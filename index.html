@@ -2443,7 +2443,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           sb.from("events").select("*"), sb.from("campaigns").select("*"), sb.from("settings").select("*"),
           sb.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(500),
           sb.from("reminders").select("*").order("due_at", { ascending: true }).limit(300),
-          sb.from("pipeline_stages").select("*").order("id", { ascending: true })
+          sb.from("pipeline_stages").select("*").order("id", { ascending: true }),
+          sb.from("agreements").select("*").order("created_at", { ascending: false })
         ]);
         var cl = chk(rs[0]) || [], of = chk(rs[1]) || [], it = chk(rs[2]) || [];
         cache = { clients: cl, offers: of, interactions: it };
@@ -2454,7 +2455,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         state.campaigns = (chk(rs[4]) || []).map(cpToApp);
         var st = chk(rs[5]) || [], cal = st.find(function (x) { return x.key === "calendar"; }), fd = st.find(function (x) { return x.key === "calendar_feed"; });
         state.settings = cal ? cal.value : {}; state.feedToken = fd && fd.value ? fd.value.token : ""; var prd = st.find(function (x) { return x.key === "products"; }); state.products = prd && prd.value && prd.value.list ? prd.value.list : {}; var lgo = st.find(function (x) { return x.key === "logo"; }); state.logo = lgo && lgo.value && lgo.value.data ? lgo.value.data : ""; var pr = st.find(function (x) { return x.key === "pricing"; }); state.pricing = pr && pr.value ? pr.value : {};
-        state.logs = chk(rs[6]) || []; state.reminders = chk(rs[7]) || []; state.stages = chk(rs[8]) || [];
+        state.logs = chk(rs[6]) || []; state.reminders = chk(rs[7]) || []; state.stages = chk(rs[8]) || []; state.agreements = chk(rs[9]) || []; try { agrAutoSave(); } catch (e) {}
         ["clients", "events", "campaigns", "settings"].forEach(function (k) { loaded[k] = true; fresh[k] = true; });
         syncOk = true; setStatus(true, "מחובר, הכל נשמר אוטומטית");
         renderAll();
@@ -2552,7 +2553,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         field("פרט (קובץ / תוכן)", "al-note", '<input id="al-note" placeholder="למשל: ' + esc((c.name || "") + "_(" + (c.finalPkgName || c.maxPkgName || "Supreme") + ").pdf") + '"' + dis() + '>') +
         '<button class="btn" data-sb="log-act"' + dis() + '>תיעוד</button></div>' +
       (logs.length ? '<ul class="tl">' + actRows(logs.slice(0, 40)) + '</ul>' : '<div class="empty">עוד אין פעולות מתועדות ללקוח הזה. מעברי סטטוס, שלבים ותשלומים נרשמים אוטומטית.</div>') + '</section>';
-    return pipe + journeySection(c) + hall + pk + act;
+    return pipe + journeySection(c) + agreementSection(c) + hall + pk + act;
   }
   document.addEventListener("change", function (e) {
     var t = e.target, f = t.dataset && t.dataset.sbf; if (!f || !openId || !canWrite) return;
@@ -3293,6 +3294,132 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     el.hidden = false;
     el.innerHTML = '<h3>הפעולות שלך לפי מסע הלקוח <span class="count num">' + rows.length + '</span> <small>🟢 תורך · 🟡 המערכת מחכה לשליחה · ⏳ בקרוב עם תאריך</small></h3>' + rows.map(function (r) { return r.html; }).join("");
   }
+
+  /* ---- digital service agreement: built in the CRM, signed by the client on the website, PDF saved to the chosen folder ---- */
+  var AGR = { ver: "2026-11-v1", site: "https://sms-website-v2.vercel.app", deposit: 2500, payDays: 3, refundDays: 14, transferDays: 30, transferMonths: 12, collectDays: 7 };
+  function agrSnapshot(c, remote) {
+    var total = lastOffered(c) || dealValue(c) || 0, dep = AGR.deposit, pkg = (c.finalPkgName || c.maxPkgName || (c.quote && (c.quote.en || c.quote.pkg)) || "לפי הצעת המחיר");
+    var ev = c.eventDate ? fmtDate(c.eventDate) : "יתואם", guests = Number(c.rsvpConfirmed) || Number(c.guests) || 0;
+    var s = {
+      title: "הסכם שירות לאספקת חבילת משקאות לאירוע", version: AGR.ver, created: new Date().toLocaleDateString("he-IL"),
+      parties: [{ k: "הספק", v: "ש.מ.ש משקאות, גן יבנה · טלפון 054-5435939 · smsdrinkss@gmail.com" }, { k: "הלקוח", v: (c.name || "") + (c.phone ? " · " + c.phone : "") + (c.email ? " · " + c.email : "") }],
+      summary: [
+        { k: "מועד האירוע", v: ev }, { k: "אולם / מקום", v: c.venue || "יתואם" }, { k: "מספר מוזמנים", v: guests ? String(guests) : "לפי הצעת המחיר" },
+        { k: "חבילה", v: pkg }, { k: "מחיר לפי הצעה אחרונה", v: total ? shekel(total) : "לפי הצעת המחיר שנשלחה" }, { k: "מקדמה לשריון התאריך", v: shekel(dep) },
+        { k: "יתרה לתשלום", v: total ? shekel(Math.max(0, total - dep)) + " עד " + AGR.payDays + " ימים לפני האירוע" : "עד " + AGR.payDays + " ימים לפני האירוע" },
+        { k: "אופן סגירת העסקה", v: remote ? "מרחוק (טלפון / הודעות / אינטרנט)" : "פנים מול פנים" }
+      ], sections: []
+    }, S = s.sections;
+    S.push({ h: "מהות ההסכם", p: ["הספק יספק ללקוח חבילת משקאות לאירוע, כמפורט בהצעת המחיר העדכנית שנשלחה ללקוח ובהסכם זה. ההסכם מתייחס לכל התהליך, מהשריון ועד הזיכוי."] });
+    S.push({ h: "מהלך התהליך", ul: [
+      "אפיון: הלקוח מוסר פרטי אירוע והעדפות, והספק בונה הצעה מותאמת.",
+      "הצעה ראשונית: נבנית למספר המוזמנים המרבי. עם שריון התאריך, מחיר ההצעה נעול.",
+      "כשבוע לפני האירוע: הלקוח מעביר אישורי הגעה, והספק מוציא הצעה סופית מעודכנת לפי מספר המאשרים. החבילה יכולה לקטון לפי אישורי ההגעה. הגדלה מעבר להצעה הראשונית תיעשה בהסכמה ובהתאם למחיר שיעודכן.",
+      "תשלום: מלוא התמורה תשולם עד " + AGR.payDays + " ימים לפני האירוע. ללא תשלום מלא לא תתבצע אספקה.",
+      "אספקה: הספק יביא את החבילה לאולם במועד ובמקום שסוכמו, בתיאום עם איש הקשר של הלקוח באולם.",
+      "אחרי האירוע: הספק ייצור קשר לבירור שביעות רצון ולתיאום איסוף בקבוקים סגורים וזיכוי."
+    ] });
+    S.push({ h: "מחיר ותשלום", p: ["התמורה היא סכום ההצעה האחרונה שנשלחה ללקוח ואושרה על ידו. המקדמה מקוזזת מהתמורה הכוללת. התשלום ייעשה בדרך שתיקבע בין הצדדים. כל שינוי במחיר ייעשה בכתב ובהסכמת הלקוח."] });
+    S.push({ h: "שינויים בחבילה", p: ["הלקוח יכול לבקש להחליף או להוסיף מוצרים עד שבוע לפני האירוע, בכפוף לזמינות. המחיר המעודכן ייקבע לפי עלות המוצר ויישלח לאישור הלקוח לפני הביצוע."] });
+    S.push({ h: "אספקה", p: ["האספקה תתבצע באולם במועד שיתואם. הלקוח אחראי לוודא שהאולם מאפשר קבלת הסחורה ואחסונה, ולמסור איש קשר זמין. עיכוב שנגרם בשל הלקוח או האולם לא יחייב את הספק בפיצוי."] });
+    S.push({ h: "זיכוי על בקבוקים סגורים", p: ["בקבוקים סגורים ושלמים שלא נפתחו יוחזרו לספק בתוך " + AGR.collectDays + " ימים מהאירוע, ויזוכו לפי מחירון הזיכוי שצורף להצעה. הספק יתאם איסוף מהכתובת שימסור הלקוח. בקבוקים פתוחים, פגומים או שלא נמסרו במועד אינם זכאים לזיכוי."] });
+    var cx = [
+      "המקדמה בסך " + shekel(dep) + " משריינת את תאריך האירוע ביומן הספק. בעקבות השריון הספק מסרב לאירועים אחרים באותו מועד.",
+    ];
+    if (remote) cx.push("זכות ביטול בעסקה מרחוק: מאחר שההסכם נסגר מרחוק, הלקוח רשאי לבטל אותו לפי חוק הגנת הצרכן תוך 14 יום מיום החתימה, ובלבד שהודיע על כך לפחות יומיים לפני האירוע. הספק יחזיר את התשלומים בתוך 7 ימי עסקים, בניכוי דמי ביטול של 5% מהעסקה או 100 ש״ח, הנמוך מביניהם.");
+    cx.push("ביטול על ידי הלקוח " + (remote ? "אחרי תום התקופה האמורה" : "") + ": המקדמה אינה מוחזרת. היא מהווה פיצוי מוסכם על סגירת היומן והפסד אירועים אחרים. הצדדים מצהירים כי הסכום סביר ביחס לנזק שניתן היה לצפות מראש.");
+    cx.push("דחיית מועד: אם הלקוח מבקש לדחות את האירוע לתאריך אחר בתוך " + AGR.transferMonths + " חודשים, בהודעה של לפחות " + AGR.transferDays + " ימים לפני האירוע המקורי, וכל עוד התאריך החדש פנוי, המקדמה תועבר לתאריך החדש פעם אחת ללא עלות.");
+    cx.push("סכומים ששולמו מעבר למקדמה: בביטול של הלקוח לפחות " + AGR.refundDays + " ימים לפני האירוע יוחזרו במלואם. בביטול סמוך יותר יוחזרו בניכוי עלות הסחורה שנרכשה והוכנה בפועל לאירוע, שתוצג ללקוח לפי דרישה.");
+    cx.push("ביטול על ידי הספק, למעט כוח עליון: הספק יחזיר ללקוח את כל הסכומים ששולמו, לרבות המקדמה.");
+    cx.push("כוח עליון: אם האירוע לא יכול להתקיים בשל הגבלה או הוראה של רשות מוסמכת, או מצב ביטחוני או אירוע שאינו בשליטת הצדדים, הצדדים יתאמו תאריך חדש בתוך " + AGR.transferMonths + " חודשים והמקדמה תועבר אליו. סכומים ששולמו מעבר למקדמה יוחזרו.");
+    S.push({ h: "הזמנה, מקדמה וביטול", ul: cx });
+    S.push({ h: "אחריות ושתייה אחראית", p: ["הגשת משקאות משכרים תיעשה לבגירים בלבד, ואחריות זו חלה על הלקוח ועל האירוע. הלקוח אחראי לרישיונות ולהיתרים הנדרשים מהאולם ולאחסון הסחורה. אחריות הספק מוגבלת לסכום ששולם לו, ואינה כוללת נזק עקיף, והכול כל עוד הדין מתיר זאת."] });
+    S.push({ h: "פרטיות ויצירת קשר", p: ["הספק ישתמש בפרטי הלקוח לצורך ביצוע ההסכם בלבד, בהתאם למדיניות הפרטיות באתר. הודעות שיווקיות יישלחו רק אם הלקוח סימן לכך הסכמה נפרדת."] });
+    S.push({ h: "כללי וחתימה אלקטרונית", p: ["זה ההסכם המלא בין הצדדים. שינויים ייעשו בכתב, לרבות בהודעה כתובה ששני הצדדים אישרו. על ההסכם יחול הדין הישראלי. הלקוח מאשר שקרא את ההסכם, הבין אותו וחתם עליו באופן אלקטרוני. החתימה נשמרת יחד עם שם החותם, מועד החתימה ופרטי חיבור, ומזהה ייחודי של המסמך."] });
+    return s;
+  }
+  async function sha256hex(str) { var b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)); return Array.prototype.map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }
+  function agrLink(a) { return AGR.site + "/sign.html?t=" + a.token; }
+  function agrOf(cid) { return (state.agreements || []).filter(function (a) { return a.client_id === cid; }).sort(function (x, y) { return x.created_at < y.created_at ? 1 : -1; }); }
+  async function agrCreate(id, remote) {
+    var c = byId(state.clients, id); if (!c || !canWrite) return;
+    if (!c.eventDate) { toast("הזינו תאריך אירוע בכרטיס לפני יצירת הסכם"); return; }
+    var snap = agrSnapshot(c, remote), tb = new Uint8Array(24); crypto.getRandomValues(tb);
+    var token = Array.prototype.map.call(tb, function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""), h = await sha256hex(JSON.stringify(snap));
+    chk(await sb.from("agreements").insert({ client_id: id, token: token, version: AGR.ver, snapshot: snap, doc_hash: h, status: "sent" }));
+    await logAct(id, "agreement_created", null, { note: "נוצר הסכם שירות לחתימה", version: AGR.ver, remote: !!remote, hash: h });
+    renderSheet(true); toast("ההסכם נוצר. שלחו ללקוח את הקישור לחתימה");
+  }
+  async function agrVoid(aid) { chk(await sb.from("agreements").update({ status: "void" }).eq("id", aid)); await loadAll(); renderSheet(true); toast("ההסכם בוטל והקישור כבר לא פעיל"); }
+  var AGR_CSS = ".agr{direction:rtl;background:#fff;color:#111;font-family:'SMS Heebo',Arial,sans-serif;width:794px;padding:56px 60px;font-size:15px;line-height:1.7}.agr h1{font-size:28px;margin:0 0 4px}.agr h2{font-size:18px;margin:20px 0 6px;color:#7a5a12}.agr .v{color:#666;font-size:12px;margin:0 0 18px}.agr .k{display:flex;gap:12px;border-bottom:1px solid #e6e0d0;padding:4px 0}.agr .k b{width:150px;flex:none;color:#555;font-weight:500}.agr p{margin:0 0 6px}.agr ul{margin:0 0 6px;padding-inline-start:22px}.agr li{margin:0 0 4px}.agr .sg{margin-top:26px;border-top:2px solid #7a5a12;padding-top:12px;page-break-inside:avoid}.agr .sg img{width:230px;border:1px solid #bbb;border-radius:6px;padding:4px;background:#fff}.agr .m{font-family:monospace;font-size:10px;color:#666;word-break:break-all;direction:ltr;text-align:left}";
+  function agrHtml(a) {
+    var s = a.snapshot || {}, o = "<style>" + AGR_CSS + "</style><div class='agr'><h1>" + esc(s.title) + "</h1><p class='v'>ש.מ.ש משקאות · גרסה " + esc(s.version) + " · הופק " + esc(s.created || "") + "</p>";
+    [["parties", "הצדדים"], ["summary", "פרטי העסקה"]].forEach(function (g) { o += "<h2>" + g[1] + "</h2>" + (s[g[0]] || []).map(function (r) { return "<div class='k'><b>" + esc(r.k) + "</b><span>" + esc(r.v) + "</span></div>"; }).join(""); });
+    (s.sections || []).forEach(function (sec, i) { o += "<h2>" + (i + 1) + ". " + esc(sec.h) + "</h2>" + (sec.p || []).map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("") + (sec.ul ? "<ul>" + sec.ul.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>" : ""); });
+    var au = a.audit || {}, cs = a.consents || {};
+    o += "<div class='sg'><h2 style='margin-top:0'>חתימת הלקוח</h2><p>נחתם על ידי <b>" + esc(a.signer_name || "") + "</b> ב-" + esc(a.signed_at ? new Date(a.signed_at).toLocaleString("he-IL", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jerusalem" }) : "") + "</p>" +
+      (a.signature_png ? "<img src='" + esc(a.signature_png) + "' alt='חתימה'>" : "") + "<p style='font-size:13px'>אושרו: תנאי ההסכם, סעיף המקדמה והביטול, מדיניות הפרטיות" + (cs.marketing ? ", וקבלת דיוור" : "") + ".</p>" +
+      "<p class='m'>doc: " + esc(a.doc_hash || "") + "<br>sig: " + esc(a.signed_hash || "") + "<br>ip: " + esc(au.ip || "") + " · tz: " + esc(au.tz || "") + "</p></div></div>";
+    return o;
+  }
+  async function agrPdf(a) {
+    if (!window.html2canvas || !window.jspdf) throw new Error("ספריית ה-PDF לא נטענה");
+    var root = document.createElement("div"); root.style.cssText = "position:fixed;left:-9999px;top:0"; root.innerHTML = agrHtml(a); document.body.appendChild(root);
+    try {
+      if (document.fonts && document.fonts.load) await Promise.race([Promise.all(["400 16px 'SMS Heebo'", "700 16px 'SMS Heebo'"].map(function (f) { return document.fonts.load(f, "אAa1₪"); })), new Promise(function (r) { setTimeout(r, 4000); })]);
+      await Promise.all([].slice.call(root.querySelectorAll("img")).map(function (im) { return im.complete ? 0 : new Promise(function (r) { im.onload = im.onerror = r; setTimeout(r, 2500); }); }));
+      var el = root.querySelector(".agr"), cv = await window.html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false });
+      var W = 595, H = 842, M = 40, k = cv.width / W, usable = (H - 2 * M) * k, er = el.getBoundingClientRect(), sc = cv.width / er.width;
+      var ends = [].slice.call(el.querySelectorAll("p,li,.k,.sg")).filter(function (n) { return !n.closest(".sg") || n.classList.contains("sg"); }).map(function (n) { return (n.getBoundingClientRect().bottom - er.top) * sc; }).sort(function (x, y) { return x - y; });
+      var cuts = [0], pos = 0;
+      while (cv.height - pos > usable) { var lim = pos + usable, best = 0; ends.forEach(function (e) { if (e <= lim && e > pos + usable * 0.45) best = e; }); pos = best || lim; cuts.push(Math.round(pos)); }
+      cuts.push(cv.height);
+      var pdf = new window.jspdf.jsPDF({ unit: "pt", format: [W, H], orientation: "portrait", compress: true });
+      for (var i = 0; i < cuts.length - 1; i++) {
+        var hh = cuts[i + 1] - cuts[i]; if (hh < 2) continue;
+        var part = document.createElement("canvas"); part.width = cv.width; part.height = hh; var cx = part.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, part.width, part.height); cx.drawImage(cv, 0, cuts[i], cv.width, hh, 0, 0, cv.width, hh);
+        if (i) pdf.addPage([W, H], "portrait"); pdf.addImage(part.toDataURL("image/jpeg", 0.92), "JPEG", 0, M, W, hh / k, undefined, "FAST");
+        pdf.setFontSize(8); pdf.setTextColor(120); pdf.text((i + 1) + " / " + (cuts.length - 1), W / 2, H - 16, { align: "center" });
+      }
+      return pdf.output("blob");
+    } finally { root.remove(); }
+  }
+  function agrFile(a, c) { return "הסכם_" + String((c && c.name) || "לקוח").replace(/[\\\/:*?"<>|]/g, "").trim().replace(/\s+/g, "_") + "_" + String(a.signed_at || "").slice(0, 10) + ".pdf"; }
+  var agrSaving = {};
+  async function agrSave(a, manual) {
+    var c = byId(state.clients, a.client_id); if (agrSaving[a.id]) return; agrSaving[a.id] = true;
+    try {
+      var useDir = await dirReady(!!manual); if (!manual && !useDir) return;
+      var blob = await agrPdf(a), where = await saveBlob(blob, agrFile(a, c), useDir);
+      try { localStorage.setItem("sms_agr_" + a.id, "1"); } catch (e) {}
+      toast("ההסכם החתום של " + ((c && c.name) || "הלקוח") + (where === "dir" ? " נשמר בתיקייה " + dirName : " ירד למחשב"));
+    } catch (e) { if (manual) toast("שמירת ההסכם נכשלה: " + ((e && e.message) || "שגיאה")); }
+    finally { delete agrSaving[a.id]; }
+  }
+  function agrAutoSave() {
+    (state.agreements || []).forEach(function (a) { var done = false; try { done = !!localStorage.getItem("sms_agr_" + a.id); } catch (e) {} if (a.status === "signed" && !done) agrSave(a, false); });
+  }
+  function agreementSection(c) {
+    if (c.status !== "נסגרה עסקה" && !agrOf(c.id).length) return "";
+    var list = agrOf(c.id), w = waNum(c.phone), rows = list.map(function (a) {
+      var st = a.status === "signed" ? '<span class="chip good">נחתם ✓</span>' : a.status === "void" ? '<span class="chip">בוטל</span>' : '<span class="chip warn">ממתין לחתימה</span>';
+      var link = agrLink(a), msg = "היי " + (String(c.name || "").split(" ")[0] || "") + " 🥂 מצורף ההסכם לחתימה דיגיטלית, לוקח דקה: " + link;
+      var acts = a.status === "sent" ? '<button class="btn ghost sm" data-agr="copy" data-aid="' + esc(a.id) + '">העתקת קישור</button>' + (w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-agr="void" data-aid="' + esc(a.id) + '"' + dis() + '>ביטול ההסכם</button>' :
+        a.status === "signed" ? '<button class="btn sm" data-agr="pdf" data-aid="' + esc(a.id) + '">הורדת PDF חתום</button>' : "";
+      return '<div style="padding:8px 0;border-bottom:1px solid var(--line,#2a2a2a)"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>הסכם ' + esc(a.version) + '</b> ' + st + '<span class="muted">' + esc(new Date(a.signed_at || a.created_at).toLocaleDateString("he-IL")) + (a.signer_name ? " · " + esc(a.signer_name) : "") + '</span></div><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">' + acts + '</div></div>';
+    }).join("");
+    return '<section class="sec"><h3>הסכם שירות לחתימה <small>כל התהליך, כולל מקדמה וביטול</small></h3>' + rows +
+      '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="agrMode" aria-label="אופן סגירת העסקה"><option value="1">נסגר מרחוק (טלפון / וואטסאפ)</option><option value="0">נסגר פנים מול פנים</option></select><button class="btn" data-agr="new"' + dis() + '>יצירת הסכם חדש</button></div>' +
+      '<div class="muted" style="font-size:12.5px;margin-top:6px">הלקוח חותם מהנייד. עם החתימה, ה-PDF נשמר בתיקייה שבחרת (או יורד למחשב כשפותחים את המערכת).</div></section>';
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-agr]"); if (!b) return;
+    var k = b.dataset.agr, aid = b.dataset.aid, a = aid && (state.agreements || []).find(function (x) { return x.id === aid; });
+    if (k === "new") { var m = document.getElementById("agrMode"); guard(function () { return agrCreate(openId, !m || m.value === "1"); }); }
+    else if (k === "copy" && a) { try { navigator.clipboard.writeText(agrLink(a)); toast("הקישור הועתק"); } catch (er) { toast(agrLink(a)); } }
+    else if (k === "void" && a) { if (confirm("לבטל את ההסכם? הקישור ללקוח יפסיק לעבוד.")) guard(function () { return agrVoid(aid); }); }
+    else if (k === "pdf" && a) agrSave(a, true);
+  });
 
   /* ---- open charges panel (top of the dashboard) ---- */
   function telHref(p) { var d = String(p || "").replace(/[^\d+]/g, ""); if (!d) return ""; if (d[0] === "+") return "tel:" + d; if (d.indexOf("972") === 0) return "tel:+" + d; if (d[0] === "0") return "tel:+972" + d.slice(1); return "tel:" + d; }
