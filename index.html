@@ -1429,10 +1429,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   /* ---- monthly backup ---- */
+  function monthlySnapshot() {
+    var keep = srcPeriod; srcPeriod = "all"; var d = summaryData(); srcPeriod = keep;
+    return Object.keys(d.months).filter(Boolean).sort().map(function (k) { var m = d.months[k]; return { month: k, leads: m.leads, dealsClosed: m.n, dealValue: m.value, paid: m.paid, openDebt: m.debt, adSpend: m.spend, goals: (state.goals || {})[k] || null }; });
+  }
   function backupData() {
-    return { app: "sms-crm", exportedAt: new Date().toISOString(),
-      counts: { clients: state.clients.length, events: state.events.length, campaigns: state.campaigns.length },
-      clients: state.clients, events: state.events, campaigns: state.campaigns, settings: state.settings || {} };
+    var agr = (state.agreements || []).map(function (a) { var o = Object.assign({}, a); delete o.token; return o; });
+    return { app: "sms-crm", backupVersion: 2, exportedAt: new Date().toISOString(),
+      counts: { clients: state.clients.length, events: state.events.length, campaigns: state.campaigns.length, activityLog: (state.logs || []).length, reminders: (state.reminders || []).length, agreements: agr.length },
+      clients: state.clients, events: state.events, campaigns: state.campaigns, settings: state.settings || {},
+      goals: state.goals || {}, monthlySummaries: monthlySnapshot(), pricing: state.pricing || {}, products: state.products || {}, logo: state.logo || "",
+      pipelineStages: state.stages || [], agreements: agr, activityLog: state.logs || [], reminders: state.reminders || [] };
   }
   async function doBackup() {
     if (!dl) { toast("ההורדה לא זמינה בתצוגה הזו. פתחו את הדף ב-claude.ai"); return; }
