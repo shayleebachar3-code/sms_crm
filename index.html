@@ -3261,6 +3261,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function journeyLight(c) {
     var sid = c.pipelineStage; if (c.status !== "נסגרה עסקה" || !sid) return null;
     var due = journeyDue(c, sid), dd = due ? daysUntil(due) : 0, ad = stepDone(c, sid, "a"), od = stepDone(c, sid, "o"), msg = journeyMsg(c, sid);
+    var rdone = sid === 11 && c.refund && c.refund.status === "done"; /* refund already done: no waiting for the date, the client can be closed now */
+    if (rdone) { dd = 0; ad = true; if (!od) return { k: "owner", sid: sid, due: due, dd: 0, msg: "", txt: "הזיכוי הושלם. לחיצה על ״סימנתי שביצעתי את החלק שלי״ סוגרת את הלקוח והוא עובר ל״הושלם״." }; }
     var auto = !!AGENT_AUTO[sid] && sid !== 4;
     if (due && dd > 0) return { k: "wait", sid: sid, due: due, dd: dd, msg: msg, txt: "עוד " + dd + " ימים. מגיע ב-" + fmtDate(due) + ". עד אז אין מה לעשות." };
     if (!od && auto) return { k: "owner", sid: sid, due: due, dd: dd, msg: msg, txt: "אור ירוק: תורך קודם. אחרי שתסמן, המערכת ממשיכה." };
