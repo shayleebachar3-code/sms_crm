@@ -356,6 +356,14 @@ details.pull[open] > summary { margin-bottom: 10px; }
         <div class="field check"><input id="s-auto" type="checkbox"><label for="s-auto">סנכרון אוטומטי אחרי כל שינוי</label></div>
       </div>
     </details>
+    <details id="bk-det">
+      <summary>גיבוי ושחזור</summary>
+      <div class="calset">
+        <div class="field" style="grid-column:1/-1"><div class="sub" id="bk-info">טוען…</div></div>
+        <div class="field"><button class="btn sm" type="button" data-act="backup">הורדת גיבוי עכשיו</button></div>
+        <div class="field"><label for="bk-file">שחזור מקובץ גיבוי</label><input id="bk-file" type="file" accept=".json,application/json"></div>
+      </div>
+    </details>
   </section>
 
   <nav class="tabs" role="tablist" aria-label="תצוגות">
@@ -424,6 +432,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
       <div class="charts" id="sum-tiles"></div>
       <h3 style="margin:18px 0 8px">לפי חודש</h3>
       <div class="tablebox"><table><thead><tr><th>חודש</th><th>לידים</th><th>עסקאות שנסגרו</th><th>שווי</th><th>שולם</th><th>חוב פתוח</th><th>הוצאות פרסום</th></tr></thead><tbody id="sum-months"></tbody></table></div>
+      <div id="sum-nodate"></div>
       <h3 style="margin:18px 0 8px">העסקאות שנסגרו בתקופה</h3>
       <div class="tablebox"><table><thead><tr><th>לקוח</th><th>נסגר</th><th>תאריך אירוע</th><th>חבילה</th><th>שווי עסקה</th><th>שולם</th><th>יתרה</th><th>מקור</th></tr></thead><tbody id="sum-rows"></tbody></table></div>
     </section>
@@ -479,6 +488,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
 </form></div>
 <div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="p-title"></div></div>
 <div class="overlay top2" id="closeoverlay" hidden><div id="closebox"></div></div>
+<div class="overlay top2" id="xoverlay" hidden><div id="xbox"></div></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>/* supabase-js 2.119.0 (inlined) */
@@ -1451,6 +1461,82 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     } catch (e) { toast(e && e.code === "declined" ? "ההורדה בוטלה" : "ההורדה נכשלה, נסו שוב"); }
   }
 
+  /* ---- dialogs ---- */
+  function xDlg(html) { $("xbox").innerHTML = '<div class="dlg" role="dialog" aria-modal="true">' + html + '</div>'; $("xoverlay").hidden = false; }
+  function xClose() { $("xoverlay").hidden = true; $("xbox").innerHTML = ""; rsPlan = null; cmId = null; }
+  var cmId = null;
+  function cmRow(ym, v) { return '<div class="cmrow" style="display:flex;gap:8px;margin-bottom:6px"><input type="month" class="cm-m" value="' + esc(ym) + '" style="flex:1"><input type="number" min="0" inputmode="numeric" class="cm-v" placeholder="₪" value="' + esc(v === "" ? "" : v) + '" style="flex:1"></div>'; }
+  function campMonthsDlg(id) {
+    var c = byId(state.campaigns, id); if (!c) return; cmId = id;
+    var m = c.spendByMonth && typeof c.spendByMonth === "object" ? c.spendByMonth : {}, ks = Object.keys(m).sort();
+    if (!ks.length && c.spend) ks = [ymOf(c.createdAt) || curYm()], m = (function (o) { o[ks[0]] = c.spend; return o; })({});
+    xDlg('<h2>הוצאה לפי חודש: ' + esc(c.name) + '</h2><div class="dlg-body"><div class="sub" style="margin-bottom:8px">הזינו כמה הוצאתם בכל חודש. הסך הכולל של הקמפיין יתעדכן לפי הסכום. בלי פירוט, כל ההוצאה נספרת בחודש פתיחת הקמפיין.</div><div id="cm-rows">' +
+      ks.map(function (k) { return cmRow(k, m[k]); }).join("") + '</div><button class="btn ghost sm" type="button" data-act="cm-add">הוספת חודש</button></div>' +
+      '<div class="form-actions" style="margin-top:0"><button class="btn" data-act="cm-save">שמירה</button><button class="btn ghost" data-act="x-close">ביטול</button></div>');
+  }
+  function cmAddRow() { var d = document.createElement("div"); d.innerHTML = cmRow(curYm(), ""); $("cm-rows").appendChild(d.firstChild); }
+  function cmSave() {
+    var c = byId(state.campaigns, cmId); if (!c || !canWrite) return;
+    var o = {}, bad = false;
+    Array.prototype.forEach.call(document.querySelectorAll("#cm-rows .cmrow"), function (r) {
+      var ym = r.querySelector(".cm-m").value, v = Number(r.querySelector(".cm-v").value) || 0;
+      if (!ym && !v) return; if (!/^\d{4}-\d{2}$/.test(ym)) { bad = true; return; }
+      o[ym] = (o[ym] || 0) + v;
+    });
+    if (bad) { toast("בחרו חודש בכל שורה"); return; }
+    var total = Object.keys(o).reduce(function (t, k) { return t + o[k]; }, 0), data = Object.assign({}, c); delete data.id; delete data.createdAt;
+    data.spendByMonth = o; data.spend = total;
+    xClose(); guard(async function () { await put("campaigns", c.id, data); toast("ההוצאות לפי חודש נשמרו"); });
+  }
+
+  /* ---- restore from a backup file ---- */
+  var rsPlan = null, autoBk = null;
+  function renderBkInfo() {
+    var el = $("bk-info"); if (!el) return;
+    var lb = cfg().lastBackup;
+    el.innerHTML = "גיבוי קובץ אחרון: <b>" + (lb ? fmtDate(String(lb).slice(0, 10)) : "עוד לא הורד") + "</b>. גיבוי אוטומטי שבועי בשרת (בכל יום ראשון, נשמרים 12 אחרונים): <b>" + (autoBk === undefined ? "לא זמין" : autoBk ? fmtDate(jerDate(autoBk)) : "טוען…") + "</b>. הגיבוי בשרת נמצא באותו מסד נתונים, ולכן ממשיכים להוריד קובץ גם פעם בחודש.";
+  }
+  async function loadAutoBk() {
+    if (!sb) return;
+    try { var r = await sb.from("backups").select("id,created_at").order("created_at", { ascending: false }).limit(1); autoBk = r.data && r.data[0] ? r.data[0].created_at : undefined; } catch (e) { autoBk = undefined; }
+    renderBkInfo();
+  }
+  function rsPrepare(file) {
+    var fr = new FileReader();
+    fr.onerror = function () { toast("לא הצלחתי לקרוא את הקובץ"); };
+    fr.onload = function () {
+      var b; try { b = JSON.parse(String(fr.result)); } catch (e) { toast("הקובץ אינו קובץ גיבוי תקין"); return; }
+      if (!b || b.app !== "sms-crm" || !Array.isArray(b.clients)) { toast("זה לא קובץ גיבוי של המערכת"); return; }
+      var ex = function (col, arr) { var have = {}; state[col].forEach(function (x) { have[x.id] = 1; }); var nw = [], old = []; (arr || []).forEach(function (x) { if (!x || !x.id) return; (have[x.id] ? old : nw).push(x); }); return { nw: nw, old: old }; };
+      rsPlan = { b: b, clients: ex("clients", b.clients), events: ex("events", b.events), campaigns: ex("campaigns", b.campaigns) };
+      var P = rsPlan, line = function (n, x) { return '<li><b>' + n + '</b>: ' + x.nw.length + ' חסרים וישוחזרו, ' + x.old.length + ' קיימים כבר במערכת</li>'; };
+      xDlg('<h2>שחזור מגיבוי</h2><div class="dlg-body"><div class="sub" style="margin-bottom:8px">גיבוי מתאריך ' + esc(b.exportedAt ? fmtDate(jerDate(b.exportedAt)) : "לא ידוע") + '. הפעולה לא מוחקת שום דבר, רק משחזרת מה שחסר.</div><ul style="margin:0 0 10px;padding-inline-start:18px">' +
+        line("לקוחות", P.clients) + line("אירועים", P.events) + line("קמפיינים", P.campaigns) + '<li>יעדים, מוצרים, תמחור ולוגו: ישוחזרו רק מה שחסר היום</li></ul>' +
+        '<label class="opt"><input type="checkbox" id="rs-over"> לדרוס גם לקוחות, אירועים וקמפיינים קיימים בנתוני הגיבוי (יחזיר אותם למצב שהיה בגיבוי, שינויים מאז יימחקו)</label></div>' +
+        '<div class="form-actions" style="margin-top:0"><button class="btn" data-act="rs-go">שחזור</button><button class="btn ghost" data-act="x-close">ביטול</button></div>');
+    };
+    fr.readAsText(file);
+  }
+  function restoreGo() {
+    var P = rsPlan; if (!P || !canWrite) return;
+    var over = $("rs-over") && $("rs-over").checked, b = P.b, btn = document.querySelector('[data-act="rs-go"]'); if (btn) btn.disabled = true;
+    var strip = function (x) { var d = Object.assign({}, x); delete d.id; return d; };
+    guard(async function () {
+      var n = 0;
+      for (var q = 0; q < 3; q++) {
+        var col = ["clients", "events", "campaigns"][q], L = P[col], list = L.nw.concat(over ? L.old : []);
+        for (var i = 0; i < list.length; i++) { await db.collection(col).doc(list[i].id).set(strip(list[i])); n++; }
+      }
+      var cg = state.goals || {}, bg = b.goals || {}, mg = Object.assign({}, bg, cg); if (Object.keys(bg).some(function (k) { return !cg[k]; })) await db.doc("settings/goals").set({ byMonth: mg });
+      var cp = state.products || {}, bp = b.products || {}, mp = Object.assign({}, bp, cp); if (Object.keys(bp).some(function (k) { return !cp[k]; })) await db.doc("settings/products").set({ list: mp });
+      if (b.pricing && Object.keys(b.pricing).length && !(state.pricing && Object.keys(state.pricing).length)) await db.doc("settings/pricing").set(b.pricing);
+      if (b.logo && !state.logo) await db.doc("settings/logo").set({ data: b.logo });
+      xClose(); toast("השחזור הסתיים: " + n + " רשומות");
+    });
+  }
+  $("bk-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) rsPrepare(f); });
+  $("bk-det").addEventListener("toggle", function () { if ($("bk-det").open) { renderBkInfo(); loadAutoBk(); } });
+
   /* ---- quote agent ---- */
   var PKGS = { "Classic": 22.8, "חצי חצי": 24.4, "Supreme": 26.9, "סופר פרימיום": 55.4 };
   function quoteEst(pkg, guests) { var p = PKGS[pkg]; if (!p || !guests) return 0; return Math.round((p * 350 - 3125) * guests / 350 + 3125); }
@@ -1981,7 +2067,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           field("סוג", "g-type", '<select id="g-type"' + dis() + '>' + typeLogOpts + '</select>') +
           field("מה קרה / מה סוכם", "g-text", '<textarea id="g-text" rows="2"' + dis() + '></textarea>') +
           '<button class="btn" data-act="add-log"' + dis() + '>הוספה</button></div>' + logHtml + '</section>' +
-      debtBanner(c) + sbSection(c) + sheetExtra(c) +
+      debtBanner(c) + closedEdit(c) + sbSection(c) + sheetExtra(c) +
       '<section class="sec"><h3>ביומן Google</h3>' + calHtml + '</section>' +
       '<section class="sec"><h3>הערות כלליות</h3><textarea data-field="notes" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px"' + dis() + '>' + esc(c.notes || "") + '</textarea></section>' +
       '<div><button class="btn danger sm" data-act="del-client"' + dis() + '>מחיקת הלקוח</button></div>' +
@@ -2029,9 +2115,33 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function boardActive(c) { return !isWon(c) || closedYm(c) >= curYm(); }
   var srcPeriod = "cur";
   /* A deal belongs to the month in which it was closed. Older deals without a stored closing date fall back to their payment/creation date. */
-  function closedYm(c) { return ymOf(c.closedAt || (c.payment && c.payment.updatedAt) || c.createdAt); }
+  var clMapSrc = null, clMap = {};
+  function logClosedAt(c) {
+    if (clMapSrc !== state.logs) { clMapSrc = state.logs; clMap = {}; (state.logs || []).forEach(function (l) { if (l.kind === "status_change" && l.details && l.details.to === "נסגרה עסקה" && l.client_id && (!clMap[l.client_id] || l.created_at > clMap[l.client_id])) clMap[l.client_id] = l.created_at; }); }
+    return clMap[c.id] || "";
+  }
+  function closedYm(c) { return ymOf(c.closedAt || logClosedAt(c) || (c.payment && c.payment.updatedAt) || c.createdAt); }
+  function closedGuess(c) { return String(c.closedAt || logClosedAt(c) || (c.payment && c.payment.updatedAt) || c.createdAt || "").slice(0, 10); }
+  function jerDate(iso) { if (!iso) return ""; try { return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }); } catch (e) { return String(iso).slice(0, 10); } }
+  function closedEdit(c) {
+    if (!isWon(c)) return "";
+    var d = jerDate(c.closedAt || logClosedAt(c) || ""), src = c.closedAt ? "" : (d ? " (נלקח מיומן הפעולות)" : " (לא מתועד, מוצג לפי תאריך אחר)");
+    return '<section class="sec"><div class="field" style="max-width:340px"><label for="cl-edit">תאריך סגירת עסקה' + src + '</label><input id="cl-edit" type="date" data-cl-edit="' + esc(c.id) + '" value="' + esc(d || closedGuess(c)) + '"></div><div class="sub">קובע באיזה חודש העסקה נספרת במספרים ובסיכומים.</div></section>';
+  }
+  function setClosedDate(id, ds) { if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return; guard(async function () { await patch("clients", id, { closedAt: ds + "T12:00:00+03:00" }); toast("תאריך הסגירה עודכן"); }); }
+  function noDateList() {
+    var rows = state.clients.filter(function (c) { return isWon(c) && !c.closedAt; });
+    if (!rows.length) return "";
+    return '<h3 style="margin:18px 0 8px">עסקאות בלי תאריך סגירה מתועד (' + rows.length + ')</h3><div class="sub" style="margin-bottom:6px">לבדוק ולתקן כדי שייספרו בחודש הנכון. השינוי נשמר מיד.</div><div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>נספר כרגע בחודש</th><th>תאריך סגירה</th></tr></thead><tbody>' +
+      rows.map(function (c) { var d = jerDate(logClosedAt(c)) || closedGuess(c); return '<tr><td><b>' + esc(c.name) + '</b></td><td class="num">' + (c.eventDate ? fmtDate(c.eventDate) : "–") + '</td><td>' + esc(ymLabel(closedYm(c))) + '</td><td><input type="date" data-cl-edit="' + esc(c.id) + '" value="' + esc(d) + '"></td></tr>'; }).join("") + '</tbody></table></div>';
+  }
   function closedInRange(r) { return state.clients.filter(function (c) { return isWon(c) && inRange(closedYm(c), r); }); }
   function pkgOf(c) { return c.finalPkgName || c.maxPkgName || ""; }
+  function campSpendIn(c, r) {
+    var m = c.spendByMonth, ks = m && typeof m === "object" ? Object.keys(m) : [];
+    if (ks.length) return ks.reduce(function (t, k) { return inRange(k, r) ? t + (Number(m[k]) || 0) : t; }, 0);
+    return inRange(ymOf(c.createdAt), r) ? Number(c.spend) || 0 : 0;
+  }
   function summaryData() {
     var r = periodRange(srcPeriod), won = closedInRange(r), today = todayStr();
     var d = { r: r, won: won, value: 0, paid: 0, debt: 0, spend: 0, leads: 0, held: 0, months: {} };
@@ -2042,7 +2152,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (isWon(c) && c.eventDate && c.eventDate < today && inRange(ymOf(c.eventDate), r)) d.held++;
       var p = payOf(c); if (isWon(c) && p.amount) { var py = ymOf(p.date || c.eventDate); if (inRange(py, r)) { d.paid += p.amount; mo(py).paid += p.amount; } }
     });
-    state.campaigns.forEach(function (c) { var ym = ymOf(c.createdAt); if (ym && inRange(ym, r)) { d.spend += c.spend || 0; mo(ym).spend += c.spend || 0; } });
+    state.campaigns.forEach(function (c) {
+      var m = c.spendByMonth, ks = m && typeof m === "object" ? Object.keys(m) : [];
+      if (ks.length) ks.forEach(function (k) { if (inRange(k, r)) { var v = Number(m[k]) || 0; d.spend += v; mo(k).spend += v; } });
+      else { var ym = ymOf(c.createdAt); if (ym && inRange(ym, r)) { d.spend += c.spend || 0; mo(ym).spend += c.spend || 0; } }
+    });
     return d;
   }
   function goalBar(label, cur, goal, money) {
@@ -2053,6 +2167,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function renderSummary() {
     if (!$("sum-tiles")) return;
     var d = summaryData(), n = d.won.length, single = d.r && d.r[0] === d.r[1] ? d.r[0] : "";
+    if ($("sum-nodate") && !(document.activeElement && document.activeElement.hasAttribute && document.activeElement.hasAttribute("data-cl-edit"))) $("sum-nodate").innerHTML = noDateList();
     $("sum-note").innerHTML = "תקופה: <b>" + (d.r ? (single ? ymLabel(single) : ymLabel(d.r[0]) + " עד " + ymLabel(d.r[1])) : "כל הזמן") + "</b>. עסקה נספרת בחודש שבו נסגרה. כסף ששולם לפי תאריך התשלום. הוצאות פרסום לפי חודש יצירת הקמפיין.";
     var g = (state.goals || {})[single] || {}, ae = document.activeElement, typing = ae && /^goal-/.test(ae.id || "");
     if (typing) { var gb = $("goal-bars"); if (gb) gb.innerHTML = goalBarsHtml(single, d, n); }
@@ -2076,13 +2191,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       guard(async function () { await db.doc("settings/goals").set({ byMonth: cur }); renderSummary(); toast("היעדים נשמרו"); });
     }
   });
+  document.addEventListener("change", function (e) { var t = e.target; if (t && t.dataset && t.dataset.clEdit && canWrite) setClosedDate(t.dataset.clEdit, t.value); });
   document.addEventListener("click", function (e) { var r = e.target.closest && e.target.closest("[data-sumid]"); if (r) openSheet(r.dataset.sumid); });
 
   /* ---- sources & charts ---- */
   function sourceStats() {
     var map = {};
     var pr = periodRange(srcPeriod);
-    state.campaigns.forEach(function (c) { map[c.name] = { name: c.name, channel: c.channel || "", spend: (!pr || inRange(ymOf(c.createdAt), pr)) ? Number(c.spend) || 0 : 0, camp: c, n: {}, total: 0, rev: 0 }; });
+    state.campaigns.forEach(function (c) { map[c.name] = { name: c.name, channel: c.channel || "", spend: campSpendIn(c, pr), camp: c, n: {}, total: 0, rev: 0 }; });
     state.clients.forEach(function (c) {
       if (!inRange(ymOf(c.createdAt), pr)) return;
       var s = c.source || DIRECT;
@@ -2145,7 +2261,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         '<td class="num">' + (s.conv == null ? "–" : Math.round(s.conv * 100) + "%") + '</td><td class="num">' + shekel(s.rev) + '</td>' +
         '<td class="num">' + (s.cpw == null ? "–" : shekel(s.cpw)) + '</td>' +
         '<td>' + (s.roi == null ? "–" : '<span class="chip ' + (s.roi >= 1 ? "good" : "bad") + ' num">×' + s.roi.toFixed(1) + '</span>') + '</td>' +
-        '<td>' + (s.camp ? '<button class="btn danger sm" data-act="del-camp"' + dis() + '>מחיקה</button>' : "") + '</td></tr>';
+        '<td>' + (s.camp ? '<button class="btn ghost sm" data-act="camp-months"' + dis() + '>לפי חודש</button> <button class="btn danger sm" data-act="del-camp"' + dis() + '>מחיקה</button>' : "") + '</td></tr>';
     }).join("");
   }
 
@@ -2390,6 +2506,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "mc-set") { var sk = b.dataset.key, sd = b.dataset.ds; if (sk === "form") setFormDate(sd); else if (openId && canWrite) { delete MCSEL.sheet; MC.sheet = null; guard(async function () { await patch("clients", openId, { eventDate: sd }); renderSheet(true); toast("התאריך עודכן"); }); } }
     else if (act === "bar-rank" && openId) { var bc = byId(state.clients, openId); if (bc) { var rk = barOf(bc).rank.slice(), ri = rk.indexOf(b.dataset.k), rj = ri + Number(b.dataset.d); if (ri >= 0 && rj >= 0 && rj < rk.length) { var tmp = rk[ri]; rk[ri] = rk[rj]; rk[rj] = tmp; patchBar(openId, { rank: rk }); } } }
     else if (act === "backup") doBackup();
+    else if (act === "camp-months") campMonthsDlg(b.closest("tr").dataset.id);
+    else if (act === "x-close") xClose();
+    else if (act === "cm-add") cmAddRow();
+    else if (act === "cm-save") cmSave();
+    else if (act === "rs-go") restoreGo();
     else if (act === "quote-start" && openId) runQuote(openId);
     else if (act === "quote-sent" && openId) markQuoteSent(openId, b.dataset.qid);
     else if (act === "sw-open" && openId) { swForm[openId] = { mode: "swap", key: b.dataset.n }; renderSheet(true); var swb = $("sw-name"); if (swb) swb.focus(); }
@@ -3537,7 +3658,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var au0 = a.audit || {}, st = a.status === "signed" ? '<span class="chip good">נחתם ✓</span>' + (au0.phone_match === true ? '<span class="chip good">טלפון החותם תואם לכרטיס ✓</span>' : au0.phone_match === false ? '<span class="chip bad">⚠ הטלפון שהוקלד לא תואם לכרטיס (' + esc(au0.phone_entered || "") + ')</span>' : "") : a.status === "void" ? '<span class="chip">בוטל</span>' : '<span class="chip warn">ממתין לחתימה</span>';
       var link = agrLink(a), msg = "היי " + (String(c.name || "").split(" ")[0] || "") + " 🥂 מצורף ההסכם לחתימה דיגיטלית, לוקח דקה: " + link;
       var acts = a.status === "sent" ? '<button class="btn ghost sm" data-agr="copy" data-aid="' + esc(a.id) + '">העתקת קישור</button>' + (w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-agr="void" data-aid="' + esc(a.id) + '"' + dis() + '>ביטול ההסכם</button>' :
-        a.status === "signed" ? '<button class="btn sm" data-agr="pdf" data-aid="' + esc(a.id) + '">הורדת PDF חתום</button>' : "";
+        a.status === "signed" ? '<button class="btn sm" data-agr="pdf" data-aid="' + esc(a.id) + '">הורדת PDF חתום</button>' + (w ? '<a class="btn ghost sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent("היי " + (String(c.name || "").split(" ")[0] || "") + " 🥂 ההסכם נחתם, תודה! כאן העותק שלכם, אפשר להדפיס או לשמור כ-PDF: " + link) + '" target="_blank" rel="noopener">שליחת עותק ללקוח בווטסאפ</a>' : "") : "";
       return '<div style="padding:8px 0;border-bottom:1px solid var(--line,#2a2a2a)"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>הסכם ' + esc(a.version) + '</b> ' + st + '<span class="muted">' + esc(new Date(a.signed_at || a.created_at).toLocaleDateString("he-IL")) + (a.signer_name ? " · " + esc(a.signer_name) : "") + '</span></div><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">' + acts + '</div></div>';
     }).join("");
     return '<section class="sec"><h3>הסכם שירות לחתימה <small>כל התהליך, כולל מקדמה וביטול</small></h3>' + rows +
