@@ -364,6 +364,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
     <button class="tab" role="tab" data-view="clients" aria-selected="false">לקוחות</button>
     <button class="tab" role="tab" data-view="sources" aria-selected="false">מקורות והמרות</button>
     <button class="tab" role="tab" data-view="events" aria-selected="false">אירועים</button>
+    <button class="tab" role="tab" data-view="summary" aria-selected="false">סיכומים</button>
     <button class="tab" role="tab" data-view="messages" aria-selected="false">הודעות ווטסאפ</button>
     <button class="tab" role="tab" data-view="activity" aria-selected="false">תזכורות ויומן פעולות</button>
   </nav>
@@ -416,11 +417,24 @@ details.pull[open] > summary { margin-bottom: 10px; }
       </div>
       <div class="form-actions"><button class="btn" type="submit">שמירה</button><button class="btn ghost" type="button" data-close="camp-form">ביטול</button></div>
     </form>
+    <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end"><div class="field"><label for="src-period">תקופה (לפי תאריך הגעת הליד)</label><select id="src-period"></select></div></div>
     <div class="insight" id="insight"></div>
     <div class="charts" id="charts"></div>
     <div class="tablebox"><table><thead><tr>
       <th>מקור</th><th>ערוץ</th><th>הוצאה</th><th>לקוחות</th><th>סגרו</th><th>אחוז המרה</th><th>הכנסה</th><th>עלות ללקוח שסגר</th><th>החזר על ההוצאה</th><th></th>
     </tr></thead><tbody id="src-body"></tbody></table></div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="view" id="view-summary" hidden>
+    <div class="row-head"><h2>סיכומים: חודש, חודשים אחרונים ושנה</h2><button class="btn" id="sum-csv">הורדת גיליון (Excel)</button></div>
+    <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end"><div class="field"><label for="sum-period">תקופה</label><select id="sum-period"></select></div></div>
+    <div class="insight" id="sum-note"></div>
+    <div class="charts" id="sum-tiles"></div>
+    <h3 style="margin:18px 0 8px">לפי חודש</h3>
+    <div class="tablebox"><table><thead><tr><th>חודש</th><th>אירועים</th><th>שווי עסקאות</th><th>שולם (לפי תאריך תשלום)</th><th>חוב פתוח</th><th>הוצאות פרסום</th></tr></thead><tbody id="sum-months"></tbody></table></div>
+    <h3 style="margin:18px 0 8px">כל הלקוחות בתקופה</h3>
+    <div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>חבילה</th><th>שווי עסקה</th><th>שולם</th><th>יתרה</th><th>סטטוס</th><th>מקור</th></tr></thead><tbody id="sum-rows"></tbody></table></div>
   </section>
 
   <!-- EVENTS -->
@@ -1870,14 +1884,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function renderBoard() {
     $("board").innerHTML = GROUPS.map(function (g) {
-      var rows = state.clients.filter(function (c) { return stageOf(c) === g.k; });
+      var rows = state.clients.filter(function (c) { return stageOf(c) === g.k; }), archived = 0;
+      if (g.k === "סגרו" || g.k === "הושלם") { var all0 = rows.length; rows = rows.filter(boardActive); archived = all0 - rows.length; }
       if (g.k === "מתלבטים") rows.sort(function (a, b) { return (a.followUp || "0").localeCompare(b.followUp || "0"); });
       else if (g.k === "ליד חדש") rows.sort(function (a, b) { return (a.createdAt || "").localeCompare(b.createdAt || ""); });
       else rows.sort(function (a, b) { return (a.eventDate || "9").localeCompare(b.eventDate || "9"); });
       var sum = rows.reduce(function (t, c) { return t + dealValue(c); }, 0);
       var body = rows.length ? rows.map(clientCard).join("") :
         '<div class="empty">' + (loaded.clients ? (g.k === "ליד חדש" ? "אין לידים חדשים. הוסיפו ליד בכפתור למעלה." : g.k === "בתהליך" ? "אין לקוחות בתהליך" : g.k === "מתלבטים" ? "אין מתלבטים כרגע" : g.k === "סגרו" ? "עוד אין עסקאות סגורות" : "אין לקוחות שאבדו") : "טוען…") + '</div>';
-      return '<div class="col" id="col-' + g.k + '"><div class="col-head"><h3>' + g.label + ' <span class="muted num">' + rows.length + '</span></h3><span class="sum num">' + (sum ? shekel(sum) : "") + '</span></div><div class="col-sub">' + g.sub + '</div>' + body + '</div>';
+      return '<div class="col" id="col-' + g.k + '"><div class="col-head"><h3>' + g.label + ' <span class="muted num">' + rows.length + '</span></h3><span class="sum num">' + (sum ? shekel(sum) : "") + '</span></div><div class="col-sub">' + g.sub + (archived ? ' · <a href="#summary" style="color:inherit;text-decoration:underline">' + archived + " מחודשים קודמים בסיכומים</a>" : "") + '</div>' + body + '</div>';
     }).join("");
   }
 
@@ -1975,11 +1990,97 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function closeSheet() { openId = null; $("overlay").hidden = true; document.body.style.overflow = ""; }
 
+
+  /* ---- periods, monthly reset of the board, summaries ---- */
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function ymOf(d) { return d ? String(d).slice(0, 7) : ""; }
+  function curYm() { return todayStr().slice(0, 7); }
+  function addMonths(ym, n) { var y = Number(ym.slice(0, 4)), m = Number(ym.slice(5, 7)) - 1 + n; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return y + "-" + pad2(m + 1); }
+  var HMONTH = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+  function ymLabel(ym) { return HMONTH[Number(ym.slice(5, 7)) - 1] + " " + ym.slice(0, 4); }
+  /* returns [fromYm, toYm] inclusive, or null for all time */
+  function periodRange(key) {
+    var cm = curYm();
+    if (key === "all") return null;
+    if (key === "cur") return [cm, cm];
+    if (key === "prev") { var p = addMonths(cm, -1); return [p, p]; }
+    if (key === "3m") return [addMonths(cm, -2), cm];
+    if (key === "6m") return [addMonths(cm, -5), cm];
+    if (key === "ytd") return [cm.slice(0, 4) + "-01", cm];
+    if (key === "12m") return [addMonths(cm, -11), cm];
+    if (key.indexOf("y") === 0) return [key.slice(1) + "-01", key.slice(1) + "-12"];
+    return [key, key];
+  }
+  function inRange(ym, r) { return !r || (ym && ym >= r[0] && ym <= r[1]); }
+  function periodOptions(sel) {
+    var opts = [["cur", "החודש הנוכחי"], ["prev", "החודש הקודם"], ["3m", "3 חודשים אחרונים"], ["6m", "6 חודשים אחרונים"], ["ytd", "מתחילת השנה"], ["12m", "12 חודשים אחרונים"], ["all", "כל הזמן"]];
+    var yrs = {}, yms = {};
+    state.clients.forEach(function (c) { [c.eventDate, c.createdAt].forEach(function (d) { if (d) { yrs[d.slice(0, 4)] = 1; yms[ymOf(d)] = 1; } }); });
+    Object.keys(yrs).sort().reverse().forEach(function (y) { opts.push(["y" + y, "שנת " + y]); });
+    Object.keys(yms).sort().reverse().forEach(function (m) { opts.push([m, ymLabel(m)]); });
+    return opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === sel ? " selected" : "") + ">" + o[1] + "</option>"; }).join("");
+  }
+  /* The "נסגרה עסקה" / "הושלם" columns reset on the 1st: only this month's and future events stay, plus anything with an open debt or an unfinished process. */
+  function boardActive(c) {
+    if (!isWon(c)) return true;
+    if (hasDebt(c) || !isFinished(c) && c.eventDate && c.eventDate < todayStr()) return true;
+    return (ymOf(c.eventDate) || ymOf(c.createdAt)) >= curYm();
+  }
+  var srcPeriod = "cur", sumPeriod = "cur";
+  function wonInRange(r) { return state.clients.filter(function (c) { return isWon(c) && c.eventDate && inRange(ymOf(c.eventDate), r); }); }
+  function pkgOf(c) { return c.finalPkgName || c.maxPkgName || ""; }
+  function summaryData() {
+    var r = periodRange(sumPeriod), won = wonInRange(r), today = todayStr();
+    var d = { r: r, won: won, held: 0, upcoming: 0, value: 0, paid: 0, debt: 0, spend: 0, months: {} };
+    function mo(ym) { return d.months[ym] || (d.months[ym] = { ym: ym, n: 0, value: 0, paid: 0, debt: 0, spend: 0 }); }
+    won.forEach(function (c) {
+      var p = payOf(c), m = mo(ymOf(c.eventDate));
+      if (c.eventDate < today) d.held++; else d.upcoming++;
+      d.value += p.value; d.debt += p.bal; m.n++; m.value += p.value; m.debt += p.bal;
+    });
+    state.clients.forEach(function (c) { var p = payOf(c); if (isWon(c) && p.amount && inRange(ymOf(p.date || c.eventDate), r)) { d.paid += p.amount; mo(ymOf(p.date || c.eventDate)).paid += p.amount; } });
+    state.campaigns.forEach(function (c) { var ym = ymOf(c.createdAt); if (ym && inRange(ym, r)) { d.spend += c.spend || 0; mo(ym).spend += c.spend || 0; } });
+    return d;
+  }
+  function renderSummary() {
+    var el = $("sum-period"); if (!el) return;
+    el.innerHTML = periodOptions(sumPeriod);
+    var d = summaryData(), n = d.won.length;
+    $("sum-note").innerHTML = "תקופה: <b>" + (d.r ? (d.r[0] === d.r[1] ? ymLabel(d.r[0]) : ymLabel(d.r[0]) + " עד " + ymLabel(d.r[1])) : "כל הזמן") + "</b>. אירועים ושווי עסקאות לפי תאריך האירוע. כסף ששולם לפי תאריך התשלום. הוצאות פרסום לפי חודש יצירת הקמפיין.";
+    function tile(t, v, sub) { return '<div class="chart"><h3>' + t + '</h3><div style="font-size:26px;font-weight:700" class="num">' + v + '</div><div class="cap">' + (sub || "") + '</div></div>'; }
+    $("sum-tiles").innerHTML = tile("אירועים", n, d.held + " התקיימו · " + d.upcoming + " עתידיים") + tile("שווי עסקאות", shekel(d.value), n ? "ממוצע " + shekel(Math.round(d.value / n)) + " לעסקה" : "") + tile("שולם", shekel(d.paid), "") + tile("חוב פתוח", shekel(d.debt), d.debt ? "יתרה לגבייה" : "אין חוב") + tile("הוצאות פרסום", shekel(d.spend), d.spend && d.value ? "החזר ×" + (d.value / d.spend).toFixed(1) : "");
+    var ms = Object.keys(d.months).filter(Boolean).sort().reverse();
+    $("sum-months").innerHTML = ms.length ? ms.map(function (k) { var m = d.months[k]; return "<tr><td><b>" + ymLabel(k) + '</b></td><td class="num">' + m.n + '</td><td class="num">' + shekel(m.value) + '</td><td class="num">' + shekel(m.paid) + '</td><td class="num">' + shekel(m.debt) + '</td><td class="num">' + shekel(m.spend) + "</td></tr>"; }).join("") : '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink-2)">אין נתונים בתקופה הזו</td></tr>';
+    var rows = d.won.slice().sort(function (a, b) { return (b.eventDate || "").localeCompare(a.eventDate || ""); });
+    $("sum-rows").innerHTML = rows.length ? rows.map(function (c) {
+      var p = payOf(c), st = stageOf(c) === "הושלם" ? "הושלם" : "בתהליך";
+      return '<tr data-sumid="' + esc(c.id) + '" style="cursor:pointer"><td><b>' + esc(c.name) + "</b></td><td>" + (c.eventDate ? fmtDate(c.eventDate) : "") + "</td><td>" + esc(pkgOf(c)) + '</td><td class="num">' + shekel(p.value) + '</td><td class="num">' + shekel(p.amount) + '</td><td class="num">' + (p.bal ? '<span class="chip bad">' + shekel(p.bal) + "</span>" : "0") + "</td><td>" + st + "</td><td>" + esc(c.source || "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--ink-2)">אין לקוחות בתקופה הזו</td></tr>';
+  }
+  function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function summaryCsv() {
+    var d = summaryData(), out = [["לקוח", "תאריך אירוע", "חבילה", "שווי עסקה", "שולם", "יתרה", "סטטוס", "מקור", "טלפון"]];
+    d.won.slice().sort(function (a, b) { return (a.eventDate || "").localeCompare(b.eventDate || ""); }).forEach(function (c) { var p = payOf(c); out.push([c.name, c.eventDate, pkgOf(c), p.value, p.amount, p.bal, stageOf(c) === "הושלם" ? "הושלם" : "בתהליך", c.source || "", c.phone || ""]); });
+    out.push([], ["סה\"כ", "", "", d.value, d.paid, d.debt, "", "", ""], ["הוצאות פרסום", "", "", d.spend]);
+    var blob = new Blob(["﻿" + out.map(function (r) { return r.map(csvCell).join(","); }).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "sms-summary-" + sumPeriod + ".csv"; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  document.addEventListener("change", function (e) {
+    if (e.target && e.target.id === "sum-period") { sumPeriod = e.target.value; renderSummary(); }
+    else if (e.target && e.target.id === "src-period") { srcPeriod = e.target.value; renderSources(); }
+  });
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest("#sum-csv")) { summaryCsv(); return; }
+    var r = e.target.closest && e.target.closest("[data-sumid]"); if (r) openSheet(r.dataset.sumid);
+  });
+
   /* ---- sources & charts ---- */
   function sourceStats() {
     var map = {};
-    state.campaigns.forEach(function (c) { map[c.name] = { name: c.name, channel: c.channel || "", spend: Number(c.spend) || 0, camp: c, n: {}, total: 0, rev: 0 }; });
+    var pr = periodRange(srcPeriod);
+    state.campaigns.forEach(function (c) { map[c.name] = { name: c.name, channel: c.channel || "", spend: (!pr || inRange(ymOf(c.createdAt), pr)) ? Number(c.spend) || 0 : 0, camp: c, n: {}, total: 0, rev: 0 }; });
     state.clients.forEach(function (c) {
+      if (!inRange(ymOf(c.createdAt), pr)) return;
       var s = c.source || DIRECT;
       if (!map[s]) map[s] = { name: s, channel: "", spend: null, camp: null, n: {}, total: 0, rev: 0 };
       var m = map[s], st = stageOf(c);
@@ -1992,6 +2093,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     });
   }
   function renderSources() {
+    if ($("src-period")) $("src-period").innerHTML = periodOptions(srcPeriod);
     var st = sourceStats(), withData = st.filter(function (s) { return s.total > 0; });
     var ranked = withData.slice().sort(function (a, b) { return b.conv - a.conv || b.total - a.total; });
     var small = state.clients.length < 15, ins;
@@ -2117,10 +2219,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     sel.innerHTML = sourceNames().map(function (n) { return '<option>' + esc(n) + '</option>'; }).join("");
     if (cur) sel.value = cur;
   }
-  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
+  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderSources(); renderSummary(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
 
   /* ---- tabs ---- */
-  var VIEWS = ["today", "availability", "clients", "sources", "events", "messages", "activity"];
+  var VIEWS = ["today", "availability", "clients", "sources", "events", "summary", "messages", "activity"];
   function showView(v) {
     if (VIEWS.indexOf(v) < 0) v = "today";
     document.querySelectorAll(".view").forEach(function (el) { el.hidden = el.id !== "view-" + v; });
@@ -2393,7 +2495,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var evToApp = function (r) { return { id: r.id, name: r.name, date: r.event_date || "", guests: r.guests == null ? 0 : r.guests, venue: r.venue || "", pkg: r.pkg || "", price: r.price == null ? 0 : Number(r.price), cal: r.cal || {} }; };
   function evToRow(p) { var o = {}; if ("name" in p) o.name = p.name; if ("date" in p) o.event_date = nz(p.date); if ("guests" in p) o.guests = nnum(p.guests); if ("venue" in p) o.venue = p.venue || null; if ("pkg" in p) o.pkg = p.pkg || null; if ("price" in p) o.price = nnum(p.price); if ("cal" in p) o.cal = p.cal || {}; return o; }
-  var cpToApp = function (r) { return Object.assign({}, r.doc || {}, { id: r.id, name: r.name, channel: r.channel || "", spend: Number(r.spend) || 0 }); };
+  var cpToApp = function (r) { return Object.assign({}, r.doc || {}, { id: r.id, name: r.name, channel: r.channel || "", spend: Number(r.spend) || 0, createdAt: r.created_at || "" }); };
   function cpToRow(p) { var o = {}, doc = {}; Object.keys(p).forEach(function (k) { if (k === "name") o.name = p[k]; else if (k === "channel") o.channel = p[k] || null; else if (k === "spend") o.spend = Number(p[k]) || 0; else if (k !== "id") doc[k] = p[k]; }); if (Object.keys(doc).length) o.doc = doc; return o; }
 
   /* ---------- low level (Supabase client only: no string-built SQL anywhere) ---------- */
