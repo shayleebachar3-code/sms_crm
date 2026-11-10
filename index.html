@@ -3382,7 +3382,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var au = a.audit || {}, cs = a.consents || {};
     o += "<div class='sg'><h2 style='margin-top:0'>חתימת הלקוח</h2><p>נחתם על ידי <b>" + esc(a.signer_name || "") + "</b> ב-" + esc(a.signed_at ? new Date(a.signed_at).toLocaleString("he-IL", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jerusalem" }) : "") + "</p>" +
       (a.signature_png ? "<img src='" + esc(a.signature_png) + "' alt='חתימה'>" : "") + "<p style='font-size:13px'>אושרו: תנאי ההסכם, סעיף המקדמה והביטול, מדיניות הפרטיות" + (cs.marketing ? ", וקבלת דיוור" : "") + ".</p>" +
-      "<p class='m'>doc: " + esc(a.doc_hash || "") + "<br>sig: " + esc(a.signed_hash || "") + "<br>ip: " + esc(au.ip || "") + " · tz: " + esc(au.tz || "") + "</p></div></div>";
+      (au.phone_entered ? "<p style='font-size:13px'>טלפון שהוקלד בחתימה: " + esc(au.phone_entered) + (au.phone_match ? " (תואם לטלפון בכרטיס הלקוח)" : " (לא תואם לטלפון בכרטיס הלקוח)") + "</p>" : "") + "<p class='m'>doc: " + esc(a.doc_hash || "") + "<br>sig: " + esc(a.signed_hash || "") + "<br>ip: " + esc(au.ip || "") + " · tz: " + esc(au.tz || "") + "</p></div></div>";
     return o;
   }
   async function agrPdf(a) {
@@ -3425,7 +3425,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function agreementSection(c) {
     if (c.status !== "נסגרה עסקה" && !agrOf(c.id).length) return "";
     var list = agrOf(c.id), w = waNum(c.phone), rows = list.map(function (a) {
-      var st = a.status === "signed" ? '<span class="chip good">נחתם ✓</span>' : a.status === "void" ? '<span class="chip">בוטל</span>' : '<span class="chip warn">ממתין לחתימה</span>';
+      var au0 = a.audit || {}, st = a.status === "signed" ? '<span class="chip good">נחתם ✓</span>' + (au0.phone_match === true ? '<span class="chip good">טלפון החותם תואם לכרטיס ✓</span>' : au0.phone_match === false ? '<span class="chip bad">⚠ הטלפון שהוקלד לא תואם לכרטיס (' + esc(au0.phone_entered || "") + ')</span>' : "") : a.status === "void" ? '<span class="chip">בוטל</span>' : '<span class="chip warn">ממתין לחתימה</span>';
       var link = agrLink(a), msg = "היי " + (String(c.name || "").split(" ")[0] || "") + " 🥂 מצורף ההסכם לחתימה דיגיטלית, לוקח דקה: " + link;
       var acts = a.status === "sent" ? '<button class="btn ghost sm" data-agr="copy" data-aid="' + esc(a.id) + '">העתקת קישור</button>' + (w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-agr="void" data-aid="' + esc(a.id) + '"' + dis() + '>ביטול ההסכם</button>' :
         a.status === "signed" ? '<button class="btn sm" data-agr="pdf" data-aid="' + esc(a.id) + '">הורדת PDF חתום</button>' : "";
