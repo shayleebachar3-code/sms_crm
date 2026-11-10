@@ -912,6 +912,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     { k: "ליד חדש", label: "ליד חדש", sub: "הגיעו ועוד לא טופלו", color: "var(--seg-new)" },
     { k: "מתלבטים", label: "פולואפ", sub: "מתלבטים ומי שלא ענה בטלפון", color: "var(--warn)" },
     { k: "סגרו", label: "נסגרה עסקה", sub: "עסקה סגורה", color: "var(--good)" },
+    { k: "הושלם", label: "הושלם", sub: "התהליך הסתיים (אירוע עבר וזיכוי הושלם)", color: "var(--accent, #6b7280)" },
     { k: "אבדו", label: "לא מעוניין", sub: "לא התקדמו", color: "var(--bad)" }
   ];
   var OFFER_STATUS = ["נשלחה", "בדיון", "התקבלה", "נדחתה"];
@@ -1223,7 +1224,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function allEvents() {
     var rows = [];
-    state.clients.filter(function (c) { return stageOf(c) === "סגרו"; }).forEach(function (c) {
+    state.clients.filter(function (c) { return isWon(c); }).forEach(function (c) {
       var acc = (c.offers || []).filter(function (o) { return o.status === "התקבלה"; }).pop();
       rows.push({ id: "c:" + c.id, derived: true, clientId: c.id, col: "clients", row: c, name: c.name, type: c.eventType, date: c.eventDate, guests: c.guests, venue: c.venue, pkg: acc ? acc.pkg : "", price: dealValue(c), example: c.example });
     });
@@ -1243,24 +1244,38 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function leftText(n) { return n < 0 ? "באיחור " + (-n) + " ימים" : n === 0 ? "היום היום האחרון" : n === 1 ? "נשאר יום אחד" : "נשארו " + n + " ימים"; }
   function chipH(p) { return '<span class="chip ' + (p[1] || "") + '">' + esc(p[0]) + '</span>'; }
   function rfChip(c) {
-    if (stageOf(c) !== "סגרו") return "";
+    if (!isWon(c)) return "";
     var r = rfOf(c);
     if (r.status === "done") return '<span class="chip good">זיכוי הושלם ✅</span>';
     if (r.pickupDate) return '<span class="chip ' + (r.left <= RF_WARN ? "bad" : "warn") + '">זיכוי: ' + leftText(r.left) + '</span>';
     if (c.eventDate && c.eventDate < todayStr()) return '<span class="chip warn">' + rfLabel(r.status) + '</span>';
     return "";
   }
-  function payOf(c) {
-    var p = c.payment || {}, v = dealValue(c), a = Number(p.amount) || 0;
-    var st = p.status === "מלא" || p.status === "מקדמה" ? p.status : "טרם";
-    if (st === "מלא" && !a) a = v;
-    return { status: st, amount: a, value: v, bal: Math.max(0, v - a), date: p.date || "", note: p.note || "" };
+  function isWonSt(st) { return st === "סגרו" || st === "הושלם"; }
+  function isWon(c) { return c.status === "נסגרה עסקה"; }
+  function isFinished(c) {
+    if (c.status !== "נסגרה עסקה") return false;
+    var r = c.refund || {};
+    return r.status === "done" && (!c.eventDate || c.eventDate < todayStr());
   }
+  /* Debt is ALWAYS computed from the numbers (latest offered quote minus what was actually paid), never from the status label. */
+  function payOf(c) {
+    var p = c.payment || {}, v = dealValue(c), a = Number(p.amount) || 0, label = p.status === "מלא" || p.status === "מקדמה" ? p.status : "טרם";
+    var st = label, mismatch = false;
+    if (label === "מלא" && !a) a = v; /* marked full without an amount: trust the label */
+    if (v > 0) {
+      st = a >= v ? "מלא" : a > 0 ? "מקדמה" : "טרם";
+      mismatch = label === "מלא" && st !== "מלא";
+    }
+    return { status: st, label: label, mismatch: mismatch, amount: a, value: v, bal: Math.max(0, v - a), date: p.date || "", note: p.note || "" };
+  }
+  function hasDebt(c) { var p = payOf(c); return isWon(c) && p.value > 0 && p.bal > 0; }
   function payChip(c) {
-    if (stageOf(c) !== "סגרו") return "";
+    if (!isWon(c)) return "";
     var p = payOf(c);
+    if (p.value > 0 && p.bal > 0) return '<span class="chip bad">חוב ' + shekel(p.bal) + (p.amount ? " · שולם " + shekel(p.amount) : " · לא שולם") + '</span>';
     if (p.status === "מלא") return '<span class="chip good">שולם מלא</span>';
-    if (p.status === "מקדמה") return '<span class="chip warn">מקדמה ' + shekel(p.amount) + (p.value ? " · יתרה " + shekel(p.bal) : "") + '</span>';
+    if (p.status === "מקדמה") return '<span class="chip warn">מקדמה ' + shekel(p.amount) + '</span>';
     return '<span class="chip bad">לא שולם</span>';
   }
   function takenOn(date, selfId) {
@@ -1277,7 +1292,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function dayChipHtml(date, selfId, closed) { return dayPair(date, selfId, closed).map(chipH).join(""); }
   function stChips(c) {
     var st = stageOf(c);
-    if (st === "סגרו") return payChip(c) + rfChip(c) + dayChipHtml(c.eventDate, c.id, true);
+    if (isWonSt(st)) return payChip(c) + rfChip(c) + dayChipHtml(c.eventDate, c.id, true);
     if (st === "אבדו") return "";
     return (c.quote && !c.quote.sentAt ? '<span class="chip acc">הצעה מוכנה לשליחה</span>' : "") + dayChipHtml(c.eventDate, c.id, false);
   }
@@ -1305,11 +1320,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var st = stageOf(c);
     if (!c.eventDate || st === "אבדו" || c.eventDate < todayStr()) return "";
     var t = takenOn(c.eventDate, c.id), names = t.map(function (e) { return esc(e.name); }).join(", "), d = weekday(c.eventDate) + " " + fmtDate(c.eventDate);
-    if (st === "סגרו") return t.length ? '<div class="av-banner bad">כפל אירועים ב' + d + ': ' + names + '</div>' : "";
+    if (isWonSt(st)) return t.length ? '<div class="av-banner bad">כפל אירועים ב' + d + ': ' + names + '</div>' : "";
     return t.length ? '<div class="av-banner bad">התאריך תפוס, ' + d + ': כבר יש אירוע של ' + names + '</div>' : '<div class="av-banner good">התאריך פנוי, ' + d + ': אין אירוע אחר</div>';
   }
+  function debtBanner(c) {
+    if (!hasDebt(c)) return "";
+    var p = payOf(c);
+    return '<div class="av-banner bad" style="font-size:16px">⚠ יש חוב פתוח: ' + shekel(p.bal) + ' · עסקה ' + shekel(p.value) + ' (ההצעה האחרונה) · שולם ' + shekel(p.amount) + (p.mismatch ? ' · הסטטוס "שולם מלא" לא תואם לסכום, כדאי לתקן' : "") + '</div>';
+  }
   function sheetExtra(c) {
-    if (stageOf(c) !== "סגרו") return "";
+    if (!isWon(c)) return "";
     var p = payOf(c), r = rfOf(c), w = waText(c, RF_TEXT);
     var PAYL = { "מקדמה": "שולמה מקדמה", "מלא": "שולם תשלום מלא", "טרם": "עוד לא שולם" };
     var payOpts = Object.keys(PAYL).map(function (k) { return '<option value="' + k + '"' + (p.status === k ? " selected" : "") + '>' + PAYL[k] + '</option>'; }).join("");
@@ -1318,7 +1338,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       field("סכום ששולם (₪)", "pp-amt", '<input id="pp-amt" data-pay="amount" type="number" min="0" inputmode="numeric" value="' + esc(p.amount || "") + '"' + dis() + '>') +
       field("תאריך תשלום", "pp-date", '<input id="pp-date" data-pay="date" type="date" value="' + esc(p.date) + '"' + dis() + '>') +
       field("הערה", "pp-note", '<input id="pp-note" data-pay="note" value="' + esc(p.note) + '"' + dis() + '>') + '</div>' +
-      (p.value ? '<div class="bal">שווי העסקה ' + shekel(p.value) + ' · שולם ' + shekel(p.amount) + ' · יתרה <b>' + shekel(p.bal) + '</b></div>' : "") + '</section>';
+      (p.value && p.bal > 0 ? '<div class="av-banner bad"><b>חוב פתוח ' + shekel(p.bal) + '</b> · לפי ההצעה האחרונה שנשלחה (' + shekel(p.value) + ') פחות מה ששולם (' + shekel(p.amount) + ')' + (p.mismatch ? ' · שימו לב: הסטטוס מסומן "שולם מלא" אבל הסכום ששולם נמוך מהעסקה' : "") + '</div>' : p.value ? '<div class="av-banner good">שולם במלואו · ' + shekel(p.value) + '</div>' : "") + (p.value ? '<div class="bal">שווי העסקה ' + shekel(p.value) + ' · שולם ' + shekel(p.amount) + ' · יתרה <b>' + shekel(p.bal) + '</b></div>' : "") + '</section>';
     var steps = RF.map(function (x) { return '<button class="st' + (r.status === x.k ? (x.k === "done" ? " done" : " on") : "") + '" data-act="rf-status" data-st="' + x.k + '"' + dis() + '>' + x.t + '</button>'; }).join("");
     var count = r.pickupDate && r.status !== "done" ? '<div class="av-banner ' + (r.left <= RF_WARN ? "bad" : "warn") + '">איסוף ' + fmtDate(r.pickupDate) + ' · להחזיר כסף עד ' + fmtDate(r.due) + ' · <b>' + leftText(r.left) + '</b></div>' : "";
     var ref = '<section class="sec"><h3>צינור זיכויים <small>תקרה של ' + RF_DAYS + ' ימים מיום האיסוף</small></h3><div class="pipe">' + steps + '</div>' + count + '<div class="fields">' +
@@ -1334,7 +1354,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return {
       week: all.filter(function (e) { return e.date && daysUntil(e.date) === 7; }),
       ended: all.filter(function (e) { return e.date && daysUntil(e.date) === -1; }),
-      urgent: state.clients.filter(function (c) { return stageOf(c) === "סגרו" && rfOpen(c) && rfOf(c).left <= RF_WARN; }).sort(function (a, b) { return rfOf(a).left - rfOf(b).left; })
+      urgent: state.clients.filter(function (c) { return isWon(c) && rfOpen(c) && rfOf(c).left <= RF_WARN; }).sort(function (a, b) { return rfOf(a).left - rfOf(b).left; })
     };
   }
   function digestText() {
@@ -1483,7 +1503,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     guard(async function () { await patch("clients", id, d); renderSheet(true); toast("ההצעה נרשמה בהיסטוריית ההצעות"); });
   }
   function quoteSection(c) {
-    var st = stageOf(c); if (st === "סגרו" || st === "אבדו") return "";
+    var st = stageOf(c); if (isWonSt(st) || st === "אבדו") return "";
     var q = c.quote, busy = !!quoting[c.id], miss = [];
     if (!c.guests) miss.push("מספר מוזמנים"); if (!c.eventDate) miss.push("תאריך"); if (!(c.notes || "").trim() && !(c.log || []).length) miss.push("הערות או תיעוד שיחה");
     var sat = c.eventDate && new Date(c.eventDate + "T12:00:00").getDay() === 6;
@@ -1562,7 +1582,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var st = stageOf(row);
       var acc = (row.offers || []).filter(function (o) { return o.status === "התקבלה"; }).pop();
       var desc = descOf(["לקוח: " + row.name, row.phone ? "טלפון: " + row.phone : "", row.email ? "אימייל: " + row.email : "", row.guests ? "מוזמנים: " + row.guests : "", row.venue ? "אולם: " + row.venue : "", acc && acc.pkg ? "חבילה: " + acc.pkg : "", dealValue(row) ? "שווי: " + shekel(dealValue(row)) : ""]);
-      if (st === "סגרו" && row.eventDate) eventItems(row.name, row.eventDate, desc);
+      if (isWonSt(st) && row.eventDate) eventItems(row.name, row.eventDate, desc);
       if (st === "מתלבטים" && row.followUp) add("followup", { summary: "פולואפ: " + row.name, date: row.followUp, time: s.hour, desc: desc });
     } else if (col === "events" && row.date) {
       eventItems(row.name, row.date, descOf(["אירוע: " + row.name, row.guests ? "מוזמנים: " + row.guests : "", row.venue ? "אולם: " + row.venue : "", row.pkg ? "חבילה: " + row.pkg : "", row.price ? "מחיר: " + shekel(row.price) : ""]));
@@ -1760,7 +1780,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         chips: [["אין קשר " + daysAgo(base) + " ימים", "warn"]], acts: waBtn(c) + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
     var missing = [];
-    state.clients.filter(function (c) { return stageOf(c) === "סגרו"; }).forEach(function (c) {
+    state.clients.filter(function (c) { return isWon(c); }).forEach(function (c) {
       var m = [];
       if (!c.eventDate) m.push("תאריך אירוע");
       if (!c.venue) m.push("אולם");
@@ -1774,7 +1794,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return arow({ cid: e.derived ? e.clientId : "", title: e.name, sub: esc(weekday(e.date) + ", " + fmtDate(e.date)) + (e.guests ? " · " + e.guests + " מוזמנים" : "") + (e.venue ? " · " + esc(e.venue) : ""),
         chips: [[inDays(n), n <= 3 ? "bad" : "warn"]].concat(e.venue ? [] : [["חסר אולם", "bad"]]), acts: e.derived ? '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' : "" });
     });
-    var closedAll = state.clients.filter(function (c) { return stageOf(c) === "סגרו"; });
+    var closedAll = state.clients.filter(function (c) { return isWon(c); });
     var rF1 = closedAll.filter(function (c) { var r = rfOf(c); return c.eventDate && c.eventDate < today && daysUntil(c.eventDate) >= -RF_LOOKBACK && r.status === "wait" && !r.pickupDate; })
       .sort(function (a, b) { return b.eventDate.localeCompare(a.eventDate); }).map(function (c) {
         var n = daysUntil(c.eventDate), r = rfOf(c), w = waText(c, RF_TEXT);
@@ -1837,7 +1857,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return '<article class="card" data-id="' + esc(c.id) + '">' +
       '<div class="name"><button data-act="open">' + esc(c.name) + '</button>' + (c.example ? '<span class="chip ex">דוגמה</span>' : "") + '</div>' +
       '<div class="meta"><span>' + esc(c.eventType || "") + '</span><span class="num">' + fmtDate(c.eventDate) + '</span>' + (c.guests ? '<span class="num">' + nf.format(c.guests) + ' מוזמנים</span>' : "") + '</div>' +
-      (st === "ליד חדש" ? (c.notes ? '<div class="meta">' + esc(c.notes) + '</div>' : "") : '<div class="line"><b>הצעה</b><span>' + offerLine + '</span><b>קשר אחרון</b><span>' + logLine + '</span>' + (v && st === "סגרו" ? '<b>סגר ב</b><span class="num"><b style="color:var(--good)">' + shekel(v) + '</b></span>' : "") + '</div>') +
+      (st === "ליד חדש" ? (c.notes ? '<div class="meta">' + esc(c.notes) + '</div>' : "") : '<div class="line"><b>הצעה</b><span>' + offerLine + '</span><b>קשר אחרון</b><span>' + logLine + '</span>' + (v && isWonSt(st) ? '<b>סגר ב</b><span class="num"><b style="color:var(--good)">' + shekel(v) + '</b></span>' : "") + '</div>') +
       '<div class="meta"><span class="chip acc">' + esc(c.source || DIRECT) + '</span>' + (c.createdAt && st === "ליד חדש" ? '<span class="chip warn">הגיע ' + ago(c.createdAt) + '</span>' : "") + fuChip + calChip + stChips(c) + '</div>' +
       (c.phone || c.email ? '<div class="meta">' + (c.phone ? '<span class="ltr num">' + esc(c.phone) + '</span>' : "") + (c.email ? '<span class="ltr">' + esc(c.email) + '</span>' : "") + '</div>' : '<div class="meta"><span class="chip bad">אין פרטי קשר</span></div>') +
       '<div class="actions">' +
@@ -1941,7 +1961,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           field("סוג", "g-type", '<select id="g-type"' + dis() + '>' + typeLogOpts + '</select>') +
           field("מה קרה / מה סוכם", "g-text", '<textarea id="g-text" rows="2"' + dis() + '></textarea>') +
           '<button class="btn" data-act="add-log"' + dis() + '>הוספה</button></div>' + logHtml + '</section>' +
-      sbSection(c) + sheetExtra(c) +
+      debtBanner(c) + sbSection(c) + sheetExtra(c) +
       '<section class="sec"><h3>ביומן Google</h3>' + calHtml + '</section>' +
       '<section class="sec"><h3>הערות כלליות</h3><textarea data-field="notes" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px"' + dis() + '>' + esc(c.notes || "") + '</textarea></section>' +
       '<div><button class="btn danger sm" data-act="del-client"' + dis() + '>מחיקת הלקוח</button></div>' +
@@ -1964,10 +1984,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (!map[s]) map[s] = { name: s, channel: "", spend: null, camp: null, n: {}, total: 0, rev: 0 };
       var m = map[s], st = stageOf(c);
       m.n[st] = (m.n[st] || 0) + 1; m.total++;
-      if (st === "סגרו") m.rev += dealValue(c);
+      if (isWonSt(st)) m.rev += dealValue(c);
     });
     return Object.keys(map).map(function (k) {
-      var m = map[k]; m.won = m.n["סגרו"] || 0; m.conv = m.total ? m.won / m.total : null;
+      var m = map[k]; m.won = (m.n["סגרו"] || 0) + (m.n["הושלם"] || 0); m.conv = m.total ? m.won / m.total : null;
       m.cpw = m.spend && m.won ? m.spend / m.won : null; m.roi = m.spend ? m.rev / m.spend : null; return m;
     });
   }
@@ -2072,7 +2092,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }).join("");
   }
 
-  function openPayList() { return state.clients.filter(function (c) { return stageOf(c) === "סגרו" && payOf(c).status !== "מלא" && (!c.eventDate || daysUntil(c.eventDate) >= -RF_LOOKBACK); }).sort(function (a, b) { return (a.eventDate || "9").localeCompare(b.eventDate || "9"); }); }
+  function openPayList() { return state.clients.filter(function (c) { return hasDebt(c) && (!c.eventDate || daysUntil(c.eventDate) <= 7); }).sort(function (a, b) { return (a.eventDate || "9").localeCompare(b.eventDate || "9"); }); }
   function renderKpis() {
     var today = todayStr();
     var nw = state.clients.filter(function (c) { return stageOf(c) === "ליד חדש"; });
@@ -2085,7 +2105,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     $("k-hes-box").classList.toggle("alert", due.length > 0);
     var payL = openPayList(); $("k-pay").textContent = payL.length; $("k-pay-box").classList.toggle("alert", payL.length > 0);
     $("k-pay-sub").textContent = payL.length ? shekel(payL.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0)) + " לגבייה" : "אין תשלומים פתוחים";
-    var won = state.clients.filter(function (c) { return stageOf(c) === "סגרו"; });
+    var won = state.clients.filter(function (c) { return isWon(c); });
     $("k-won").textContent = nf.format(won.reduce(function (t, c) { return t + dealValue(c); }, 0));
     $("k-won-sub").textContent = won.length + " לקוחות שסגרו";
     var up = allEvents().filter(function (e) { return e.date && e.date >= today; });
@@ -2176,7 +2196,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var NUMERIC = { guests: 1, value: 1 };
   function setStage(id, value) {
     var cur = byId(state.clients, id), d = { stage: value };
-    if (value === "סגרו" && cur && stageOf(cur) !== "סגרו") { requestClose(id, {}); return; }
+    if (value === "סגרו" && cur && !isWon(cur)) { requestClose(id, {}); return; }
     if (value === "מתלבטים" && cur && !cur.followUp) d.followUp = addDays(3);
     guard(function () { return patch("clients", id, d); });
   }
@@ -2192,7 +2212,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var oid = t.closest(".offer").dataset.oid, c = byId(state.clients, openId); if (!c) return;
       var offers = (c.offers || []).map(function (o) { return o.id === oid ? Object.assign({}, o, { status: t.value }) : o; });
       var d2 = { offers: offers };
-      if (t.value === "התקבלה") { var o = offers.find(function (x) { return x.id === oid; }); if (o && Number(o.amount)) d2.value = Number(o.amount); if (stageOf(c) !== "סגרו") { requestClose(openId, d2); return; } }
+      if (t.value === "התקבלה") { var o = offers.find(function (x) { return x.id === oid; }); if (o && Number(o.amount)) d2.value = Number(o.amount); if (!isWon(c)) { requestClose(openId, d2); return; } }
       guard(async function () { await patch("clients", openId, d2); renderSheet(true); });
     }
     if (t.dataset.quotetext != null && openId) {
@@ -2472,7 +2492,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---------- derived status helpers ---------- */
   stageOf = function (c) {
-    if (c.status === "נסגרה עסקה") return "סגרו";
+    if (c.status === "נסגרה עסקה") return isFinished(c) ? "הושלם" : "סגרו";
     if (c.status === "לא מעוניין") return "אבדו";
     if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer goes straight to follow-up */
     if (!(c.offers || []).length && !(c.log || []).length && !c.quote) return "ליד חדש";
@@ -3315,21 +3335,24 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       "אפיון: הלקוח מוסר פרטי אירוע והעדפות, והספק בונה הצעה מותאמת.",
       "הצעה ראשונית: נבנית למספר המוזמנים המרבי. עם שריון התאריך, מחיר ההצעה נעול.",
       "כשבוע לפני האירוע: הלקוח מעביר אישורי הגעה, והספק מוציא הצעה סופית מעודכנת לפי מספר המאשרים. החבילה יכולה לקטון לפי אישורי ההגעה. הגדלה מעבר להצעה הראשונית תיעשה בהסכמה ובהתאם למחיר שיעודכן.",
-      "תשלום: מלוא התמורה תשולם עד " + AGR.payDays + " ימים לפני האירוע. ללא תשלום מלא לא תתבצע אספקה.",
+      "תשלום: מלוא התמורה תשולם בהעברה בנקאית, וההעברה צריכה להתקבל עד " + AGR.payDays + " ימים לפני האירוע. אם התשלום לא התקבל במועד, העסקה לא תוכל להתקיים והדבר ייחשב כביטול מצד הלקוח, בהתאם לסעיף הביטול להלן.",
       "אספקה: הספק יביא את החבילה לאולם במועד ובמקום שסוכמו, בתיאום עם איש הקשר של הלקוח באולם.",
-      "אחרי האירוע: הספק ייצור קשר לבירור שביעות רצון ולתיאום איסוף בקבוקים סגורים וזיכוי."
+      "איסוף אחרי האירוע: לאחר האירוע ייקבע תאריך לאיסוף הבקבוקים הסגורים על ידי שליח מטעם הספק, מהכתובת שימסור הלקוח. השליח כלול במחיר העסקה ואין בגינו תשלום נוסף.",
+      "זיכוי: הבקבוקים הסגורים והשלמים שנאספו יזוכו לפי מחירון הזיכוי שצורף להצעה, והזיכוי יועבר ללקוח בתוך " + AGR.collectDays + " ימים מיום האיסוף.",
+      "שביעות רצון: הספק ייצור קשר עם הלקוח לבירור שביעות רצון."
     ] });
     S.push({ h: "מחיר ותשלום", p: ["התמורה היא סכום ההצעה האחרונה שנשלחה ללקוח ואושרה על ידו. המקדמה מקוזזת מהתמורה הכוללת. התשלום ייעשה בדרך שתיקבע בין הצדדים. כל שינוי במחיר ייעשה בכתב ובהסכמת הלקוח."] });
     S.push({ h: "שינויים בחבילה", p: ["הלקוח יכול לבקש להחליף או להוסיף מוצרים עד שבוע לפני האירוע, בכפוף לזמינות. המחיר המעודכן ייקבע לפי עלות המוצר ויישלח לאישור הלקוח לפני הביצוע."] });
     S.push({ h: "אספקה", p: ["האספקה תתבצע באולם במועד שיתואם. הלקוח אחראי לוודא שהאולם מאפשר קבלת הסחורה ואחסונה, ולמסור איש קשר זמין. עיכוב שנגרם בשל הלקוח או האולם לא יחייב את הספק בפיצוי."] });
-    S.push({ h: "זיכוי על בקבוקים סגורים", p: ["בקבוקים סגורים ושלמים שלא נפתחו יוחזרו לספק בתוך " + AGR.collectDays + " ימים מהאירוע, ויזוכו לפי מחירון הזיכוי שצורף להצעה. הספק יתאם איסוף מהכתובת שימסור הלקוח. בקבוקים פתוחים, פגומים או שלא נמסרו במועד אינם זכאים לזיכוי."] });
+    S.push({ h: "זיכוי על בקבוקים סגורים", p: ["רק בקבוקים סגורים, שלמים ושלא נפתחו ניתן להחזיר ולקבל עליהם זיכוי, לפי מחירון הזיכוי שצורף להצעה. הבקבוקים ייאספו על ידי שליח מטעם הספק במועד שייקבע בתיאום עם הלקוח לאחר האירוע, ועלות השליח כלולה בעסקה. בקבוקים שנפתחו, פגומים, חסרים או שלא נמסרו לשליח במועד שנקבע אינם זכאים לזיכוי. על הלקוח לשמור את הבקבוקים הסגורים באריזתם ובמקום מוגן עד האיסוף."] });
     var cx = [
       "המקדמה בסך " + shekel(dep) + " משריינת את תאריך האירוע ביומן הספק. בעקבות השריון הספק מסרב לאירועים אחרים באותו מועד.",
     ];
     if (remote) cx.push("זכות ביטול בעסקה מרחוק: מאחר שההסכם נסגר מרחוק, הלקוח רשאי לבטל אותו לפי חוק הגנת הצרכן תוך 14 יום מיום החתימה, ובלבד שהודיע על כך לפחות יומיים לפני האירוע. הספק יחזיר את התשלומים בתוך 7 ימי עסקים, בניכוי דמי ביטול של 5% מהעסקה או 100 ש״ח, הנמוך מביניהם.");
     cx.push("ביטול על ידי הלקוח " + (remote ? "אחרי תום התקופה האמורה" : "") + ": המקדמה אינה מוחזרת. היא מהווה פיצוי מוסכם על סגירת היומן והפסד אירועים אחרים. הצדדים מצהירים כי הסכום סביר ביחס לנזק שניתן היה לצפות מראש.");
     cx.push("דחיית מועד: אם הלקוח מבקש לדחות את האירוע לתאריך אחר בתוך " + AGR.transferMonths + " חודשים, בהודעה של לפחות " + AGR.transferDays + " ימים לפני האירוע המקורי, וכל עוד התאריך החדש פנוי, המקדמה תועבר לתאריך החדש פעם אחת ללא עלות.");
-    cx.push("סכומים ששולמו מעבר למקדמה: בביטול של הלקוח לפחות " + AGR.refundDays + " ימים לפני האירוע יוחזרו במלואם. בביטול סמוך יותר יוחזרו בניכוי עלות הסחורה שנרכשה והוכנה בפועל לאירוע, שתוצג ללקוח לפי דרישה.");
+    cx.push("החזר כספי: בביטול על ידי הלקוח עד " + AGR.refundDays + " ימים לפני האירוע יוחזר ללקוח כל סכום ששילם, למעט המקדמה בסך " + shekel(dep) + ". בביטול סמוך יותר יוחזרו סכומים ששולמו בניכוי עלות הסחורה שנרכשה והוכנה בפועל לאירוע, שתוצג ללקוח לפי דרישה, וכן בניכוי המקדמה.");
+    cx.push("אי תשלום במועד: אם ההעברה הבנקאית לא התקבלה עד " + AGR.payDays + " ימים לפני האירוע, העסקה מתבטלת והדבר נחשב לביטול על ידי הלקוח. המקדמה לא תוחזר, וההחזר יחול על יתר הסכומים ששולמו, אם שולמו, לפי הכלל שלמעלה.");
     cx.push("ביטול על ידי הספק, למעט כוח עליון: הספק יחזיר ללקוח את כל הסכומים ששולמו, לרבות המקדמה.");
     cx.push("כוח עליון: אם האירוע לא יכול להתקיים בשל הגבלה או הוראה של רשות מוסמכת, או מצב ביטחוני או אירוע שאינו בשליטת הצדדים, הצדדים יתאמו תאריך חדש בתוך " + AGR.transferMonths + " חודשים והמקדמה תועבר אליו. סכומים ששולמו מעבר למקדמה יוחזרו.");
     S.push({ h: "הזמנה, מקדמה וביטול", ul: cx });
@@ -3427,8 +3450,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var el = $("charges"); if (!el) return;
     if (!loaded.clients) { el.hidden = true; return; }
     var list = state.clients.filter(function (c) {
-      if (c.status !== "נסגרה עסקה" || !c.eventDate || payOf(c).status === "מלא") return false;
-      var dd = daysUntil(c.eventDate); return dd <= 7 && dd >= -60;
+      if (!hasDebt(c)) return false;
+      return !c.eventDate || daysUntil(c.eventDate) <= 7; /* no lower limit: an old unpaid balance stays until it is paid */
     }).sort(function (a, b) { return (a.eventDate || "").localeCompare(b.eventDate || ""); });
     if (!list.length) { el.hidden = true; el.innerHTML = ""; return; }
     var sum = list.reduce(function (s, c) { return s + (payOf(c).bal || 0); }, 0);
