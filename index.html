@@ -322,6 +322,12 @@ details.pull[open] > summary { margin-bottom: 10px; }
 .pkgrow input[type=text] { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; }
 @media (max-width: 520px) { .mcc { min-height: 46px; } .mcc i { font-size: 9.5px; } .brow { grid-template-columns: 70px 1fr auto; } }
 .qsteps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:8px 0 10px}.qstep{display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:13px;position:relative}.qstep input{position:absolute;opacity:0;pointer-events:none}.qstep span{color:var(--ink-2);font-size:12.5px}.qstep em{font-style:normal;font-size:12.5px;color:var(--ink-2)}.qstep.done em{color:var(--good)}.qstep.cur{border-color:var(--accent,#b8924f);box-shadow:0 0 0 2px rgba(184,146,79,.35)}
+.cl-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1 1 320px;justify-content:flex-end}.cl-tools input{flex:1 1 220px;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.rsv-ans{display:grid;gap:6px;font-size:14px;margin:8px 0}.rsv-ans .ln{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}.rsv-ans .ln b{min-width:120px;color:var(--ink-2);font-weight:500}
+.rsv-sig{max-width:220px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px;display:block}
+.rsv-box{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:12px 14px;display:grid;gap:8px}
+.big-n{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.1}
+td .btn{margin-inline-end:4px}
 .qtab{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:8px}.qtab th{text-align:right;color:var(--ink-2);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}.qtab td{padding:4px 6px;border-bottom:1px solid var(--line)}.qtab input{width:70px;min-height:34px}.btn.sm{text-decoration:none}.steps{display:grid;gap:8px;margin:8px 0}.stp{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;line-height:1.55}.stp.ok{opacity:.8}
 </style>
 
@@ -370,6 +376,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
     <button class="tab" role="tab" data-view="today" aria-selected="true">היום<span class="badge" id="today-badge" hidden>0</span></button>
     <button class="tab" role="tab" data-view="availability" aria-selected="false">זמינות</button>
     <button class="tab" role="tab" data-view="clients" aria-selected="false">לקוחות</button>
+    <button class="tab" role="tab" data-view="payments" aria-selected="false">תשלומים<span class="badge" id="pay-badge" hidden>0</span></button>
     <button class="tab" role="tab" data-view="sources" aria-selected="false">מקורות והמרות</button>
     <button class="tab" role="tab" data-view="events" aria-selected="false">אירועים</button>
     <button class="tab" role="tab" data-view="messages" aria-selected="false">הודעות ווטסאפ</button>
@@ -393,7 +400,8 @@ details.pull[open] > summary { margin-bottom: 10px; }
 
   <!-- CLIENTS -->
   <section class="view" id="view-clients" hidden>
-    <div class="row-head"><h2>כרטיסי לקוח</h2><button class="btn" id="toggle-client-form">ליד חדש</button></div>
+    <div class="row-head"><h2>כרטיסי לקוח</h2><div class="cl-tools"><input id="cl-search" type="search" placeholder="חיפוש לפי שם, טלפון, אולם או תאריך" aria-label="חיפוש לקוח" autocomplete="off"><button class="btn" id="toggle-client-form">ליד חדש</button></div></div>
+    <div class="muted" id="cl-search-info" style="font-size:13px;margin:-6px 0 10px" hidden></div>
     <form class="form" id="client-form" hidden>
       <div class="fields">
         <div class="field"><label for="l-name">שם</label><input id="l-name" required></div>
@@ -410,6 +418,17 @@ details.pull[open] > summary { margin-bottom: 10px; }
       <div class="form-actions"><button class="btn" type="submit">הוספת ליד</button><button class="btn ghost" type="button" data-close="client-form">ביטול</button></div>
     </form>
     <div class="board" id="board"></div>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section class="view" id="view-payments" hidden>
+    <div class="row-head"><h2>תשלומים וגבייה</h2></div>
+    <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל עסקה סגורה מופיעה כאן עד שהיא משולמת במלואה. היתרה מחושבת מההצעה האחרונה שנשלחה פחות מה ששולם בפועל. התשלום צריך להתקבל עד 3 ימים לפני האירוע.</p>
+    <div class="kpis" id="pay-kpis"></div>
+    <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px">
+      <div class="field"><label for="pay-filter">להציג</label><select id="pay-filter"><option value="open">פתוחים בלבד</option><option value="all">כל העסקאות הסגורות</option><option value="paid">שולמו במלואם</option></select></div>
+    </div>
+    <div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>לשלם עד</th><th>שווי עסקה</th><th>שולם</th><th>יתרה</th><th>מצב</th><th></th></tr></thead><tbody id="pay-rows"></tbody></table></div>
   </section>
 
   <!-- SOURCES -->
@@ -464,7 +483,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
   <!-- MESSAGES -->
   <section class="view" id="view-activity" hidden>
     <section class="att"><h3>תזכורות פתוחות <span class="count num" id="rm-count">0</span></h3><div id="rm-list"></div></section>
-    <section class="sec"><div class="row-head"><h2>יומן פעולות</h2><div class="field" style="min-width:200px"><label for="al-filter">סוג פעולה</label><select id="al-filter"><option value="">הכל</option><option value="status_change">שינוי סטטוס</option><option value="stage_change">מעבר שלב</option><option value="message_sent">הודעה נשלחה</option><option value="pdf_generated">הופק PDF</option><option value="payment">תשלום</option></select></div></div><div id="al-list"></div></section>
+    <section class="sec"><div class="row-head"><h2>יומן פעולות</h2><div class="field" style="min-width:200px"><label for="al-filter">סוג פעולה</label><select id="al-filter"><option value="">הכל</option><option value="status_change">שינוי סטטוס</option><option value="stage_change">מעבר שלב</option><option value="message_sent">הודעה נשלחה</option><option value="pdf_generated">הופק PDF</option><option value="payment">תשלום</option><option value="rsvp_sent">טופס אישורי הגעה נשלח</option><option value="rsvp_received">טופס אישורי הגעה התקבל</option><option value="agreement_created">הסכם נוצר</option><option value="agreement_signed">הסכם נחתם</option></select></div></div><div id="al-list"></div></section>
   </section>
 
   <section class="view" id="view-messages" hidden>
@@ -1202,7 +1221,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           '<div class="pk-d">' + esc(p.desc) + '</div><div class="pk-n"><input type="text" id="pn-' + id + '" data-pkgnote="' + esc(k) + '" placeholder="הערות לשינויים (למשל: בלי ג\'ין, בלאק לייבל במקום רד)" value="' + esc(b.pkgNotes[k] || "") + '"' + d + '></div></div>';
       }).join("");
     var chosen = b.pkg && BPK[b.pkg] ? BPK[b.pkg].en + " · ₪" + BPK[b.pkg].per + " לאורח" : "עוד לא נבחרה";
-    return '<section class="sec"><h3>אפיון בר <small>סימולציה כמו במחשבון באתר</small></h3><div class="barwrap">' + inputs + out + '</div></section>' +
+    return '<section class="sec"><h3>אפיון החבילה <small>סימולציה כמו במחשבון באתר</small></h3><div class="barwrap">' + inputs + out + '</div></section>' +
       '<section class="sec"><details class="pull" data-k="pkg"' + (OPEN.pkg === false ? "" : " open") + '><summary><span>איזו חבילה הלקוח רוצה</span><small>' + esc(chosen) + '</small></summary>' + pkRows + '<div class="muted" style="font-size:12.5px">המחירים לאורח הם ל-350 מוזמנים. הסכום ללקוח מחושב לפי מספר המוזמנים בכרטיס, לאימות מול טבלת הבקרה.</div></details></section>';
   }
 
@@ -1291,6 +1310,79 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return { status: st, label: label, mismatch: mismatch, amount: a, value: v, bal: Math.max(0, v - a), date: p.date || "", note: p.note || "" };
   }
   function hasDebt(c) { var p = payOf(c); return isWon(c) && p.value > 0 && p.bal > 0; }
+  /* A closed deal is "open for payment" until it is fully paid. A deal with no value entered is open too:
+     without a value nobody can tell what is still owed, and that is exactly how payments get missed. */
+  function payOpen(c) {
+    if (!isWon(c) || c.example) return false;
+    var p = payOf(c);
+    return p.value > 0 ? p.bal > 0 : p.label !== "מלא";
+  }
+  function payDue(c) { return c.eventDate ? shift(c.eventDate, -3) : ""; }
+  function payState(c) {
+    var p = payOf(c), today = todayStr(), due = payDue(c), dd = c.eventDate ? daysUntil(c.eventDate) : null;
+    if (!payOpen(c)) return { k: "paid", t: "שולם במלואו", cls: "good", rank: 9 };
+    if (!(p.value > 0)) return { k: "novalue", t: "חסר שווי עסקה בכרטיס", cls: "bad", rank: 0 };
+    if (dd != null && dd < 0) return { k: "late", t: "באיחור: האירוע כבר היה", cls: "bad", rank: 1 };
+    if (due && due < today) return { k: "due", t: "עבר מועד התשלום", cls: "bad", rank: 2 };
+    if (dd != null && dd <= 7) return { k: "soon", t: "דחוף: פחות משבוע לאירוע", cls: "warn", rank: 3 };
+    return { k: "open", t: p.amount ? "שולמה מקדמה" : "עוד לא שולם", cls: "", rank: 4 };
+  }
+  function payUrgent(c) { var k = payState(c).k; return k !== "paid" && k !== "open"; }
+  function balText(c) { var p = payOf(c); return p.value > 0 && p.bal > 0 ? "היתרה לתשלום היא " + shekel(p.bal) : ""; }
+  function payWaLink(c) {
+    var w = waNum(c.phone); if (!w) return "";
+    var t = TEMPLATES.filter(function (m) { return m.t === "תזכורת תשלום"; })[0];
+    var txt = t.b.replace("{name}", String(c.name || "").split(" ")[0]).replace("{date}", c.eventDate ? " ב-" + fmtDate(c.eventDate) : "").replace("{bal}", balText(c) || "נשמח להסדיר את התשלום");
+    return "https://wa.me/" + w + "?text=" + encodeURIComponent(txt);
+  }
+  /* quick "money came in" dialog: ADDS to what was already paid (payments usually arrive in parts) */
+  var payDlgId = null;
+  function payDlg(id) {
+    var c = byId(state.clients, id); if (!c || !canWrite) return; payDlgId = id;
+    var p = payOf(c);
+    xDlg('<h2>רישום תשלום: ' + esc(c.name) + '</h2><div class="dlg-body">' +
+      '<div class="bal">' + (p.value ? "שווי העסקה " + shekel(p.value) + " · שולם עד עכשיו " + shekel(p.amount) + " · יתרה <b>" + shekel(p.bal) + "</b>" : "שווי העסקה עוד לא הוזן. הזינו אותו כאן כדי שהמערכת תדע כמה נשאר לגבות.") + '</div>' +
+      (p.value ? "" : field("שווי העסקה (₪)", "pd-value", '<input id="pd-value" type="number" min="0" inputmode="numeric" value="' + esc(lastOffered(c) || "") + '">')) +
+      '<div class="fields">' + field("סכום שהתקבל עכשיו (₪)", "pd-amt", '<input id="pd-amt" type="number" min="0" inputmode="numeric" value="' + (p.bal || "") + '">') +
+      field("תאריך", "pd-date", '<input id="pd-date" type="date" value="' + todayStr() + '">') + '</div>' +
+      field("הערה (לא חובה)", "pd-note", '<input id="pd-note" placeholder="למשל: העברה בנקאית">') + '</div>' +
+      '<div class="form-actions" style="margin-top:0"><button class="btn" data-act="pd-save">שמירה</button><button class="btn ghost" data-act="x-close">ביטול</button></div>');
+    setTimeout(function () { var el = $("pd-amt"); if (el) el.focus(); }, 30);
+  }
+  function payDlgSave() {
+    var c = byId(state.clients, payDlgId); if (!c || !canWrite) return;
+    var p = payOf(c), vEl = $("pd-value"), v = vEl ? Number(vEl.value) || 0 : p.value, add = Number($("pd-amt").value) || 0;
+    if (!v) { toast("הזינו את שווי העסקה"); return; }
+    if (add < 0) { toast("סכום לא תקין"); return; }
+    var paid = (Number(p.amount) || 0) + add, note = $("pd-note").value.trim(), date = $("pd-date").value || todayStr();
+    var prevNote = (c.payment && c.payment.note) || "", line = fmtDate(date) + ": " + shekel(add) + (note ? " (" + note + ")" : "");
+    var d = { payment: { status: paid >= v ? "מלא" : paid > 0 ? "מקדמה" : "טרם", amount: paid, date: date, note: (prevNote ? prevNote + " | " : "") + line, updatedAt: new Date().toISOString() } };
+    if (vEl) d.value = v;
+    xClose();
+    guard(async function () { await patch("clients", c.id, d); renderSheet(true); toast(paid >= v ? "שולם במלואו ✓" : "נרשם. נשארה יתרה של " + shekel(v - paid)); });
+  }
+  function renderPayments() {
+    var body = $("pay-rows"); if (!body) return;
+    var won = state.clients.filter(function (c) { return isWon(c) && !c.example; });
+    var open = won.filter(payOpen), f = $("pay-filter") ? $("pay-filter").value : "open";
+    var sum = open.reduce(function (t, c) { return t + payOf(c).bal; }, 0), urg = open.filter(payUrgent), late = open.filter(function (c) { var k = payState(c).k; return k === "late" || k === "due"; });
+    var nov = open.filter(function (c) { return payState(c).k === "novalue"; });
+    var b = $("pay-badge"); if (b) { b.textContent = urg.length; b.hidden = !urg.length; }
+    var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
+    $("pay-kpis").innerHTML = tile("יתרה פתוחה לגבייה", shekel(sum), open.length + " עסקאות פתוחות", sum > 0) +
+      tile("באיחור", late.length, late.length ? shekel(late.reduce(function (t, c) { return t + payOf(c).bal; }, 0)) : "אין איחורים", late.length > 0) +
+      tile("דחופים (פחות משבוע)", urg.length - late.length - nov.length, "לגבות עכשיו", false) +
+      tile("חסר שווי עסקה", nov.length, nov.length ? "בלי סכום אין מעקב חוב" : "הכל מוזן", nov.length > 0);
+    var rows = f === "all" ? won : f === "paid" ? won.filter(function (c) { return !payOpen(c); }) : open;
+    rows = rows.slice().sort(function (a, b) { var x = payState(a).rank - payState(b).rank; return x || (a.eventDate || "9").localeCompare(b.eventDate || "9"); });
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ink-2);white-space:normal">' + (loaded.clients ? (f === "open" ? "אין תשלומים פתוחים. כל העסקאות הסגורות שולמו במלואן ✓" : "אין עסקאות להצגה") : "טוען…") + '</td></tr>'; return; }
+    body.innerHTML = rows.map(function (c) {
+      var p = payOf(c), s = payState(c), wl = s.k !== "paid" ? payWaLink(c) : "";
+      return '<tr data-cid="' + esc(c.id) + '"><td><b>' + esc(c.name) + '</b></td><td class="num">' + (c.eventDate ? fmtDate(c.eventDate) : "–") + '</td><td class="num">' + (payDue(c) ? fmtDate(payDue(c)) : "–") + '</td>' +
+        '<td class="num">' + (p.value ? shekel(p.value) : '<span class="chip bad">חסר</span>') + '</td><td class="num">' + shekel(p.amount) + '</td><td class="num"><b>' + (p.value ? shekel(p.bal) : "?") + '</b></td>' +
+        '<td><span class="chip ' + s.cls + '">' + esc(s.t) + '</span></td><td>' + (s.k !== "paid" ? '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' : "") + (wl ? '<a class="btn ghost sm" href="' + wl + '" target="_blank" rel="noopener">תזכורת בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-act="open-id">כרטיס</button></td></tr>';
+    }).join("");
+  }
   function payChip(c) {
     if (!isWon(c)) return "";
     var p = payOf(c);
@@ -1390,6 +1482,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     L.push("");
     L.push("💳 זיכויים דחופים (תקרה של " + RF_DAYS + " ימים מיום האיסוף):");
     if (d.urgent.length) d.urgent.forEach(function (c) { var r = rfOf(c); L.push("• " + c.name + " · נאסף " + fmtDate(r.pickupDate) + " · " + leftText(r.left) + " (עד " + fmtDate(r.due) + ")"); }); else L.push("• אין");
+    var pu = openPayList().filter(payUrgent);
+    L.push("");
+    L.push("💰 תשלומים דחופים לגבייה:");
+    if (pu.length) pu.forEach(function (c) { var p = payOf(c); L.push("• " + c.name + " · " + (p.value ? "יתרה " + shekel(p.bal) : "שווי עסקה לא הוזן") + " · " + payState(c).t); }); else L.push("• אין");
+    var rr = rsvpInbox();
+    if (rr.length) { L.push(""); L.push("📝 טפסי אישורי הגעה שהתקבלו, להפיק הצעה סופית:"); rr.forEach(function (f) { var c = byId(state.clients, f.client_id); L.push("• " + (c ? c.name : "לקוח") + " · " + ((f.answers || {}).guests || "?") + " מאשרים"); }); }
     return L.join("\n");
   }
   var digestMsg = "";
@@ -1398,7 +1496,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (!loaded.clients) { el.innerHTML = ""; return; }
     var op = el.querySelector("details"), wasOpen = op && op.open;
     digestMsg = digestText();
-    var d = digestInfo(), n = d.week.length + d.ended.length + d.urgent.length, admin = waNum(cfg().adminPhone);
+    var d = digestInfo(), n = d.week.length + d.ended.length + d.urgent.length + openPayList().filter(payUrgent).length + rsvpInbox().length, admin = waNum(cfg().adminPhone);
     el.innerHTML = '<div class="dg-head"><h3>סיכום בוקר לווטסאפ</h3><span class="chip ' + (n ? "warn" : "good") + '">' + (n ? n + " פריטים" : "אין משימות") + '</span></div>' +
       '<pre>' + esc(digestMsg) + '</pre><div class="dg-acts"><button class="btn sm" data-act="dg-copy">העתקה</button>' +
       (admin ? '<a class="btn ghost sm" href="https://wa.me/' + admin + '?text=' + encodeURIComponent(digestMsg) + '" target="_blank" rel="noopener">שליחה למספר שלי בווטסאפ</a>' : '<span class="muted" style="font-size:13px">הזינו את המספר שלכם בהגדרות שבסרגל היומן כדי לשלוח לעצמכם בלחיצה</span>') + '</div>' +
@@ -1445,11 +1543,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function backupData() {
     var agr = (state.agreements || []).map(function (a) { var o = Object.assign({}, a); delete o.token; return o; });
+    var rsv = (state.rsvp || []).map(function (a) { var o = Object.assign({}, a); delete o.token; return o; });
     return { app: "sms-crm", backupVersion: 2, exportedAt: new Date().toISOString(),
       counts: { clients: state.clients.length, events: state.events.length, campaigns: state.campaigns.length, activityLog: (state.logs || []).length, reminders: (state.reminders || []).length, agreements: agr.length },
       clients: state.clients, events: state.events, campaigns: state.campaigns, settings: state.settings || {},
       goals: state.goals || {}, monthlySummaries: monthlySnapshot(), pricing: state.pricing || {}, products: state.products || {}, logo: state.logo || "",
-      pipelineStages: state.stages || [], agreements: agr, activityLog: state.logs || [], reminders: state.reminders || [] };
+      pipelineStages: state.stages || [], agreements: agr, rsvpForms: rsv, activityLog: state.logs || [], reminders: state.reminders || [] };
   }
   async function doBackup() {
     if (!dl) { toast("ההורדה לא זמינה בתצוגה הזו. פתחו את הדף ב-claude.ai"); return; }
@@ -1641,7 +1740,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       [["מקדמה", "שולמה מקדמה"], ["מלא", "שולם תשלום מלא"], ["טרם", "עוד לא שולם"]].map(function (o) { return '<label class="opt"><input type="radio" name="cl-pay" value="' + o[0] + '">' + o[1] + '</label>'; }).join("") + '</div>' +
       '<div class="fields">' + field("סכום ששולם (₪)", "cl-amount", '<input id="cl-amount" type="number" min="0" inputmode="numeric">') + field("תאריך תשלום", "cl-date", '<input id="cl-date" type="date" value="' + todayStr() + '">') + '</div>' +
       field("הערה", "cl-note", '<textarea id="cl-note" rows="2" placeholder="למשל: מקדמה בהעברה, היתרה ביום האירוע"></textarea>') +
-      '<div class="bal" id="cl-bal"></div></div>' +
+      '<div class="bal" id="cl-bal"></div>' +
+      (rsvpReady ? '<div class="fl">לשלוח ללקוח עכשיו בווטסאפ</div><div class="opts">' +
+        '<label class="opt"><input type="checkbox" id="cl-rsvp" checked>טופס אישורי הגעה ושינויים בחבילה (הלקוח ממלא וחותם אונליין)</label>' +
+        '<label class="opt"><input type="checkbox" id="cl-agr"' + (agrOf(id).some(function (a) { return a.status !== "void"; }) || !c.eventDate ? "" : " checked") + (c.eventDate ? "" : " disabled") + '>הסכם שירות לחתימה' + (c.eventDate ? "" : " (צריך תאריך אירוע)") + '</label>' +
+        '<select id="cl-remote" aria-label="אופן סגירת העסקה"><option value="1">ההסכם נסגר מרחוק (טלפון / וואטסאפ)</option><option value="0">נסגר פנים מול פנים</option></select>' +
+        (c.phone ? "" : '<div class="av-banner warn">אין טלפון בכרטיס. אפשר להעתיק את ההודעה ולשלוח ידנית.</div>') + '</div>' : "") + '</div>' +
       '<div class="form-actions" style="margin-top:0"><button class="btn" data-act="cl-ok">אישור וסגירת עסקה</button><button class="btn ghost" data-act="cl-cancel">ביטול</button></div></div>';
     $("closeoverlay").hidden = false; updateCloseUI(); $("cl-value").focus();
   }
@@ -1661,12 +1765,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var sel = document.querySelector('input[name="cl-pay"]:checked');
     if (!sel) { toast("בחרו אם שולמה מקדמה, תשלום מלא או שעוד לא שולם"); return; }
     var st = sel.value, v = Number($("cl-value").value) || 0, a = st === "טרם" ? 0 : (Number($("cl-amount").value) || 0);
+    if (!v) { toast("הזינו את שווי העסקה. בלי סכום המערכת לא יכולה לעקוב אחרי התשלום"); $("cl-value").focus(); return; }
     if (st !== "טרם" && !a) { toast("הזינו את הסכום ששולם"); return; }
+    var wantRsvp = $("cl-rsvp") && $("cl-rsvp").checked, wantAgr = $("cl-agr") && $("cl-agr").checked && !$("cl-agr").disabled, remote = !$("cl-remote") || $("cl-remote").value === "1";
     var id = closing.id, d = Object.assign({}, closing.extra, { stage: "סגרו", payment: { status: st, amount: a, date: st === "טרם" ? "" : $("cl-date").value, note: $("cl-note").value.trim(), updatedAt: new Date().toISOString() } });
     if (v) d.value = v;
     d.closedAt = new Date().toISOString();
     closeDlg(false);
-    guard(async function () { await patch("clients", id, d); renderSheet(true); toast("העסקה נסגרה ונוספה לאירועים"); });
+    guard(async function () {
+      await patch("clients", id, d); renderSheet(true); toast("העסקה נסגרה ונוספה לאירועים");
+      if (!wantRsvp && !wantAgr) return;
+      var agrT = "", f = null;
+      if (wantAgr) { try { agrT = await agrCreate(id, remote, true); } catch (e) { toast("יצירת ההסכם נכשלה, אפשר ליצור אותו מהכרטיס"); } }
+      if (wantRsvp) f = await rsvpCreate(id);
+      renderSheet(true);
+      if (f) rsvpSendDlg(id, f, agrT, true);
+      else if (agrT) { var c0 = byId(state.clients, id), w0 = c0 && waNum(c0.phone); toast("ההסכם נוצר. כפתור השליחה נמצא בכרטיס הלקוח"); }
+    });
   }
 
   /* ---- Google Calendar sync ---- */
@@ -1876,7 +1991,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         acts: waBtn(c) + '<button class="btn ghost sm" data-act="snooze">דחייה ב-3 ימים</button><button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
     var noC = state.clients.filter(function (c) {
-      if (stageOf(c) !== "בתהליך") return false;
+      /* hesitating leads whose follow-up is still in the future (so they are not already in the follow-up list) but nobody talked to them for a week */
+      if (stageOf(c) !== "מתלבטים" || !c.followUp || c.followUp <= today) return false;
       var l = lastLog(c), base = l ? l.at : c.createdAt; return base && daysAgo(base) >= NO_CONTACT_DAYS;
     });
     var rC = noC.map(function (c) {
@@ -1913,9 +2029,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return arow({ cid: c.id, title: c.name, sub: "נאסף " + esc(fmtDate(r.pickupDate)) + " · להחזיר כסף עד " + esc(fmtDate(r.due)), chips: [[leftText(r.left), r.left <= RF_WARN ? "bad" : "warn"], [rfLabel(r.status), ""]],
         acts: (w ? '<a class="btn ghost sm" href="https://wa.me/' + w + '" target="_blank" rel="noopener">ווטסאפ</a>' : "") + '<button class="btn sm" data-act="rf-status" data-st="done">סימנתי שהוחזר</button><button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
-    var rP = openPayList().map(function (c) {
-      var p = payOf(c);
-      return arow({ cid: c.id, title: c.name, sub: (c.eventDate ? esc(fmtDate(c.eventDate)) + " · " : "") + (p.value ? "יתרה לתשלום " + shekel(p.bal) : "שווי עסקה לא הוזן"), chips: [[p.status === "מקדמה" ? "שולמה מקדמה" : "עוד לא שולם", p.status === "מקדמה" ? "warn" : "bad"]], acts: '<button class="btn ghost sm" data-act="open-id">עדכון תשלום</button>' });
+    var payAll = openPayList(), rP = payAll.filter(function (c) { return !payUrgent(c); }).map(function (c) {
+      var p = payOf(c), s = payState(c), wl = payWaLink(c);
+      return arow({ cid: c.id, title: c.name, sub: (c.eventDate ? esc(fmtDate(c.eventDate)) + " · לשלם עד " + esc(fmtDate(payDue(c))) + " · " : "") + (p.value ? "יתרה לתשלום " + shekel(p.bal) : "שווי עסקה לא הוזן"), chips: [[s.t, s.cls || "warn"]],
+        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + (wl ? '<a class="btn ghost sm" href="' + wl + '" target="_blank" rel="noopener">תזכורת בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
+    });
+    var rR = rsvpInbox().map(function (f) {
+      var c = byId(state.clients, f.client_id), a = f.answers || {};
+      return arow({ cid: f.client_id, title: c ? c.name : "לקוח", sub: esc("מילאו וחתמו " + ago(f.submitted_at) + " · " + (a.guests || "?") + " אישורי הגעה" + (a.wants_changes ? " · ביקשו שינויים בחבילה" : " · בלי שינויים")),
+        chips: [["טופס חתום ממתין להצעה", "bad"]], acts: '<button class="btn sm" data-act="open-id">פתיחה והפקת הצעה</button>' });
     });
     var dayMap = {};
     allEvents().filter(function (e) { return e.date && e.date >= today; }).forEach(function (e) { (dayMap[e.date] = dayMap[e.date] || []).push(e); });
@@ -1925,9 +2047,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     });
     var lbk = cfg().lastBackup;
     var rB = state.clients.length && dl && (!lbk || daysAgo(lbk) >= 30) ? [arow({ title: "הגיע הזמן לגיבוי חודשי", sub: lbk ? "הגיבוי האחרון היה לפני " + daysAgo(lbk) + " ימים" : "עוד לא הורד גיבוי", chips: [["גיבוי", "warn"]], acts: '<button class="btn sm" data-act="backup">הורד גיבוי חודשי</button>' })] : [];
-    var total = rN.length + rH.length + rC.length + missing.length + rE.length + rF1.length + rF2.length + rP.length + rX.length + rB.length;
-    var urgentCount = rN.length + rH.length + missing.length + rfUrg + rX.length;
-    return { html: section("כפל אירועים באותו תאריך", rX, true) + section("זיכויים: להחזיר כסף לפני התקרה", rF2, rfUrg > 0) + section("לידים חדשים שלא טופלו", rN, true, "sec-new") + section("פולואפים להיום ובאיחור", rH, true, "sec-follow") + section("עסקאות סגורות עם מידע חסר", missing, true) + section("בתהליך בלי קשר " + NO_CONTACT_DAYS + "+ ימים", rC, false) + section("אירועים שהסתיימו: לבקש פירוט לזיכוי", rF1, false) + section("תשלומים פתוחים", rP, false, "sec-pay") + section("גיבוי חודשי", rB, false) + section("אירועים ב-" + SOON_DAYS + " הימים הקרובים", rE, false), total: total, urgent: urgentCount, nNew: rN.length, nHes: rH.length, nMissing: missing.length, nRf: rfUrg, nX: rX.length };
+    var nPayU = payAll.length - rP.length;
+    var total = rN.length + rH.length + rC.length + missing.length + rE.length + rF1.length + rF2.length + rP.length + rX.length + rB.length + rR.length + nPayU;
+    var urgentCount = rN.length + rH.length + missing.length + rfUrg + rX.length + rR.length + nPayU;
+    return { html: section("כפל אירועים באותו תאריך", rX, true) + section("טפסי אישורי הגעה שהתקבלו: להפיק הצעה סופית", rR, true, "sec-rsvp") + section("זיכויים: להחזיר כסף לפני התקרה", rF2, rfUrg > 0) + section("לידים חדשים שלא טופלו", rN, true, "sec-new") + section("פולואפים להיום ובאיחור", rH, true, "sec-follow") + section("עסקאות סגורות עם מידע חסר", missing, true) + section("מתלבטים בלי קשר " + NO_CONTACT_DAYS + "+ ימים", rC, false) + section("אירועים שהסתיימו: לבקש פירוט לזיכוי", rF1, false) + section("תשלומים פתוחים (לא דחופים עדיין)", rP, false, "sec-pay") + section("גיבוי חודשי", rB, false) + section("אירועים ב-" + SOON_DAYS + " הימים הקרובים", rE, false), total: total, urgent: urgentCount, nNew: rN.length, nHes: rH.length, nMissing: missing.length, nRf: rfUrg, nX: rX.length, nR: rR.length, nPay: nPayU };
   }
   function renderToday() {
     var d = todayData(), b = $("today-badge");
@@ -1940,6 +2063,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (d.nMissing) parts.push(d.nMissing + " עסקאות עם מידע חסר");
     if (d.nRf) parts.push(d.nRf + " זיכויים דחופים");
     if (d.nX) parts.push(d.nX + " כפילויות אירועים");
+    if (d.nR) parts.push(d.nR + " טפסי אישורי הגעה להפקת הצעה");
+    if (d.nPay) parts.push(d.nPay + " תשלומים דחופים");
     $("today-summary").innerHTML = parts.length ? "<b>דורש טיפול עכשיו:</b> " + parts.join(", ") : "<b>אין משהו דחוף.</b> למטה מה שכדאי לעקוב אחריו.";
     $("today-body").innerHTML = d.html;
   }
@@ -1973,18 +2098,28 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       '</div></article>';
   }
 
+  /* search across name, phone, email, venue, notes and event date (dd/mm or yyyy-mm-dd). While searching, older closed deals are shown too. */
+  function clientMatch(c, q) {
+    var digits = q.replace(/\D/g, ""), hay = [c.name, c.email, c.venue, c.notes, c.source, c.eventType, c.hallName, fmtDate(c.eventDate), c.eventDate].join(" ").toLowerCase();
+    if (hay.indexOf(q) >= 0) return true;
+    return digits.length >= 3 && String(c.phone || "").replace(/\D/g, "").indexOf(digits) >= 0;
+  }
   function renderBoard() {
+    var q = ($("cl-search").value || "").trim().toLowerCase(), info = $("cl-search-info"), found = 0;
     $("board").innerHTML = GROUPS.map(function (g) {
-      var rows = state.clients.filter(function (c) { return stageOf(c) === g.k; }), archived = 0;
-      if (g.k === "סגרו" || g.k === "הושלם") { var all0 = rows.length; rows = rows.filter(boardActive); archived = all0 - rows.length; }
+      var rows = state.clients.filter(function (c) { return stageOf(c) === g.k && (!q || clientMatch(c, q)); }), archived = 0;
+      found += rows.length;
+      if (!q && (g.k === "סגרו" || g.k === "הושלם")) { var all0 = rows.length; rows = rows.filter(boardActive); archived = all0 - rows.length; }
       if (g.k === "מתלבטים") rows.sort(function (a, b) { return (a.followUp || "0").localeCompare(b.followUp || "0"); });
       else if (g.k === "ליד חדש") rows.sort(function (a, b) { return (a.createdAt || "").localeCompare(b.createdAt || ""); });
       else rows.sort(function (a, b) { return (a.eventDate || "9").localeCompare(b.eventDate || "9"); });
       var sum = rows.reduce(function (t, c) { return t + dealValue(c); }, 0);
       var body = rows.length ? rows.map(clientCard).join("") :
         '<div class="empty">' + (loaded.clients ? (g.k === "ליד חדש" ? "אין לידים חדשים. הוסיפו ליד בכפתור למעלה." : g.k === "בתהליך" ? "אין לקוחות בתהליך" : g.k === "מתלבטים" ? "אין מתלבטים כרגע" : g.k === "סגרו" ? "עוד אין עסקאות סגורות" : "אין לקוחות שאבדו") : "טוען…") + '</div>';
-      return '<div class="col" id="col-' + g.k + '"><div class="col-head"><h3>' + g.label + ' <span class="muted num">' + rows.length + '</span></h3><span class="sum num">' + (sum ? shekel(sum) : "") + '</span></div><div class="col-sub">' + g.sub + (archived ? ' · <a href="#sources" style="color:inherit;text-decoration:underline">' + archived + " מחודשים קודמים במקורות והמרות</a>" : "") + '</div>' + body + '</div>';
+      if (q && !rows.length) body = '<div class="empty">אין תוצאות בעמודה הזו</div>';
+      return '<div class="col" id="col-' + g.k + '"><div class="col-head"><h3>' + g.label + ' <span class="muted num">' + rows.length + '</span></h3><span class="sum num">' + (sum ? shekel(sum) : "") + '</span></div><div class="col-sub">' + g.sub + (archived ? ' · <a href="#sources" style="color:inherit;text-decoration:underline">' + archived + " מחודשים קודמים במקורות והמרות</a> (או בחיפוש)" : "") + '</div>' + body + '</div>';
     }).join("");
+    info.hidden = !q; info.textContent = q ? (found ? "נמצאו " + found + " לקוחות (כולל עסקאות מחודשים קודמים)" : "לא נמצא לקוח שמתאים לחיפוש") : "";
   }
 
   /* ---- client sheet ---- */
@@ -2290,11 +2425,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   var TEMPLATES = [
-    { t: "פנייה ראשונה", b: "היי {name}, כאן שי מ-ש.מ.ש משקאות. ראיתי שהתעניינת באספקת אלכוהול לאירוע{date}. אשמח לשמוע כמה פרטים: כמה מוזמנים, באיזה אולם ומה סגנון הערב? אחזור אליך עם הצעה מסודרת." },
-    { t: "שליחת הצעת מחיר", b: "היי {name}, מצורפת הצעת המחיר לאירוע{date}. ההצעה כוללת אספקה מלאה של האלכוהול והערבובים. אם משהו לא מתאים לקהל שלכם, אני מתאים את החלוקה בין הסוגים. מתי נוח לדבר?" },
-    { t: "פולואפ למתלבטים", b: "היי {name}, רציתי לבדוק איפה אתם עומדים לגבי האלכוהול לאירוע{date}. אם יש שאלה או משהו בהצעה שמעכב, אשמח לעזור. אפשר גם לשריין את התאריך כבר עכשיו." },
-    { t: "תיאום לפני האירוע", b: "היי {name}, האירוע{date} מתקרב. אני רוצה לאשר מספר מוזמנים סופי, שעת סיום וכתובת האולם, כדי להכין את האספקה בהתאם." },
-    { t: "בקשת אישור מוזמנים (שבוע לפני)", b: "היי {name}, האירוע{date} בעוד שבוע. כדי שאעדכן את החבילה והכמויות, אשמח שתשלחו לי את מספר המוזמנים שאישרו הגעה עד עכשיו." },
+    { t: "פנייה ראשונה", b: "היי {name}, כאן שי מ-ש.מ.ש משקאות. ראיתי שהתעניינתם בחבילת אלכוהול לאירוע{date}. אשמח לשמוע כמה פרטים: כמה מוזמנים, באיזה אולם ומה אופי הערב? אחזור אליכם עם הצעה מסודרת." },
+    { t: "שליחת הצעת מחיר", b: "היי {name}, מצורפת הצעת המחיר לאירוע{date}. ההצעה כוללת אספקה מלאה של האלכוהול והערבובים עד האולם. אם משהו לא מתאים לקהל שלכם, נתאים את החלוקה בין הסוגים. מתי נוח לכם לדבר?" },
+    { t: "פולואפ למתלבטים", b: "היי {name}, רציתי לבדוק איפה אתם עומדים לגבי חבילת האלכוהול לאירוע{date}. אם יש שאלה או משהו בהצעה שמעכב, נשמח לעזור. המחיר ננעל ברגע שמשריינים את התאריך." },
+    { t: "תיאום לפני האירוע", b: "היי {name}, האירוע{date} מתקרב. נשמח לאשר מספר מוזמנים סופי, שעת סיום וכתובת האולם, כדי להכין את האספקה בהתאם." },
+    { t: "טופס אישורי הגעה (שבוע לפני)", b: "היי {name}, האירוע{date} בעוד שבוע. כדי שנדייק לכם את החבילה והכמויות, נשמח שתמלאו את הטופס הקצר עם מספר אישורי ההגעה ומה תרצו לשנות, אם בכלל: {form}" },
+    { t: "תזכורת תשלום", b: "היי {name}, תזכורת קטנה לקראת האירוע{date}: {bal}. נשמח לקבל את ההעברה עד 3 ימים לפני האירוע, כדי שהכול יגיע בזמן. תודה!" },
     { t: "בקשת פירוט לזיכוי", b: RF_TEXT }
   ];
   var msgTexts = [];
@@ -2306,7 +2442,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var name = lead ? String(lead.name || "").split(" ")[0] : "[שם]";
     var date = lead && lead.eventDate ? " ב-" + fmtDate(lead.eventDate) : "";
     var num = lead ? waNum(lead.phone) : "";
-    msgTexts = TEMPLATES.map(function (m) { return m.b.replace("{name}", name).replace("{date}", date); });
+    var formL = lead ? rsvpLinkFor(lead.id) : "", balT = lead ? balText(lead) : "";
+    msgTexts = TEMPLATES.map(function (m) { return m.b.replace("{name}", name).replace("{date}", date).replace("{form}", formL || "[קישור לטופס: יוצרים אותו בכרטיס הלקוח]").replace("{bal}", balT || "[יתרה לתשלום]"); });
     $("msgs").innerHTML = TEMPLATES.map(function (m, i) {
       var link = num ? "https://wa.me/" + num + "?text=" + encodeURIComponent(msgTexts[i]) : "";
       return '<div class="msg"><h3 style="font-size:16px">' + m.t + '</h3><pre>' + esc(msgTexts[i]) + '</pre><div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -2315,7 +2452,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }).join("");
   }
 
-  function openPayList() { return state.clients.filter(function (c) { return hasDebt(c) && (!c.eventDate || daysUntil(c.eventDate) <= 7); }).sort(function (a, b) { return (a.eventDate || "9").localeCompare(b.eventDate || "9"); }); }
+  function openPayList() { return state.clients.filter(payOpen).sort(function (a, b) { return payState(a).rank - payState(b).rank || (a.eventDate || "9").localeCompare(b.eventDate || "9"); }); }
   function renderKpis() {
     var today = todayStr();
     var nw = state.clients.filter(function (c) { return stageOf(c) === "ליד חדש"; });
@@ -2326,8 +2463,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     $("k-hes").textContent = hes.length;
     $("k-hes-sub").textContent = due.length ? due.length + " לפולואפ היום או באיחור" : (hes.length ? "אין פולואפ דחוף" : "אין מתלבטים");
     $("k-hes-box").classList.toggle("alert", due.length > 0);
-    var payL = openPayList(); $("k-pay").textContent = payL.length; $("k-pay-box").classList.toggle("alert", payL.length > 0);
-    $("k-pay-sub").textContent = payL.length ? shekel(payL.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0)) + " לגבייה" : "אין תשלומים פתוחים";
+    var payL = openPayList(), payU = payL.filter(payUrgent).length; $("k-pay").textContent = payL.length; $("k-pay-box").classList.toggle("alert", payU > 0);
+    $("k-pay-sub").textContent = payL.length ? shekel(payL.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0)) + " לגבייה" + (payU ? " · " + payU + " דחופים" : "") : "אין תשלומים פתוחים";
     var won = state.clients.filter(function (c) { return isWon(c); });
     $("k-won").textContent = nf.format(won.reduce(function (t, c) { return t + dealValue(c); }, 0));
     $("k-won-sub").textContent = won.length + " לקוחות שסגרו";
@@ -2340,10 +2477,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     sel.innerHTML = sourceNames().map(function (n) { return '<option>' + esc(n) + '</option>'; }).join("");
     if (cur) sel.value = cur;
   }
-  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
+  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
 
   /* ---- tabs ---- */
-  var VIEWS = ["today", "availability", "clients", "sources", "events", "messages", "activity"];
+  var VIEWS = ["today", "availability", "clients", "payments", "sources", "events", "messages", "activity"];
   function showView(v) {
     if (VIEWS.indexOf(v) < 0) v = "today";
     document.querySelectorAll(".view").forEach(function (el) { el.hidden = el.id !== "view-" + v; });
@@ -2360,7 +2497,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (el && el.scrollIntoView) { el.scrollIntoView({ behavior: "smooth", block: "start" }); el.classList.add("flash-go"); setTimeout(function () { el.classList.remove("flash-go"); }, 1700); }
     }, 60);
   }
-  var GO = { "new": ["today", "sec-new", "clients", "col-ליד חדש"], follow: ["today", "sec-follow", "clients", "col-מתלבטים"], pay: ["today", "sec-pay", "today", "charges"], won: ["clients", "col-סגרו"], events: ["events"] };
+  var GO = { "new": ["today", "sec-new", "clients", "col-ליד חדש"], follow: ["today", "sec-follow", "clients", "col-מתלבטים"], pay: ["payments", "view-payments"], won: ["clients", "col-סגרו"], events: ["events"] };
   window.__goTile = function (k) { var g = GO[k]; if (!g) return; var el = g[1] && $(g[1]); if (g.length > 2 && (!el || el.hidden)) goTo(g[2], g[3]); else goTo(g[0], g[1]); };
   document.querySelectorAll(".kpi[data-go]").forEach(function (k) {
     k.addEventListener("click", function () { window.__goTile(k.dataset.go); });
@@ -2459,7 +2596,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (openId && t.dataset.pkgnote) { var pc2 = byId(state.clients, openId); if (pc2) { var pn = Object.assign({}, (pc2.bar || {}).pkgNotes || {}); pn[t.dataset.pkgnote] = t.value.trim(); patchBar(openId, { pkgNotes: pn }); } }
     if (t.name === "cl-pay") { var am0 = $("cl-amount"); if (am0) delete am0.dataset.touched; updateCloseUI(); }
     if (t.id === "m-lead") renderMessages();
+    if (t.id === "pay-filter") renderPayments();
   });
+  $("cl-search").addEventListener("input", function () { renderBoard(); });
   document.addEventListener("click", function (e) {
     if (e.target === $("closeoverlay")) { closeDlg(true); return; }
     if (e.target === $("overlay")) { closeSheet(); return; }
@@ -2506,6 +2645,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "mc-set") { var sk = b.dataset.key, sd = b.dataset.ds; if (sk === "form") setFormDate(sd); else if (openId && canWrite) { delete MCSEL.sheet; MC.sheet = null; guard(async function () { await patch("clients", openId, { eventDate: sd }); renderSheet(true); toast("התאריך עודכן"); }); } }
     else if (act === "bar-rank" && openId) { var bc = byId(state.clients, openId); if (bc) { var rk = barOf(bc).rank.slice(), ri = rk.indexOf(b.dataset.k), rj = ri + Number(b.dataset.d); if (ri >= 0 && rj >= 0 && rj < rk.length) { var tmp = rk[ri]; rk[ri] = rk[rj]; rk[rj] = tmp; patchBar(openId, { rank: rk }); } } }
     else if (act === "backup") doBackup();
+    else if (act === "pay-add") { var pid = cid || openId; if (pid) payDlg(pid); }
+    else if (act === "pd-save") payDlgSave();
     else if (act === "camp-months") campMonthsDlg(b.closest("tr").dataset.id);
     else if (act === "x-close") xClose();
     else if (act === "cm-add") cmAddRow();
@@ -2570,7 +2711,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var ownerOk = false;
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var STATUSES = ["נסגרה עסקה", "מתלבט", "לא מעוניין", "לא ענה בטלפון"];
-  var KIND_L = { status_change: "שינוי סטטוס", stage_change: "מעבר שלב", message_sent: "הודעה נשלחה", pdf_generated: "הופק PDF", payment: "תשלום" };
+  var KIND_L = { status_change: "שינוי סטטוס", stage_change: "מעבר שלב", message_sent: "הודעה נשלחה", pdf_generated: "הופק PDF", payment: "תשלום", agreement_created: "הסכם נוצר", agreement_sent: "הסכם נשלח", agreement_signed: "הסכם נחתם", rsvp_sent: "טופס אישורי הגעה נשלח", rsvp_received: "טופס אישורי הגעה התקבל" };
   var CH_L = { whatsapp_business: "וואטסאפ עסקי", whatsapp: "וואטסאפ", sms: "SMS", email: "אימייל", phone: "טלפון", other: "אחר" };
   var PK_NAMES = Object.keys(PKGS);
 
@@ -2591,7 +2732,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       createdAt: r.created_at, quote: r.quote || undefined, cal: r.cal || {}, bar: p.bar,
       maxPkgName: r.max_pkg_name || "", maxPkgAmount: r.max_pkg_amount == null ? "" : Number(r.max_pkg_amount),
       finalPkgName: r.final_pkg_name || "", finalPkgAmount: r.final_pkg_amount == null ? "" : Number(r.final_pkg_amount),
-      rsvpConfirmed: r.rsvp_confirmed == null ? "" : r.rsvp_confirmed, hallName: r.hall_contact_name || "", hallPhone: r.hall_contact_phone || "",
+      rsvpConfirmed: r.rsvp_confirmed == null ? "" : r.rsvp_confirmed, rsvpSentAt: r.rsvp_sent_at || "", hallName: r.hall_contact_name || "", hallPhone: r.hall_contact_phone || "",
       payment: r.payment_status ? { status: r.payment_status, amount: r.payment_amount == null ? 0 : Number(r.payment_amount), date: r.payment_date || "", note: r.payment_note || "" } : undefined,
       refund: { status: r.refund_status || "wait", pickupDate: r.pickup_date || "", requestedAt: r.refund_requested_at || "", doneAt: r.refund_done_at || "" },
       offers: (offers || []).map(function (o) { return { id: o.id, pkg: o.pkg || "", amount: o.amount == null ? 0 : Number(o.amount), date: o.sent_on, status: o.status, note: o.note || "" }; }),
@@ -2601,8 +2742,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var FLAT = { name: "name", phone: "phone", email: "email", eventType: "event_type", eventDate: "event_date", guests: "guests", venue: "venue", source: "source", notes: "notes",
     followUp: "follow_up", value: "value", example: "is_example", createdAt: "created_at", quote: "quote", cal: "cal", status: "status", pipelineStage: "pipeline_stage_id",
-    maxPkgName: "max_pkg_name", maxPkgAmount: "max_pkg_amount", finalPkgName: "final_pkg_name", finalPkgAmount: "final_pkg_amount", rsvpConfirmed: "rsvp_confirmed", hallName: "hall_contact_name", hallPhone: "hall_contact_phone" };
-  var DATEF = { event_date: 1, follow_up: 1 }, NUMF = { guests: 1, value: 1, pipeline_stage_id: 1, max_pkg_amount: 1, final_pkg_amount: 1, rsvp_confirmed: 1 };
+    maxPkgName: "max_pkg_name", maxPkgAmount: "max_pkg_amount", finalPkgName: "final_pkg_name", finalPkgAmount: "final_pkg_amount", rsvpConfirmed: "rsvp_confirmed", rsvpSentAt: "rsvp_sent_at", hallName: "hall_contact_name", hallPhone: "hall_contact_phone" };
+  var DATEF = { event_date: 1, follow_up: 1, rsvp_sent_at: 1 }, NUMF = { guests: 1, value: 1, pipeline_stage_id: 1, max_pkg_amount: 1, final_pkg_amount: 1, rsvp_confirmed: 1 };
   function clientToRow(p, cur) {
     var row = {}, extra = null, prefs = null;
     Object.keys(p).forEach(function (k) {
@@ -2692,7 +2833,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           sb.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(500),
           sb.from("reminders").select("*").order("due_at", { ascending: true }).limit(300),
           sb.from("pipeline_stages").select("*").order("id", { ascending: true }),
-          sb.from("agreements").select("*").order("created_at", { ascending: false })
+          sb.from("agreements").select("*").order("created_at", { ascending: false }),
+          sb.from("rsvp_forms").select("*").order("created_at", { ascending: false })
         ]);
         var cl = chk(rs[0]) || [], of = chk(rs[1]) || [], it = chk(rs[2]) || [];
         cache = { clients: cl, offers: of, interactions: it };
@@ -2704,6 +2846,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         var st = chk(rs[5]) || [], cal = st.find(function (x) { return x.key === "calendar"; }), fd = st.find(function (x) { return x.key === "calendar_feed"; });
         state.settings = cal ? cal.value : {}; state.feedToken = fd && fd.value ? fd.value.token : ""; var prd = st.find(function (x) { return x.key === "products"; }); state.products = prd && prd.value && prd.value.list ? prd.value.list : {}; var lgo = st.find(function (x) { return x.key === "logo"; }); state.logo = lgo && lgo.value && lgo.value.data ? lgo.value.data : ""; var gl = st.find(function (x) { return x.key === "goals"; }); state.goals = gl && gl.value && gl.value.byMonth ? gl.value.byMonth : {}; var pr = st.find(function (x) { return x.key === "pricing"; }); state.pricing = pr && pr.value ? pr.value : {};
         state.logs = chk(rs[6]) || []; state.reminders = chk(rs[7]) || []; state.stages = chk(rs[8]) || []; state.agreements = chk(rs[9]) || []; try { agrAutoSave(); } catch (e) {}
+        /* the forms table is optional: if it is missing the rest of the CRM keeps working */
+        state.rsvp = rs[10] && !rs[10].error ? rs[10].data || [] : []; rsvpReady = !!(rs[10] && !rs[10].error); try { rsvpAutoSave(); } catch (e) {}
         ["clients", "events", "campaigns", "settings"].forEach(function (k) { loaded[k] = true; fresh[k] = true; });
         syncOk = true; setStatus(true, "מחובר, הכל נשמר אוטומטית");
         renderAll();
@@ -2801,7 +2945,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         field("פרט (קובץ / תוכן)", "al-note", '<input id="al-note" placeholder="למשל: ' + esc((c.name || "") + "_(" + (c.finalPkgName || c.maxPkgName || "Supreme") + ").pdf") + '"' + dis() + '>') +
         '<button class="btn" data-sb="log-act"' + dis() + '>תיעוד</button></div>' +
       (logs.length ? '<ul class="tl">' + actRows(logs.slice(0, 40)) + '</ul>' : '<div class="empty">עוד אין פעולות מתועדות ללקוח הזה. מעברי סטטוס, שלבים ותשלומים נרשמים אוטומטית.</div>') + '</section>';
-    return pipe + journeySection(c) + agreementSection(c) + hall + pk + act;
+    return pipe + journeySection(c) + rsvpSection(c) + agreementSection(c) + hall + pk + act;
   }
   document.addEventListener("change", function (e) {
     var t = e.target, f = t.dataset && t.dataset.sbf; if (!f || !openId || !canWrite) return;
@@ -3037,7 +3181,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       ["כמות עם רזרבה", "מחשבים לפי האיפיון עם מרווח ביטחון, כדי שלא ייגמר לכם באמצע האירוע.", "bottle"], ["זיכוי על בקבוק סגור", "מה שלא נפתח חוזר אליכם בזיכוי, כך שאתם משלמים רק על מה שנשתה.", "undo"]];
     var how = [["01", "האיפיון", "מספר האורחים, סוג האירוע ואורך הערב."], ["02", "פרופיל הקהל", "הרגלי השתייה של האורחים, כפי שעלו בשיחה איתכם."], ["03", "רזרבה בטוחה", "תוספת מעבר לצריכה הצפויה, ומה שלא נפתח מזוכה."]];
     var p2 = page(2, inn(
-      '<h1 class="p-h1" style="font-size:61px;margin-bottom:0;line-height:1.1">אירוע אחד.<br><b>אפס טרטורים.</b></h1><div class="p-sub" style="margin:' + U(12) + ' 0 ' + U(21) + '">אתם מתרכזים בחגיגה, ואנחנו דואגים שהבר יהיה מלא.</div>' +
+      '<h1 class="p-h1" style="font-size:61px;margin-bottom:0;line-height:1.1">אירוע אחד.<br><b>אפס טרטורים.</b></h1><div class="p-sub" style="margin:' + U(12) + ' 0 ' + U(21) + '">אתם מתרכזים בחגיגה, ואנחנו דואגים שהאלכוהול לא ייגמר.</div>' +
       '<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:' + U(18) + ' 19px">' + why.map(function (w) {
         return '<div class="p-box" style="flex:0 0 calc(50% - 9.5px);border-top:2px solid #b8924f;padding:' + U(21) + ' 26px ' + U(19) + '"><div style="display:flex;flex-direction:row;align-items:center;gap:18px;margin-bottom:' + U(14) + '"><span style="width:48px;height:48px;border:1px solid #b8924f;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto">' + icon(w[2]) + '</span><span style="font-size:22.5px;font-weight:700;color:#f4ecd8">' + w[0] + '</span></div><div style="font-size:16.5px;line-height:1.62;color:#d6cebf">' + w[1] + "</div></div>"; }).join("") + "</div>" +
       '<div class="p-cell3" style="margin-top:' + U(26) + '">' + [[L("1,000+"), "אירועים שליווינו"], ['<span class="p-ff p-g" style="font-weight:900">כ-</span>' + L("9"), "שנות ניסיון בתחום המשקאות"], [L("3"), "שנות התמחות באירועים"]].map(function (s) {
@@ -3053,8 +3197,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var env = [["איפיון אישי וייעוץ מקצועי", "חישוב כמויות עם רזרבה"], ["משלוח לאולם ביום האירוע", "ליווי עד סוף האירוע"], ["מענה מהיר לכל שאלה", "זיכוי על בקבוק סגור"]];
     var p3 = page(3, inn(
       '<div class="p-ff" style="direction:ltr;text-align:right;font-family:\'SMS Cormorant Garamond\',Georgia,serif;font-weight:600;font-size:' + (esc(q.en).length > 10 ? 72 : 88) + 'px;letter-spacing:.05em;color:#e1bf78;line-height:1;margin:' + U(2) + ' 0 ' + U(8) + '">' + esc(q.en) + "-" + g + "</div>" +
-      '<div style="font-size:20.5px;color:#d6cebf;margin-bottom:' + U(40) + '">הבר של האירוע שלכם: מסודר, מלא ועם רזרבה.</div>' +
-      '<div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-bottom:' + U(14) + '"><span class="p-ttl" style="font-size:26px">מה מחכה לכם בבר</span><span style="border:1px solid rgba(201,164,92,.5);padding:' + U(6) + ' 20px;font-size:18.5px;color:#e1bf78;font-weight:400">' + L(q.liters) + " ליטר אלכוהול</span></div>" +
+      '<div style="font-size:20.5px;color:#d6cebf;margin-bottom:' + U(40) + '">חבילת האלכוהול של האירוע שלכם: מסודרת, מלאה ועם רזרבה.</div>' +
+      '<div style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;margin-bottom:' + U(14) + '"><span class="p-ttl" style="font-size:26px">מה יש בחבילה שלכם</span><span style="border:1px solid rgba(201,164,92,.5);padding:' + U(6) + ' 20px;font-size:18.5px;color:#e1bf78;font-weight:400">' + L(q.liters) + " ליטר אלכוהול</span></div>" +
       '<div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:' + U(14) + ' 14px">' + cards + "</div>" + mixBlock +
       (q.note ? '<div class="p-box" style="margin-top:' + U(16) + ';padding:' + U(12) + ' 20px"><div style="font-size:19px;font-weight:700;color:#e1bf78;margin-bottom:4px">התאמות לבקשות שלכם</div><div style="font-size:19px;color:#d6cebf;line-height:1.55">' + esc(q.note) + "</div></div>" : "") +
       '<div class="p-ttl" style="font-size:23px;margin:' + U(34) + ' 0 ' + U(16) + '">המעטפת כלולה במחיר</div>' +
@@ -3466,15 +3610,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---- customer journey: timeline by event date, green light for Shay, nudges ---- */
   var JOURNEY = {
-    1: { e: "👋", t: "נעים להכיר", m: "היי {n} 🥂 תודה שפניתם אלינו! אנחנו ש.מ.ש משקאות, נשמח להכיר ולבנות לכם בר מושלם לאירוע. מתי נוח לכם לדבר קצת על האירוע?" },
+    1: { e: "👋", t: "נעים להכיר", m: "היי {n} 🥂 תודה שפניתם אלינו! אנחנו ש.מ.ש משקאות, נשמח להכיר ולבנות לכם חבילת אלכוהול מדויקת לאירוע. מתי נוח לכם לדבר קצת על האירוע?" },
     2: { e: "🎯", t: "מכירים אתכם", m: "" },
-    3: { e: "🥃", t: "הבר שלכם נבנה", m: "היי {n} ✨ בנינו לכם הצעה אישית לבר, עם הכול כלול ועם זיכוי על בקבוק סגור. אשמח שתציצו ותגידו מה דעתכם!" },
+    3: { e: "🥃", t: "החבילה שלכם נבנית", m: "היי {n} ✨ בנינו לכם הצעה אישית לחבילת האלכוהול, עם הכול כלול ועם זיכוי על בקבוק סגור. נשמח שתציצו ותגידו מה דעתכם!" },
     4: { e: "🤔", t: "מתלבטים? אנחנו כאן", m: "" },
-    5: { e: "📋", t: "שבוע לפני: ספירה לאחור", m: "היי {n} 🎉 הספירה לאחור התחילה, בעוד שבוע חוגגים! כדי שנדייק לכם את הבר, כמה אישורי הגעה יש כרגע? ואם יש איש קשר באולם, נשמח לפרטים כדי לתאם איתו את ההגעה 🙌" },
-    6: { e: "✨", t: "ההצעה הסופית", m: "היי {n} 🥂 הבר שלכם מעודכן לפי אישורי ההגעה, מצורפת ההצעה הסופית. אם משהו לא מדויק, אנחנו עוד יכולים לשנות." },
-    7: { e: "🧾", t: "סוגרים חשבון", m: "היי {n} 😊 כדי שהכול יהיה סגור ורגוע ביום האירוע, נשמח להסדיר את התשלום עד 3 ימים לפני. שימו לב: ללא תשלום מלא לא נוכל לספק את הבר. תודה רבה!" },
-    8: { e: "⏰", t: "תזכורת קטנה", m: "היי {n} 🙏 תזכורת קטנה, נשארו 3 ימים לאירוע ועוד לא קיבלנו את התשלום. נשמח לסגור אותו כדי שהכול יגיע בזמן." },
-    9: { e: "🚚", t: "יום האירוע: הבר בדרך", m: "בוקר טוב {n} ☀️ היום זה היום! הבר בדרך אליכם לאולם. מאחלים לכם ערב מושלם 🥂" },
+    5: { e: "📋", t: "שבוע לפני: ספירה לאחור", m: "היי {n} 🎉 הספירה לאחור התחילה, בעוד שבוע חוגגים! כדי שנדייק לכם את החבילה, כמה אישורי הגעה יש כרגע? ואם יש איש קשר באולם, נשמח לפרטים כדי לתאם איתו את ההגעה 🙌" },
+    6: { e: "✨", t: "ההצעה הסופית", m: "היי {n} 🥂 החבילה שלכם מעודכנת לפי אישורי ההגעה, מצורפת ההצעה הסופית. אם משהו לא מדויק, אנחנו עוד יכולים לשנות." },
+    7: { e: "🧾", t: "סוגרים חשבון", m: "היי {n} 😊 כדי שהכול יהיה סגור ורגוע ביום האירוע, נשמח להסדיר את התשלום עד 3 ימים לפני{bal}. שימו לב: ללא תשלום מלא לא נוכל לספק את החבילה. תודה רבה!" },
+    8: { e: "⏰", t: "תזכורת קטנה", m: "היי {n} 🙏 תזכורת קטנה, נשארו 3 ימים לאירוע ועוד לא קיבלנו את התשלום{bal}. נשמח לסגור אותו כדי שהכול יגיע בזמן." },
+    9: { e: "🚚", t: "יום האירוע: החבילה בדרך", m: "בוקר טוב {n} ☀️ היום זה היום! החבילה בדרך אליכם לאולם. מאחלים לכם ערב מושלם 🥂" },
     10: { e: "🎉", t: "איך היה?", m: "{n} מזל טוב! 🥳 איך היה? נשמח לשמוע. ואם נשארו בקבוקים סגורים, נתאם איתכם איסוף כדי להחזיר לכם את הכסף." },
     11: { e: "🥂", t: "זיכוי ונסגר", m: "" }
   };
@@ -3484,7 +3628,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var map = { 5: nonFriSat(shift(e, -7), -1), 6: nonFriSat(shift(e, -6), -1), 7: nonFriSat(shift(e, -5), 1), 8: shift(e, -3), 9: e, 10: nonFriSat(shift(e, 1), 1), 11: shift(e, 3) };
     return map[sid] || "";
   }
-  function journeyMsg(c, sid) { var j = JOURNEY[sid]; if (!j || !j.m) return ""; return j.m.replace("{n}", String(c.name || "").split(" ")[0] || "שלום"); }
+  function journeyMsg(c, sid) {
+    var j = JOURNEY[sid]; if (!j || !j.m) return "";
+    var n = String(c.name || "").split(" ")[0] || "שלום", m = j.m;
+    if (sid === 5) { /* the RSVP form replaces the "how many confirmed?" question */
+      var f = rsvpOf(c.id)[0];
+      if (f && f.submitted_at) m = "היי {n} 🎉 קיבלנו את הטופס שמילאתם, תודה! ההצעה הסופית לפי " + (f.answers && f.answers.guests ? f.answers.guests + " " : "") + "אישורי ההגעה בדרך אליכם.";
+      else if (f && f.status === "sent") m = "היי {n} 🎉 הספירה לאחור התחילה, בעוד שבוע חוגגים! כדי שנדייק לכם את החבילה, נשמח שתמלאו את הטופס הקצר עם מספר אישורי ההגעה ומה תרצו לשנות, אם בכלל: " + rsvpLink(f);
+    }
+    var p = payOf(c), bal = p.value > 0 && p.bal > 0 ? " (היתרה לתשלום: " + shekel(p.bal) + ")" : "";
+    return m.replace("{n}", n).replace("{bal}", bal);
+  }
   /* the light for a closed deal's current step: wait (not due yet) / system (system prepares) / owner (green light for Shay) */
   function journeyLight(c) {
     var sid = c.pipelineStage; if (c.status !== "נסגרה עסקה" || !sid) return null;
@@ -3594,15 +3748,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   async function sha256hex(str) { var b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)); return Array.prototype.map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }
   function agrLink(a) { return AGR.site + "/sign.html?t=" + a.token; }
   function agrOf(cid) { return (state.agreements || []).filter(function (a) { return a.client_id === cid; }).sort(function (x, y) { return x.created_at < y.created_at ? 1 : -1; }); }
-  async function agrCreate(id, remote) {
-    var c = byId(state.clients, id); if (!c || !canWrite) return;
-    if (!c.eventDate) { toast("הזינו תאריך אירוע בכרטיס לפני יצירת הסכם"); return; }
-    var snap = agrSnapshot(c, remote), tb = new Uint8Array(24); crypto.getRandomValues(tb);
-    var token = Array.prototype.map.call(tb, function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""), h = await sha256hex(JSON.stringify(snap));
+  async function agrCreate(id, remote, quiet) {
+    var c = byId(state.clients, id); if (!c || !canWrite) return "";
+    if (!c.eventDate) { toast("הזינו תאריך אירוע בכרטיס לפני יצירת הסכם"); return ""; }
+    var snap = agrSnapshot(c, remote), token = randToken(), h = await sha256hex(JSON.stringify(snap));
     chk(await sb.from("agreements").insert({ client_id: id, token: token, version: AGR.ver, snapshot: snap, doc_hash: h, status: "sent" }));
-    await logAct(id, "agreement_created", null, { note: "נוצר הסכם שירות לחתימה", version: AGR.ver, remote: !!remote, hash: h });
-    renderSheet(true); toast("ההסכם נוצר. שלחו ללקוח את הקישור לחתימה");
+    try { await logAct(id, "agreement_created", null, { note: "נוצר הסכם שירות לחתימה", version: AGR.ver, remote: !!remote, hash: h }); } catch (e) { await loadAll(); } /* the agreement exists even if the log entry fails */
+    if (!quiet) { renderSheet(true); toast("ההסכם נוצר. שלחו ללקוח את הקישור לחתימה"); }
+    return token;
   }
+  function randToken() { var tb = new Uint8Array(24); crypto.getRandomValues(tb); return Array.prototype.map.call(tb, function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }
   async function agrVoid(aid) { chk(await sb.from("agreements").update({ status: "void" }).eq("id", aid)); await loadAll(); renderSheet(true); toast("ההסכם בוטל והקישור כבר לא פעיל"); }
   var AGR_CSS = ".agr{direction:rtl;background:#fff;color:#111;font-family:'SMS Heebo',Arial,sans-serif;width:794px;padding:56px 60px;font-size:15px;line-height:1.7}.agr h1{font-size:28px;margin:0 0 4px}.agr h2{font-size:18px;margin:20px 0 6px;color:#7a5a12}.agr .v{color:#666;font-size:12px;margin:0 0 18px}.agr .k{display:flex;gap:12px;border-bottom:1px solid #e6e0d0;padding:4px 0}.agr .k b{width:150px;flex:none;color:#555;font-weight:500}.agr p{margin:0 0 6px}.agr ul{margin:0 0 6px;padding-inline-start:22px}.agr li{margin:0 0 4px}.agr .sg{margin-top:26px;border-top:2px solid #7a5a12;padding-top:12px;page-break-inside:avoid}.agr .sg img{width:230px;border:1px solid #bbb;border-radius:6px;padding:4px;background:#fff}.agr .m{font-family:monospace;font-size:10px;color:#666;word-break:break-all;direction:ltr;text-align:left}";
   function agrHtml(a) {
@@ -3617,7 +3772,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   async function agrPdf(a) {
     if (!window.html2canvas || !window.jspdf) throw new Error("ספריית ה-PDF לא נטענה");
-    var root = document.createElement("div"); root.style.cssText = "position:fixed;left:-9999px;top:0"; root.innerHTML = agrHtml(a); document.body.appendChild(root);
+    var root = document.createElement("div"); root.style.cssText = "position:fixed;left:-9999px;top:0"; root.innerHTML = a.__html || agrHtml(a); document.body.appendChild(root);
     try {
       if (document.fonts && document.fonts.load) await Promise.race([Promise.all(["400 16px 'SMS Heebo'", "700 16px 'SMS Heebo'"].map(function (f) { return document.fonts.load(f, "אAa1₪"); })), new Promise(function (r) { setTimeout(r, 4000); })]);
       await Promise.all([].slice.call(root.querySelectorAll("img")).map(function (im) { return im.complete ? 0 : new Promise(function (r) { im.onload = im.onerror = r; setTimeout(r, 2500); }); }));
@@ -3674,24 +3829,202 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (k === "pdf" && a) agrSave(a, true);
   });
 
+  /* ======================= RSVP form: sent at closing, filled and signed by the client online, turned into the final quote ======================= */
+  var rsvpReady = false, RSVP_PROD = "https://sms-crm-supabase.vercel.app";
+  var TIER_KEYS = { "CLASSIC": "Classic", "BLEND": "חצי חצי", "SUPREME": "Supreme", "SUPER PREMIUM": "סופר פרימיום" };
+  var CH_ACT = { keep: "להשאיר", more: "יותר", less: "פחות", remove: "להוריד" };
+  function rsvpBase() { return (/^https:/.test(location.origin) ? location.origin : RSVP_PROD) + "/rsvp.html"; }
+  function rsvpOf(cid) { return (state.rsvp || []).filter(function (f) { return f.client_id === cid && f.status !== "void"; }).sort(function (x, y) { return x.created_at < y.created_at ? 1 : -1; }); }
+  function rsvpLink(f) { return rsvpBase() + "?t=" + f.token; }
+  function rsvpLinkFor(cid) { var f = rsvpOf(cid)[0]; return f && f.status === "sent" ? rsvpLink(f) : ""; }
+  function rsvpInbox() { return (state.rsvp || []).filter(function (f) { return f.status === "submitted" && byId(state.clients, f.client_id); }).sort(function (x, y) { return x.submitted_at < y.submitted_at ? -1 : 1; }); }
+  function rsvpDeadline(c) { return c.eventDate ? shift(c.eventDate, -7) : ""; }
+  /* what the client sees: event details and the package lines (names + planned quantities). No prices. */
+  function rsvpSnapshot(c) {
+    var cq = computeQuote(Object.assign({}, c, { rsvpConfirmed: "" })), q = c.quote && c.quote.kind === "custom" ? c.quote : null, lines = [], en = "", tier = "";
+    if (cq) { tier = cq.tier; en = cq.en; lines = cq.lines.filter(function (l) { return l.qty > 0; }).map(function (l) { return { key: l.key || l.name, n: dn(l.name), q: l.qty, k: l.cat }; }); }
+    else if (q) { tier = q.pkg; en = q.en; lines = (q.lines || []).map(function (l) { return { key: l.n, n: dn(l.n), q: l.q, k: l.k }; }); }
+    return { v: 1, name: c.name || "", first: String(c.name || "").split(" ")[0], date: c.eventDate || "", venue: c.venue || "", guests: Number(c.guests) || 0,
+      deadline: rsvpDeadline(c), tier: tier, en: en || (tier && BPK[tier] ? BPK[tier].en : ""), lines: lines,
+      tiers: TIERS.map(function (t) { return { k: t, en: BPK[t].en, he: BPK[t].he, desc: BPK[t].desc }; }),
+      hall_name: c.hallName || "", hall_phone: c.hallPhone || "", created: new Date().toISOString() };
+  }
+  async function rsvpCreate(id) {
+    var c = byId(state.clients, id); if (!c || !canWrite) return null;
+    if (!rsvpReady) { toast("טבלת הטפסים עוד לא הופעלה במסד הנתונים"); return null; }
+    var token = randToken();
+    chk(await sb.from("rsvp_forms").update({ status: "void" }).eq("client_id", id).eq("status", "sent")); /* one open link per client */
+    chk(await sb.from("rsvp_forms").insert({ client_id: id, token: token, snapshot: rsvpSnapshot(c), status: "sent" }));
+    await patch("clients", id, { rsvpSentAt: new Date().toISOString() });
+    try { await logAct(id, "rsvp_sent", null, { note: "נוצר טופס אישורי הגעה לשליחה ללקוח", source: "rsvp" }); } catch (e) { await loadAll(); }
+    return (state.rsvp || []).find(function (f) { return f.token === token; }) || { token: token, status: "sent", client_id: id };
+  }
+  function rsvpMsg(c, f, agrToken) {
+    var n = String(c.name || "").split(" ")[0] || "", dl = rsvpDeadline(c);
+    return "היי " + n + " 🥂 איזה כיף שסגרנו! כדי שנדייק לכם את החבילה, הכנו טופס קצר: כמה אורחים אישרו הגעה, ואם תרצו לשנות משהו בחבילה." +
+      " אפשר למלא כבר עכשיו או כשיהיו לכם אישורי הגעה" + (dl && dl >= todayStr() ? ", הכי מאוחר עד " + fmtDate(dl) : "") + ". בסוף חותמים באצבע וזהו 🙌\n" + rsvpLink(f) +
+      (agrToken ? "\n\nוזה הסכם השירות לחתימה דיגיטלית, לוקח דקה:\n" + AGR.site + "/sign.html?t=" + agrToken : "");
+  }
+  /* the "send it now" step after closing (or from the card): one WhatsApp message with the form link (and the agreement, if created) */
+  function rsvpSendDlg(id, f, agrToken, closed) {
+    var c = byId(state.clients, id); if (!c || !f) return;
+    var msg = rsvpMsg(c, f, agrToken), w = waNum(c.phone);
+    xDlg('<h2>' + (closed ? "העסקה נסגרה ✓ נשאר לשלוח ללקוח" : "שליחת הטופס ללקוח") + '</h2><div class="dlg-body">' +
+      '<div class="muted" style="font-size:13.5px">הלקוח ימלא מהנייד כמה אורחים אישרו הגעה ומה לשנות בחבילה, ויחתום. כשהטופס יתקבל תקבלו התראה, והוא יופיע ב"היום" עם כפתור להפקת ההצעה הסופית.</div>' +
+      field("ההודעה (אפשר לערוך לפני השליחה)", "rs-msg", '<textarea id="rs-msg" rows="8">' + esc(msg) + '</textarea>') + '</div>' +
+      '<div class="form-actions" style="margin-top:0;flex-wrap:wrap">' + (w ? '<a class="btn" id="rs-wa" data-cid="' + esc(id) + '" href="https://wa.me/' + w + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : '<span class="chip bad">אין טלפון בכרטיס</span>') +
+      '<button class="btn ghost" data-act="rs-copy">העתקה</button><button class="btn ghost" data-act="x-close">סגירה</button></div>');
+  }
+  document.addEventListener("input", function (e) { if (e.target && e.target.id === "rs-msg") { var a = $("rs-wa"); if (a) a.href = a.href.split("?text=")[0] + "?text=" + encodeURIComponent(e.target.value); } });
+  async function rsvpNew(id) {
+    var f = await rsvpCreate(id); if (!f) return;
+    renderSheet(true); rsvpSendDlg(id, f, "", false);
+  }
+  function rsvpVoid(fid) { guard(async function () { chk(await sb.from("rsvp_forms").update({ status: "void" }).eq("id", fid).eq("status", "sent")); await loadAll(); renderSheet(true); toast("הקישור בוטל"); }); }
+
+  /* what the client asked for, in plain words (for the card, the quote note and the signed PDF) */
+  function rsvpSummary(f) {
+    var a = f.answers || {}, s = f.snapshot || {}, out = [];
+    var W = { more: "יותר ", less: "פחות ", remove: "בלי " };
+    (a.changes || []).forEach(function (x) { if (x && W[x.act]) out.push(W[x.act] + (x.n || x.key)); });
+    if (a.tier && a.tier !== s.tier && BPK[a.tier]) out.push("מעבר לחבילת " + BPK[a.tier].en);
+    if ((a.add || "").trim()) out.push("ביקשתם: " + a.add.trim().slice(0, 200));
+    return out;
+  }
+  /* turn the signed form into the final quote: RSVP count, package switch, per-product requests, then the normal PDF engine */
+  var rsvpBusy = {};
+  function rsvpPlan(c, f) {
+    var a = f.answers || {}, g = Number(a.guests) || 0, b = barOf(c), tier = a.tier && BPK[a.tier] ? a.tier : (b.pkg || (f.snapshot || {}).tier || "");
+    var nb = Object.assign({}, c.bar || {}, { qover: {} }); if (tier) nb.pkg = tier;
+    var probe = Object.assign({}, c, { guests: g, rsvpConfirmed: g, bar: nb }), calc = function () { return computeQuote(Object.assign({}, probe, { bar: nb, status: "" })); };
+    var cq = g >= 20 ? calc() : null;
+    if (!cq) return { g: g, ok: false };
+    /* a removed drink type is excluded from the profile, so its liters move to the other types (the guests still drink the same amount).
+       Only a single brand removed out of a split type (e.g. one of two vodkas) is set to 0. */
+    var ch = (a.changes || []).filter(function (x) { return x && x.key; }), MIXK = { "משקה חמוציות": "cr", "משקה ראשן": "ra" };
+    var catOf = {}; cq.lines.forEach(function (l) { catOf[l.key || l.name] = l.cat === "m" ? (MIXK[l.key] || (/אנרגיה/.test(l.key) ? "en" : "")) : l.cat; });
+    var removed = ch.filter(function (x) { return x.act === "remove"; }).map(function (x) { return x.key; }), ex = (barOf(Object.assign({}, c, { bar: nb })).excl || []).slice();
+    ["v", "w", "a", "g", "t", "f", "en", "cr", "ra"].forEach(function (k) {
+      var keys = Object.keys(catOf).filter(function (n) { return catOf[n] === k; });
+      if (keys.length && keys.every(function (n) { return removed.indexOf(n) >= 0; }) && ex.indexOf(k) < 0) ex.push(k);
+    });
+    nb.excl = ex; cq = calc();
+    var base = {}; cq.lines.forEach(function (l) { base[l.key || l.name] = l.qty; });
+    ch.forEach(function (x) {
+      if (base[x.key] === undefined) return; var q = base[x.key];
+      if (x.act === "remove") nb.qover[x.key] = 0; /* only reached for a partial removal */
+      else if (x.act === "more") nb.qover[x.key] = q + Math.max(1, Math.ceil(q * 0.15));
+      else if (x.act === "less") nb.qover[x.key] = Math.max(0, q - Math.max(1, Math.ceil(q * 0.15)));
+    });
+    var req = rsvpSummary(f); nb.qnote = req.length ? "לפי הטופס שמילאתם: " + req.join(" · ") : (b.qnote || "");
+    var after = calc();
+    return { g: g, ok: true, bar: nb, tier: after.tier, en: after.en, total: after.total, perGuest: after.perGuest, liters: after.liters };
+  }
+  async function rsvpApply(id, fid) {
+    var c = byId(state.clients, id), f = (state.rsvp || []).find(function (x) { return x.id === fid; }); if (!c || !f || !canWrite || rsvpBusy[id]) return;
+    var plan = rsvpPlan(c, f); if (!plan.ok) { toast("במספר אישורי הגעה מתחת ל-20 צריך להכין הצעה ידנית"); return; }
+    rsvpBusy[id] = true; renderSheet(true);
+    try {
+      var a = f.answers || {}, d = { rsvpConfirmed: plan.g, bar: plan.bar };
+      if (a.hall_name && !c.hallName) d.hallName = a.hall_name; if (a.hall_phone && !c.hallPhone) d.hallPhone = a.hall_phone;
+      await patch("clients", id, d);
+      qsel[id] = "final";
+      await genQuote(id); /* builds the final quote + PDF exactly like the manual button, and logs it */
+      var c2 = byId(state.clients, id);
+      if (c2 && c2.quote && c2.quote.qk === "final" && c2.quote.at > f.submitted_at) {
+        chk(await sb.from("rsvp_forms").update({ status: "handled", handled_at: new Date().toISOString() }).eq("id", fid));
+        try { chk(await sb.from("reminders").update({ done: true }).eq("dedupe_key", "rsvp:" + fid)); } catch (e) {}
+        await loadAll();
+        toast("ההצעה הסופית הופקה לפי הטופס: " + shekel(c2.quote.total) + ". ההודעה ללקוח מוכנה למטה בכרטיס");
+      }
+    } catch (e) { toast("ההפקה נכשלה: " + ((e && e.message) || "שגיאה")); }
+    finally { delete rsvpBusy[id]; renderSheet(true); }
+  }
+  function rsvpAnswersHtml(f) {
+    var a = f.answers || {}, s = f.snapshot || {}, au = f.audit || {}, ch = (a.changes || []).filter(function (x) { return x && x.act && x.act !== "keep"; });
+    var ln = function (k, v) { return '<div class="ln"><b>' + k + '</b><span>' + v + '</span></div>'; };
+    return '<div class="rsv-ans">' + ln("אישורי הגעה", '<span class="big-n num">' + esc(a.guests) + '</span>' + (s.guests ? ' <span class="muted">(בהצעה המקורית: ' + s.guests + ')</span>' : "")) +
+      ln("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return '<span class="chip ' + (x.act === "remove" ? "bad" : "warn") + '">' + esc(CH_ACT[x.act] + ": " + (x.n || x.key)) + '</span>'; }).join(" ") : "ביקשו שינויים (פירוט למטה)") : '<span class="chip good">החבילה מתאימה כמו שהיא</span>') +
+      (a.tier && a.tier !== s.tier && BPK[a.tier] ? ln("חבילה", '<span class="chip acc">רוצים לעבור ל-' + esc(BPK[a.tier].en) + '</span>') : "") +
+      ((a.add || "").trim() ? ln("בקשות נוספות", esc(a.add)) : "") + ((a.notes || "").trim() ? ln("הערות", esc(a.notes)) : "") +
+      (a.hall_name || a.hall_phone ? ln("איש קשר באולם", esc((a.hall_name || "") + (a.hall_phone ? " · " + a.hall_phone : ""))) : "") +
+      (a.end_time ? ln("שעת סיום משוערת", esc(a.end_time)) : "") +
+      ln("נחתם", esc((f.signer_name || "") + " · " + (f.submitted_at ? new Date(f.submitted_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Jerusalem" }) : "")) + " " + (au.phone_match === true ? '<span class="chip good">טלפון החותם תואם לכרטיס ✓</span>' : au.phone_match === false ? '<span class="chip bad">⚠ הטלפון שהוקלד (' + esc(f.signer_phone || "") + ') לא תואם לכרטיס</span>' : "")) +
+      (f.signature_png ? '<img class="rsv-sig" src="' + esc(f.signature_png) + '" alt="חתימת הלקוח">' : "") + '</div>';
+  }
+  function rsvpSection(c) {
+    var list = rsvpOf(c.id), f = list[0], closed = c.status === "נסגרה עסקה";
+    if (!closed && !list.length) return "";
+    var h = '<section class="sec" id="rsvp-sec"><h3>טופס אישורי הגעה ושינויים <small>הלקוח ממלא וחותם אונליין</small></h3>';
+    if (!rsvpReady) return h + '<div class="av-banner warn">הטופס יופעל אחרי עדכון מסד הנתונים.</div></section>';
+    if (!f) return h + '<div class="muted" style="font-size:13.5px;margin-bottom:8px">עוד לא נשלח טופס ללקוח הזה. הלקוח יקבל קישור, ימלא כמה אורחים אישרו הגעה ומה לשנות בחבילה, ויחתום באצבע.</div><button class="btn" data-rs="new"' + dis() + '>יצירת טופס ושליחה בווטסאפ</button></section>';
+    if (f.status === "sent") {
+      var w = waNum(c.phone), link = rsvpLink(f);
+      return h + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><span class="chip warn">נשלח, ממתין למילוי</span>' + (f.opened_at ? '<span class="chip acc">הלקוח פתח את הטופס ' + esc(ago(f.opened_at)) + '</span>' : '<span class="chip">עוד לא נפתח</span>') + '<span class="muted" style="font-size:13px">נוצר ' + esc(ago(f.created_at)) + (rsvpDeadline(c) ? " · למלא עד " + esc(fmtDate(rsvpDeadline(c))) : "") + '</span></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' + (w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(rsvpMsg(c, f, "")) + '" target="_blank" rel="noopener">שליחה שוב בווטסאפ</a>' : "") +
+        '<button class="btn ghost sm" data-rs="copy" data-fid="' + esc(f.id) + '">העתקת קישור</button><a class="btn ghost sm" href="' + esc(link) + '" target="_blank" rel="noopener">תצוגה כמו שהלקוח רואה</a><button class="btn ghost sm" data-rs="void" data-fid="' + esc(f.id) + '"' + dis() + '>ביטול הקישור</button></div></section>';
+    }
+    var plan = f.status === "submitted" ? rsvpPlan(c, f) : null, busy = !!rsvpBusy[c.id];
+    return h + (f.status === "submitted" ? '<div class="rsv-box"><b>🟢 הלקוח מילא וחתם. הצעד הבא: הצעה סופית לפי הטופס</b>' +
+        (plan && plan.ok ? '<div>ההצעה שתצא: <b>' + esc(plan.en) + '</b> ל-' + plan.g + ' אורחים · ' + plan.liters + ' ליטר · <b>' + shekel(plan.total) + '</b> (' + plan.perGuest + ' ₪ לאורח)</div><div class="muted" style="font-size:12.5px">כולל הבקשות מהטופס: סוג משקה שהורד יוצא מהחבילה והליטרים שלו עוברים לשאר הסוגים, יותר/פחות = כ-15% (אפשר לתקן אחר כך בטבלת ההצעה). בקשות בטקסט חופשי מופיעות בהצעה ולא משנות כמויות לבד. שינויים ידניים קודמים בכמויות מתאפסים כי הכמות מחושבת מחדש לפי אישורי ההגעה.</div>' : '<div class="av-banner warn">פחות מ-20 אישורי הגעה: מכינים הצעה ידנית.</div>') +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-rs="apply" data-fid="' + esc(f.id) + '"' + (busy || !canWrite || !(plan && plan.ok) ? " disabled" : "") + '>' + (busy ? "מפיק הצעה…" : "הפקת הצעה סופית לפי הטופס") + '</button></div></div>'
+      : '<div style="margin-bottom:6px"><span class="chip good">טופל ✓ הופקה הצעה ' + esc(f.handled_at ? ago(f.handled_at) : "") + '</span></div>') +
+      rsvpAnswersHtml(f) +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost sm" data-rs="pdf" data-fid="' + esc(f.id) + '">הורדת הטופס החתום (PDF)</button><button class="btn ghost sm" data-rs="new"' + dis() + '>טופס חדש לעדכון</button></div></section>';
+  }
+  function rsvpHtml(f, c) {
+    var s = f.snapshot || {}, a = f.answers || {}, au = f.audit || {}, ch = (a.changes || []).filter(function (x) { return x && x.act && x.act !== "keep"; });
+    var k = function (l, v) { return "<div class='k'><b>" + esc(l) + "</b><span>" + esc(v) + "</span></div>"; };
+    return "<style>" + AGR_CSS + "</style><div class='agr'><h1>טופס אישורי הגעה ושינויים בחבילה</h1><p class='v'>ש.מ.ש משקאות · " + esc((c && c.name) || s.name || "") + "</p>" +
+      "<h2>פרטי האירוע</h2>" + k("שם", s.name || "") + k("תאריך האירוע", s.date ? fmtDate(s.date) : "—") + k("אולם / מקום", s.venue || "—") + k("החבילה בהצעה", s.en || "—") +
+      "<h2>מה הלקוח מילא</h2>" + k("מספר אישורי הגעה", String(a.guests || "")) + k("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return CH_ACT[x.act] + ": " + (x.n || x.key); }).join(" · ") : "כן, ראו בקשות") : "החבילה מתאימה כמו שהיא") +
+      (a.tier && a.tier !== s.tier && BPK[a.tier] ? k("מעבר חבילה", BPK[a.tier].en) : "") + ((a.add || "").trim() ? k("בקשות נוספות", a.add) : "") + ((a.notes || "").trim() ? k("הערות", a.notes) : "") +
+      (a.hall_name || a.hall_phone ? k("איש קשר באולם", (a.hall_name || "") + " " + (a.hall_phone || "")) : "") + (a.end_time ? k("שעת סיום משוערת", a.end_time) : "") +
+      "<p style='margin-top:14px;font-size:13px'>הלקוח אישר: הפרטים נכונים, וההצעה הסופית תתעדכן לפי מספר המאשרים והבקשות שבטופס. שינויים במחיר יישלחו לאישורו לפני הביצוע.</p>" +
+      "<div class='sg'><h2 style='margin-top:0'>חתימת הלקוח</h2><p>נחתם על ידי <b>" + esc(f.signer_name || "") + "</b> ב-" + esc(f.submitted_at ? new Date(f.submitted_at).toLocaleString("he-IL", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jerusalem" }) : "") + "</p>" +
+      (f.signature_png ? "<img src='" + esc(f.signature_png) + "' alt='חתימה'>" : "") +
+      "<p style='font-size:13px'>טלפון שהוקלד בחתימה: " + esc(f.signer_phone || "") + (au.phone_match ? " (תואם לטלפון בכרטיס)" : " (לא תואם לטלפון בכרטיס)") + "</p><p class='m'>form: " + esc(f.id) + "<br>sig: " + esc(f.signed_hash || "") + "<br>ip: " + esc(au.ip || "") + " · tz: " + esc(au.tz || "") + "</p></div></div>";
+  }
+  function rsvpFile(f, c) { return "טופס-אישורי-הגעה_" + String((c && c.name) || "לקוח").replace(/[\\\/:*?"<>|]/g, "").trim().replace(/\s+/g, "_") + "_" + String(f.submitted_at || "").slice(0, 10) + ".pdf"; }
+  var rsvpSaving = {};
+  async function rsvpSave(f, manual) {
+    var c = byId(state.clients, f.client_id); if (rsvpSaving[f.id]) return; rsvpSaving[f.id] = true;
+    try {
+      var useDir = await dirReady(!!manual); if (!manual && !useDir) return;
+      var blob = await agrPdf({ __html: rsvpHtml(f, c) }), where = await saveBlob(blob, rsvpFile(f, c), useDir);
+      try { localStorage.setItem("sms_rsvp_" + f.id, "1"); } catch (e) {}
+      toast("הטופס החתום של " + ((c && c.name) || "הלקוח") + (where === "dir" ? " נשמר בתיקייה " + dirName : " ירד למחשב"));
+    } catch (e) { if (manual) toast("שמירת הטופס נכשלה: " + ((e && e.message) || "שגיאה")); }
+    finally { delete rsvpSaving[f.id]; }
+  }
+  function rsvpAutoSave() { (state.rsvp || []).forEach(function (f) { var done = false; try { done = !!localStorage.getItem("sms_rsvp_" + f.id); } catch (e) {} if (f.submitted_at && !done) rsvpSave(f, false); }); }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-rs],[data-act=rs-copy]"); if (!b) return;
+    if (b.dataset.act === "rs-copy") { var ta = $("rs-msg"), t = ta ? ta.value : ""; try { navigator.clipboard.writeText(t).then(function () { toast("הועתק"); }, function () { ta.select(); toast("סמנו והעתיקו ידנית"); }); } catch (x) { ta.select(); } return; }
+    var k = b.dataset.rs, fid = b.dataset.fid, f = fid && (state.rsvp || []).find(function (x) { return x.id === fid; }); if (!openId) return;
+    if (k === "new") guard(function () { return rsvpNew(openId); });
+    else if (k === "copy" && f) { try { navigator.clipboard.writeText(rsvpLink(f)).then(function () { toast("הקישור הועתק"); }); } catch (x) { toast(rsvpLink(f)); } }
+    else if (k === "void" && f) { if (confirm("לבטל את הקישור? הלקוח לא יוכל למלא אותו יותר.")) rsvpVoid(fid); }
+    else if (k === "apply" && f) rsvpApply(openId, fid);
+    else if (k === "pdf" && f) rsvpSave(f, true);
+  });
+
   /* ---- open charges panel (top of the dashboard) ---- */
   function telHref(p) { var d = String(p || "").replace(/[^\d+]/g, ""); if (!d) return ""; if (d[0] === "+") return "tel:" + d; if (d.indexOf("972") === 0) return "tel:+" + d; if (d[0] === "0") return "tel:+972" + d.slice(1); return "tel:" + d; }
   function renderCharges() {
     var el = $("charges"); if (!el) return;
     if (!loaded.clients) { el.hidden = true; return; }
-    var list = state.clients.filter(function (c) {
-      if (!hasDebt(c)) return false;
-      return !c.eventDate || daysUntil(c.eventDate) <= 7; /* no lower limit: an old unpaid balance stays until it is paid */
-    }).sort(function (a, b) { return (a.eventDate || "").localeCompare(b.eventDate || ""); });
+    /* urgent = no value entered, event within a week, payment due date passed, or the event already happened. No lower limit: an old balance stays until it is paid. */
+    var list = openPayList().filter(payUrgent);
     if (!list.length) { el.hidden = true; el.innerHTML = ""; return; }
     var sum = list.reduce(function (s, c) { return s + (payOf(c).bal || 0); }, 0);
     el.hidden = false;
-    el.innerHTML = '<h3>חיובים פתוחים <span class="count num">' + list.length + '</span> <small>סה״כ לגבייה ' + shekel(sum) + ' · נכנסים שבוע לפני האירוע</small></h3>' + list.map(function (c) {
-      var p = payOf(c), dd = daysUntil(c.eventDate), tel = telHref(c.hallPhone);
-      var when = dd < 0 ? "האירוע היה לפני " + (-dd) + " ימים" : dd === 0 ? "האירוע היום" : "האירוע בעוד " + dd + " ימים";
-      return arow({ cid: c.id, title: c.name, sub: esc(fmtDate(c.eventDate) + " · " + when) + (c.quote && c.quote.en ? " · חבילה " + esc(c.quote.en) + " (לפי ההצעה האחרונה)" : "") + (p.value ? " · שולם " + shekel(p.amount) + " מתוך " + shekel(p.value) : ""),
-        chips: [[p.value ? "יתרה " + shekel(p.bal) : "שווי עסקה לא הוזן", dd <= 3 ? "bad" : "warn"], [dd < 0 ? "באיחור" : dd <= 3 ? "דחוף" : "שבוע", dd <= 3 ? "bad" : "warn"]],
-        acts: waBtn(c) + (tel ? '<a class="btn ghost sm" href="' + tel + '">חיוג לאולם</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
+    el.innerHTML = '<h3>תשלומים דחופים <span class="count num">' + list.length + '</span> <small>סה״כ לגבייה ' + shekel(sum) + ' · <a href="#payments" style="color:inherit">כל התשלומים</a></small></h3>' + list.map(function (c) {
+      var p = payOf(c), s = payState(c), dd = c.eventDate ? daysUntil(c.eventDate) : null, tel = telHref(c.hallPhone), wl = payWaLink(c);
+      var when = dd == null ? "אין תאריך אירוע" : dd < 0 ? "האירוע היה לפני " + (-dd) + " ימים" : dd === 0 ? "האירוע היום" : "האירוע בעוד " + dd + " ימים";
+      return arow({ cid: c.id, title: c.name, sub: esc((c.eventDate ? fmtDate(c.eventDate) + " · " : "") + when) + (c.quote && c.quote.en ? " · חבילה " + esc(c.quote.en) : "") + (p.value ? " · שולם " + shekel(p.amount) + " מתוך " + shekel(p.value) : ""),
+        chips: [[p.value ? "יתרה " + shekel(p.bal) : "שווי עסקה לא הוזן", "bad"], [s.t, s.cls || "warn"]],
+        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + (wl ? '<a class="btn ghost sm" href="' + wl + '" target="_blank" rel="noopener">תזכורת בווטסאפ</a>' : "") + (tel ? '<a class="btn ghost sm" href="' + tel + '">חיוג לאולם</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     }).join("");
   }
 

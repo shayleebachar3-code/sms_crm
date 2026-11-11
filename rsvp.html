@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#05070d">
+<title>אישורי הגעה וחבילה | ש.מ.ש משקאות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=Frank+Ruhl+Libre:wght@700&display=swap">
+<style>
+:root{--bg:#05070d;--card:#0e1320;--card2:#121a2b;--ink:#f3efe6;--soft:#b9b4a6;--line:#273049;--acc:#e1bf78;--acc2:#c9a45c;--good:#58c58a;--bad:#ff8a80}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:radial-gradient(ellipse 900px 420px at 50% -120px,rgba(201,164,92,.16),rgba(201,164,92,0) 70%),var(--bg);color:var(--ink);font-family:'Heebo',system-ui,sans-serif;font-size:17px;line-height:1.6;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0)}
+.w{max-width:640px;margin:0 auto;padding:0 16px}
+.hdr{border-bottom:1px solid var(--line);padding:14px 0;background:rgba(8,11,20,.85)}
+.hdr .w{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.logo{font-weight:700;letter-spacing:.16em;color:var(--acc);direction:ltr}.hsub{color:var(--soft);font-size:14px}
+.msg{text-align:center;padding:64px 8px;color:var(--soft)}
+.msg b{display:block;color:var(--ink);font-size:21px;margin-bottom:8px}
+h1{font-family:'Frank Ruhl Libre',serif;font-size:32px;line-height:1.2;margin:28px 0 6px}
+h1 em{font-style:normal;color:var(--acc)}
+.lead{color:var(--soft);margin:0 0 20px}
+.ev{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px}
+.ev div span{display:block;font-size:13px;color:var(--soft)}.ev div b{font-weight:600}
+.ev .pk{color:var(--acc);letter-spacing:.08em;direction:ltr;display:inline-block}
+.step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 16px}
+.step h2{font-size:19px;margin:0 0 4px;display:flex;gap:10px;align-items:center}
+.step h2 i{font-style:normal;width:28px;height:28px;border-radius:50%;border:1px solid var(--acc2);color:var(--acc);display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.step .hint{color:var(--soft);font-size:14.5px;margin:0 0 12px}
+.num{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0 4px}
+.num button{width:52px;height:52px;border-radius:14px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:26px;cursor:pointer;line-height:1}
+.num input{width:150px;text-align:center;font-size:34px;font-weight:700;padding:8px;border-radius:14px;border:1px solid var(--acc2);background:#080b14;color:var(--ink);font-family:inherit}
+.choice{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:var(--card2)}
+.opt input{width:22px;height:22px;margin-top:2px;accent-color:#e1bf78;flex:none}
+.opt:has(input:checked){border-color:var(--acc);background:rgba(225,191,120,.08)}
+.opt small{display:block;color:var(--soft);font-size:13.5px}
+.items{display:grid;gap:10px;margin-top:14px}
+.it{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card2)}
+.it .nm{display:flex;justify-content:space-between;gap:8px;font-weight:500;margin-bottom:8px}
+.it .nm small{color:var(--soft);font-weight:400;white-space:nowrap}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;text-align:center;border:1px solid var(--line);border-radius:10px;padding:8px 2px;font-size:14.5px;color:var(--soft)}
+.seg input:checked+span{border-color:var(--acc);color:#1a1308;background:linear-gradient(135deg,#f3e1b6,#d9ba7c);font-weight:700}
+.seg input:checked+span.rm{background:#3a1d1d;border-color:var(--bad);color:var(--bad)}
+.seg input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+.f{display:block;margin:0 0 14px}.f>span{display:block;color:var(--soft);font-size:14.5px;margin-bottom:5px}
+.f input,.f textarea,.f select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#080b14;color:var(--ink);font:inherit;font-size:16px}
+.f textarea{min-height:84px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.pad{position:relative;background:#fff;border-radius:14px;border:2px dashed #8a8a8a;height:190px;touch-action:none}
+.pad canvas{width:100%;height:100%;display:block;border-radius:12px;touch-action:none}
+.pad .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#999;pointer-events:none}
+.chk{display:flex;gap:12px;align-items:flex-start;margin:14px 0;cursor:pointer}
+.chk input{width:22px;height:22px;margin-top:3px;accent-color:#e1bf78;flex:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.btn{border:0;border-radius:14px;padding:15px 26px;font:inherit;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#f3e1b6,#d9ba7c);color:#1a1308;font-size:17px}
+.btn.full{width:100%}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;padding:10px 18px;font-size:15px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.err{color:var(--bad);min-height:24px;margin:10px 0 0;font-size:15.5px}
+.ok{background:#0f2a1d;border:1px solid #1f6b46;border-radius:16px;padding:22px;margin:28px 0 16px;text-align:center}
+.ok b{color:var(--good);font-size:22px;display:block;margin-bottom:6px}
+.sum{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 16px}
+.sum dl{display:grid;grid-template-columns:140px 1fr;gap:6px 14px;margin:0}.sum dt{color:var(--soft)}.sum dd{margin:0}
+.sig{max-width:240px;background:#fff;border-radius:8px;padding:6px;display:block;margin-top:8px}
+.foot{text-align:center;color:var(--soft);font-size:13.5px;margin:22px 0 32px}
+.foot a{color:var(--acc)}
+[hidden]{display:none!important}
+@media(max-width:480px){h1{font-size:27px}.two{grid-template-columns:1fr}.sum dl{grid-template-columns:1fr;gap:0}.sum dt{margin-top:8px}.seg span{font-size:13.5px}}
+@media print{body{background:#fff;color:#000}.hdr,.row,.foot,.noprint{display:none}.sum,.ok{background:#fff;border-color:#999;color:#000}.ok b{color:#000}}
+</style>
+</head>
+<body>
+<header class="hdr"><div class="w"><span class="logo">S.M.S DRINKS</span><span class="hsub">אישורי הגעה וחבילה</span></div></header>
+<main class="w" id="app" aria-live="polite"><p class="msg">טוען את הטופס…</p></main>
+<script>
+(function () {
+  'use strict';
+  var CFG = { url: 'https://qrcdmcrhzhhqhfxxntjb.supabase.co', key: 'sb_publishable_Cs-76ga4YG3GIBe2GVORbw_e4PdHk5o', wa: '972545435939' };
+  var app = document.getElementById('app'), tok = (new URLSearchParams(location.search).get('t') || '').trim(), S = null;
+  var ACT = [['keep', 'להשאיר'], ['more', 'יותר'], ['less', 'פחות'], ['remove', 'להוריד']];
+  var HEW = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function rpc(fn, body) {
+    var tx = window.__RSVP_FETCH || fetch;
+    return tx(CFG.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key, Authorization: 'Bearer ' + CFG.key }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { if (!r.ok) { var e = new Error((j && (j.message || j.hint)) || 'error'); e.status = r.status; throw e; } return j; }); });
+  }
+  function dmy(s) { return s ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4) : ''; }
+  function dayName(s) { return s ? 'יום ' + HEW[new Date(s + 'T12:00:00').getDay()] : ''; }
+  function waLink(t) { return 'https://wa.me/' + CFG.wa + '?text=' + encodeURIComponent(t); }
+  function msg(title, text) {
+    app.innerHTML = '<div class="msg"><b>' + esc(title) + '</b>' + esc(text || '') + '</div><p class="foot">שאלות? <a href="' + waLink('היי, יש לי שאלה לגבי טופס אישורי ההגעה') + '" target="_blank" rel="noopener">כתבו לנו בוואטסאפ</a> · 054-5435939</p>';
+  }
+  function evBox(s) {
+    return '<div class="ev"><div><span>תאריך האירוע</span><b>' + esc(s.date ? dayName(s.date) + ', ' + dmy(s.date) : 'יתואם') + '</b></div>' +
+      (s.venue ? '<div><span>אולם / מקום</span><b>' + esc(s.venue) + '</b></div>' : '') +
+      (s.en ? '<div><span>החבילה שלכם</span><b class="pk">' + esc(s.en) + '</b></div>' : '') + '</div>';
+  }
+
+  /* ---------- signature pad ---------- */
+  function pad(canvas, onchange) {
+    var ctx = canvas.getContext('2d'), drawing = false, dirty = false, last = null;
+    function fit() { var r = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1; if (canvas.width !== Math.round(r.width * d)) { canvas.width = Math.round(r.width * d); canvas.height = Math.round(r.height * d); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0b1020'; } }
+    function pt(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    canvas.addEventListener('pointerdown', function (e) { fit(); drawing = true; last = pt(e); try { canvas.setPointerCapture(e.pointerId); } catch (x) {} ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(last.x + .1, last.y + .1); ctx.stroke(); dirty = true; onchange(); e.preventDefault(); });
+    canvas.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pt(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; e.preventDefault(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { canvas.addEventListener(n, function () { drawing = false; }); });
+    setTimeout(fit, 0); window.addEventListener('resize', function () { if (!dirty) fit(); });
+    return { has: function () { return dirty; }, clear: function () { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.restore(); dirty = false; onchange(); }, png: function () { return canvas.toDataURL('image/png'); } };
+  }
+
+  /* ---------- the form ---------- */
+  function form(s) {
+    var lines = (s.lines || []).filter(function (l) { return l && l.q > 0; });
+    var alc = lines.filter(function (l) { return l.k !== 'm'; }), mix = lines.filter(function (l) { return l.k === 'm'; });
+    var itemHtml = function (l, i) {
+      return '<div class="it"><div class="nm"><span>' + esc(l.n) + '</span><small>בהצעה: ' + esc(l.q) + '</small></div><div class="seg" role="radiogroup" aria-label="' + esc(l.n) + '">' +
+        ACT.map(function (a, j) { return '<label><input type="radio" name="it' + i + '" value="' + a[0] + '"' + (j === 0 ? ' checked' : '') + '><span' + (a[0] === 'remove' ? ' class="rm"' : '') + '>' + a[1] + '</span></label>'; }).join('') + '</div></div>';
+    };
+    var all = alc.concat(mix);
+    var tiers = (s.tiers || []).map(function (t) { return '<option value="' + esc(t.k) + '"' + (t.k === s.tier ? ' selected' : '') + '>' + esc(t.en + ' · ' + t.he) + (t.k === s.tier ? ' (הנוכחית)' : '') + '</option>'; }).join('');
+    var dl = s.deadline && s.deadline >= new Date().toISOString().slice(0, 10) ? ' הכי מאוחר עד ' + dmy(s.deadline) + '.' : '';
+    app.innerHTML =
+      '<h1>היי ' + esc(s.first || s.name || '') + ',<br><em>עוד כמה פרטים ומדייקים לכם את החבילה</em></h1>' +
+      '<p class="lead">ממלאים פעם אחת, לוקח כשתי דקות.' + esc(dl) + ' לפי מה שתמלאו נכין לכם את ההצעה הסופית ונשלח אותה בוואטסאפ.</p>' + evBox(s) +
+      '<form id="f" novalidate>' +
+      '<section class="step"><h2><i>1</i>כמה אורחים אישרו הגעה?</h2><p class="hint">לפי אישורי ההגעה שקיבלתם. אנחנו מחשבים את הכמויות לפי המספר הזה, עם רזרבה.</p>' +
+        '<div class="num"><button type="button" data-d="-10" aria-label="פחות 10">−</button><input id="g" type="number" inputmode="numeric" min="1" max="5000" value="' + (s.guests || '') + '" aria-label="מספר אישורי הגעה"><button type="button" data-d="10" aria-label="עוד 10">+</button></div>' +
+        (s.guests ? '<p class="hint" style="text-align:center;margin:6px 0 0">בהצעה המקורית: ' + esc(s.guests) + ' מוזמנים</p>' : '') + '</section>' +
+      '<section class="step"><h2><i>2</i>החבילה</h2><p class="hint">רוצים לשנות משהו? זה הזמן. אפשר להוסיף, להוריד או לעבור חבילה.</p><div class="choice">' +
+        '<label class="opt"><input type="radio" name="wc" value="0" checked><span>החבילה מתאימה לנו כמו שהיא</span></label>' +
+        '<label class="opt"><input type="radio" name="wc" value="1"><span>נרצה לשנות משהו<small>מסמנים ליד כל מוצר מה לעשות, או כותבים בקשה</small></span></label></div>' +
+        '<div id="chg" hidden>' + (all.length ? '<div class="items">' + all.map(itemHtml).join('') + '</div>' : '') +
+          (tiers ? '<label class="f" style="margin-top:14px"><span>לעבור לחבילה אחרת?</span><select id="tier">' + tiers + '</select></label>' : '') +
+          '<label class="f"><span>מוצר להוסיף או להחליף (למשל: וויסקי אחר, בלי ערק, תוספת קוקטייל)</span><textarea id="add" maxlength="600"></textarea></label></div></section>' +
+      '<section class="step"><h2><i>3</i>פרטים לתיאום האספקה</h2><p class="hint">לא חובה, אבל עוזר לנו להגיע בדיוק בזמן.</p>' +
+        '<div class="two"><label class="f"><span>איש קשר באולם שמקבל את החבילה</span><input id="hn" maxlength="80" autocomplete="off" value="' + esc(s.hall_name || '') + '"></label>' +
+        '<label class="f"><span>הטלפון שלו</span><input id="hp" type="tel" inputmode="tel" maxlength="20" dir="ltr" style="text-align:right" value="' + esc(s.hall_phone || '') + '"></label></div>' +
+        '<label class="f"><span>עד מתי האירוע, בערך?</span><select id="end"><option value="">לא יודעים עדיין</option><option>עד 23:00</option><option>עד 00:00</option><option>עד 01:00</option><option>עד 02:00</option><option>עד 03:00 ואחרי</option></select></label>' +
+        '<label class="f"><span>משהו נוסף שחשוב שנדע?</span><textarea id="nt" maxlength="600"></textarea></label></section>' +
+      '<section class="step"><h2><i>4</i>אישור וחתימה</h2>' +
+        '<div class="two"><label class="f"><span>שם מלא</span><input id="nm" autocomplete="name" maxlength="80"></label>' +
+        '<label class="f"><span>הטלפון שלכם (לאימות)</span><input id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" dir="ltr" style="text-align:right"></label></div>' +
+        '<span class="f"><span>חתימה באצבע או בעכבר</span></span><div class="pad"><canvas id="cv" aria-label="אזור חתימה"></canvas><div class="ph" id="cvph">חתמו כאן</div></div>' +
+        '<div class="row"><button type="button" class="btn ghost" id="clr">ניקוי חתימה</button></div>' +
+        '<label class="chk"><input type="checkbox" id="cf"><span>אנחנו מאשרים שהפרטים נכונים. ההצעה הסופית תתעדכן לפי מספר המאשרים והבקשות שבטופס, וכל שינוי במחיר יישלח לאישורנו לפני הביצוע.</span></label>' +
+        '<button class="btn full" id="go" type="submit">שליחה וחתימה</button><p class="err" id="er" role="alert"></p></section>' +
+      '</form><p class="foot">שאלות? <a href="' + waLink('היי, יש לי שאלה לגבי טופס אישורי ההגעה') + '" target="_blank" rel="noopener">כתבו לנו בוואטסאפ</a> · 054-5435939</p>';
+
+    var $ = function (id) { return document.getElementById(id); }, g = $('g'), er = $('er');
+    app.querySelectorAll('.num button').forEach(function (b) { b.addEventListener('click', function () { var v = (Number(g.value) || 0) + Number(b.dataset.d); g.value = Math.max(1, Math.min(5000, v)); }); });
+    app.querySelectorAll('input[name=wc]').forEach(function (r) { r.addEventListener('change', function () { $('chg').hidden = r.value !== '1' || !r.checked; }); });
+    var P = pad($('cv'), function () { $('cvph').style.display = P && P.has() ? 'none' : 'flex'; });
+    $('clr').addEventListener('click', function () { P.clear(); });
+    $('f').addEventListener('submit', function (e) {
+      e.preventDefault(); er.textContent = '';
+      var guests = Math.round(Number(g.value));
+      if (!(guests >= 1 && guests <= 5000)) { er.textContent = 'נא לכתוב כמה אורחים אישרו הגעה.'; g.focus(); return; }
+      var wc = app.querySelector('input[name=wc]:checked').value === '1';
+      var changes = wc ? all.map(function (l, i) { var c = app.querySelector('input[name=it' + i + ']:checked'); return { key: l.key, n: l.n, q: l.q, act: c ? c.value : 'keep' }; }) : [];
+      var tier = wc && $('tier') ? $('tier').value : (s.tier || '');
+      var add = wc ? $('add').value.trim() : '';
+      if (wc && !add && tier === s.tier && !changes.some(function (c) { return c.act !== 'keep'; })) { er.textContent = 'סימנתם שתרצו שינוי: בחרו מה לשנות או כתבו בקשה.'; return; }
+      var nm = $('nm').value.trim(), ph = $('ph').value.trim();
+      if (nm.length < 2) { er.textContent = 'נא לכתוב שם מלא.'; $('nm').focus(); return; }
+      if (ph.replace(/\D/g, '').length < 9) { er.textContent = 'נא לכתוב מספר טלפון.'; $('ph').focus(); return; }
+      if (!P.has()) { er.textContent = 'נא לחתום באזור החתימה.'; return; }
+      if (!$('cf').checked) { er.textContent = 'נא לסמן את האישור לפני השליחה.'; return; }
+      var go = $('go'); go.disabled = true; go.textContent = 'שולחים…';
+      var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (x) {}
+      var answers = { v: 1, guests: guests, wants_changes: wc, changes: changes, tier: tier, add: add, hall_name: $('hn').value.trim(), hall_phone: $('hp').value.trim(), end_time: $('end').value, notes: $('nt').value.trim(), confirm: true };
+      rpc('rsvp_submit', { p_token: tok, p_answers: answers, p_name: nm, p_phone: ph, p_signature: P.png(), p_ua: navigator.userAgent, p_tz: tz })
+        .then(function () { return rpc('rsvp_get', { p_token: tok }); })
+        .then(function (r) { render(r, true); window.scrollTo(0, 0); })
+        .catch(function (x) {
+          go.disabled = false; go.textContent = 'שליחה וחתימה';
+          var m = String((x && x.message) || '');
+          er.textContent = /closed/.test(m) ? 'מועד האירוע כבר עבר, ולכן אי אפשר לשלוח את הטופס. כתבו לנו בוואטסאפ.' : /not open/.test(m) ? 'הטופס כבר נשלח או שהקישור הוחלף. רעננו את הדף.' : /signature/.test(m) ? 'החתימה קצרה מדי. נא לחתום שוב.' : 'השליחה נכשלה. בדקו את החיבור ונסו שוב, או כתבו לנו בוואטסאפ.';
+        });
+    });
+  }
+
+  function done(r, fresh) {
+    var a = r.answers || {}, s = r.snapshot || {}, ch = (a.changes || []).filter(function (c) { return c.act && c.act !== 'keep'; }), L = { more: 'יותר', less: 'פחות', remove: 'להוריד' };
+    var tierName = ''; (s.tiers || []).forEach(function (t) { if (t.k === a.tier && a.tier !== s.tier) tierName = t.en; });
+    var when = ''; try { when = new Date(r.submitted_at).toLocaleString('he-IL', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Jerusalem' }); } catch (e) {}
+    app.innerHTML = '<div class="ok"><b>' + (fresh ? 'תודה, קיבלנו!' : 'הטופס כבר נשלח') + '</b>' + (fresh ? 'נכין לכם את ההצעה הסופית לפי מה שמילאתם ונשלח אותה בוואטסאפ.' : 'קיבלנו את הפרטים שלכם. רוצים לשנות משהו? כתבו לנו.') + '</div>' + evBox(s) +
+      '<div class="sum"><dl><dt>אישורי הגעה</dt><dd><b>' + esc(a.guests) + '</b></dd><dt>שינויים בחבילה</dt><dd>' + (a.wants_changes ? (ch.map(function (c) { return esc(L[c.act] + ': ' + c.n); }).join('<br>') || 'כן') : 'החבילה מתאימה כמו שהיא') + '</dd>' +
+      (tierName ? '<dt>מעבר חבילה</dt><dd>' + esc(tierName) + '</dd>' : '') + (a.add ? '<dt>בקשות</dt><dd>' + esc(a.add) + '</dd>' : '') +
+      '<dt>נחתם</dt><dd>' + esc((r.signer_name || '') + (when ? ' · ' + when : '')) + '</dd></dl></div>' +
+      '<div class="row noprint" style="justify-content:center"><button class="btn ghost" type="button" onclick="window.print()">הדפסה / שמירה</button><a class="btn ghost" href="' + waLink('היי, מילאנו את טופס אישורי ההגעה ורצינו לעדכן משהו') + '" target="_blank" rel="noopener">לעדכון: כתבו לנו</a></div>' +
+      '<p class="foot">ש.מ.ש משקאות · 054-5435939</p>';
+  }
+
+  function render(r, fresh) {
+    if (!r || !r.snapshot) { msg('הקישור לא בתוקף', 'ייתכן שהקישור הוחלף בקישור חדש. כתבו לנו ונשלח אותו שוב.'); return; }
+    S = r.snapshot;
+    if (r.submitted_at) { done(r, !!fresh); return; }
+    if (r.closed) { msg('מועד האירוע כבר עבר', 'אי אפשר למלא את הטופס אחרי האירוע. לכל שאלה אנחנו בוואטסאפ.'); return; }
+    if (r.status !== 'sent') { msg('הטופס סגור', 'כתבו לנו ונשלח קישור חדש.'); return; }
+    form(r.snapshot);
+  }
+
+  if (tok.length < 32) { msg('הקישור חסר או שגוי', 'כתבו לנו ונשלח לכם קישור חדש.'); return; }
+  rpc('rsvp_get', { p_token: tok }).then(function (r) { render(r, false); }).catch(function () { msg('לא הצלחנו לטעון את הטופס', 'נסו לרענן את הדף בעוד רגע, או כתבו לנו.'); });
+})();
+</script>
+</body>
+</html>
