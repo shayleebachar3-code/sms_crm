@@ -326,6 +326,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
 .rsv-ans{display:grid;gap:6px;font-size:14px;margin:8px 0}.rsv-ans .ln{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}.rsv-ans .ln b{min-width:120px;color:var(--ink-2);font-weight:500}
 .rsv-sig{max-width:220px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px;display:block}
 .rsv-box{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:12px 14px;display:grid;gap:8px}
+.payalert{display:flex;gap:10px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--bad);color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px}.payalert b{font-size:17px;display:block}.payalert span{font-size:14px;opacity:.95}.payalert .btn{background:#fff;color:var(--bad)}
 .big-n{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.1}
 td .btn{margin-inline-end:4px}
 .qtab{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:8px}.qtab th{text-align:right;color:var(--ink-2);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}.qtab td{padding:4px 6px;border-bottom:1px solid var(--line)}.qtab input{width:70px;min-height:34px}.btn.sm{text-decoration:none}.steps{display:grid;gap:8px;margin:8px 0}.stp{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;line-height:1.55}.stp.ok{opacity:.8}
@@ -347,6 +348,7 @@ td .btn{margin-inline-end:4px}
     <div class="kpi" data-go="won" role="button" tabindex="0"><div class="lbl">סגרו (₪)</div><div class="val num" id="k-won">0</div><div class="sub" id="k-won-sub">&nbsp;</div></div>
     <div class="kpi" data-go="events" role="button" tabindex="0"><div class="lbl">אירועים קרובים</div><div class="val num" id="k-events">0</div><div class="sub" id="k-events-sub">&nbsp;</div></div>
   </section>
+  <section class="payalert" id="pay-alert" role="alert" hidden></section>
 
   <section class="calbar" aria-label="יומן Google">
     <div class="cs"><b>יומן Google</b><span id="cal-state" class="muted">בודק חיבור…</span></div>
@@ -360,6 +362,13 @@ td .btn{margin-inline-end:4px}
         <div class="field"><label for="s-sd">תיאום אספקה, ימים לפני האירוע</label><input id="s-sd" type="number" min="1" max="60" value="3"></div>
         <div class="field"><label for="s-admin">המספר שלי לסיכום הבוקר בווטסאפ</label><input id="s-admin" type="tel" dir="ltr" inputmode="tel" placeholder="050-0000000"></div>
         <div class="field check"><input id="s-auto" type="checkbox"><label for="s-auto">סנכרון אוטומטי אחרי כל שינוי</label></div>
+      </div>
+    </details>
+    <details open>
+      <summary>תיקיית קבצים במחשב (הצעות, הסכמים, אישורי הגעה)</summary>
+      <div class="calset">
+        <div class="field" style="grid-column:1/-1"><div class="sub" id="folder-info">טוען…</div></div>
+        <div class="field"><button class="btn sm" type="button" data-act="pick-dir">בחירת תיקייה ראשית</button></div>
       </div>
     </details>
     <details id="bk-det">
@@ -385,9 +394,9 @@ td .btn{margin-inline-end:4px}
 
   <!-- TODAY -->
   <section class="view" id="view-today">
+    <section class="att urgent" id="charges" hidden></section>
     <section class="digest" id="digest"></section>
     <section class="att" id="nudges" hidden></section>
-    <section class="att urgent" id="charges" hidden></section>
     <div class="summary" id="today-summary"></div>
     <div id="today-body"></div>
   </section>
@@ -423,7 +432,7 @@ td .btn{margin-inline-end:4px}
   <!-- PAYMENTS -->
   <section class="view" id="view-payments" hidden>
     <div class="row-head"><h2>תשלומים וגבייה</h2></div>
-    <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל עסקה סגורה מופיעה כאן עד שהיא משולמת במלואה. היתרה מחושבת מההצעה האחרונה שנשלחה פחות מה ששולם בפועל. התשלום צריך להתקבל עד 3 ימים לפני האירוע.</p>
+    <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל עסקה סגורה מופיעה כאן עד שהיא משולמת במלואה. היתרה מחושבת מההצעה האחרונה שנשלחה פחות מה ששולם בפועל. <b>אין שירות בלי תשלום:</b> התשלום חייב להיות סגור עד יומיים לפני האירוע. החל מ-5 ימים לפני, הלקוח מקבל ממך תזכורת כל יום, ויום לפני האירוע עם יתרה פתוחה מסומן "חוסם אספקה".</p>
     <div class="kpis" id="pay-kpis"></div>
     <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px">
       <div class="field"><label for="pay-filter">להציג</label><select id="pay-filter"><option value="open">פתוחים בלבד</option><option value="all">כל העסקאות הסגורות</option><option value="paid">שולמו במלואם</option></select></div>
@@ -1317,23 +1326,60 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var p = payOf(c);
     return p.value > 0 ? p.bal > 0 : p.label !== "מלא";
   }
-  function payDue(c) { return c.eventDate ? shift(c.eventDate, -3) : ""; }
+  /* Shay's rule: no service without payment. The balance must be closed 2 days before the event at the latest.
+     From 5 days before the event the client gets a reminder every day (Shay sends it in one click) and Shay sees it first. */
+  var PAY_DUE_DAYS = 2, PAY_REMIND_DAYS = 5;
+  function payDue(c) { return c.eventDate ? shift(c.eventDate, -PAY_DUE_DAYS) : ""; }
   function payState(c) {
-    var p = payOf(c), today = todayStr(), due = payDue(c), dd = c.eventDate ? daysUntil(c.eventDate) : null;
+    var p = payOf(c), dd = c.eventDate ? daysUntil(c.eventDate) : null;
     if (!payOpen(c)) return { k: "paid", t: "שולם במלואו", cls: "good", rank: 9 };
     if (!(p.value > 0)) return { k: "novalue", t: "חסר שווי עסקה בכרטיס", cls: "bad", rank: 0 };
     if (dd != null && dd < 0) return { k: "late", t: "באיחור: האירוע כבר היה", cls: "bad", rank: 1 };
-    if (due && due < today) return { k: "due", t: "עבר מועד התשלום", cls: "bad", rank: 2 };
-    if (dd != null && dd <= 7) return { k: "soon", t: "דחוף: פחות משבוע לאירוע", cls: "warn", rank: 3 };
-    return { k: "open", t: p.amount ? "שולמה מקדמה" : "עוד לא שולם", cls: "", rank: 4 };
+    if (dd != null && dd < PAY_DUE_DAYS) return { k: "block", t: "⛔ חוסם אספקה: עבר מועד התשלום", cls: "bad", rank: 1 };
+    if (dd === PAY_DUE_DAYS) return { k: "due", t: "היום המועד האחרון לתשלום", cls: "bad", rank: 2 };
+    if (dd != null && dd <= PAY_REMIND_DAYS) return { k: "remind", t: "לתזכר היום: " + (dd - PAY_DUE_DAYS) + " ימים למועד התשלום", cls: "bad", rank: 3 };
+    if (dd != null && dd <= 7) return { k: "soon", t: "פחות משבוע לאירוע", cls: "warn", rank: 4 };
+    return { k: "open", t: p.amount ? "שולמה מקדמה" : "עוד לא שולם", cls: "", rank: 5 };
   }
   function payUrgent(c) { var k = payState(c).k; return k !== "paid" && k !== "open"; }
+  /* the ones that need a client reminder TODAY (5 days before the event and on), plus no-value and overdue */
+  function payToday(c) { var k = payState(c).k; return ["novalue", "late", "block", "due", "remind"].indexOf(k) >= 0; }
+  function payBlocks(c) { var k = payState(c).k; return k === "block" || k === "late" || (k === "novalue" && c.eventDate && daysUntil(c.eventDate) < PAY_DUE_DAYS); }
   function balText(c) { var p = payOf(c); return p.value > 0 && p.bal > 0 ? "היתרה לתשלום היא " + shekel(p.bal) : ""; }
-  function payWaLink(c) {
-    var w = waNum(c.phone); if (!w) return "";
-    var t = TEMPLATES.filter(function (m) { return m.t === "תזכורת תשלום"; })[0];
-    var txt = t.b.replace("{name}", String(c.name || "").split(" ")[0]).replace("{date}", c.eventDate ? " ב-" + fmtDate(c.eventDate) : "").replace("{bal}", balText(c) || "נשמח להסדיר את התשלום");
-    return "https://wa.me/" + w + "?text=" + encodeURIComponent(txt);
+  /* the client message gets firmer as the deadline gets closer */
+  function payReminderText(c) {
+    var n = String(c.name || "").split(" ")[0] || "", dd = c.eventDate ? daysUntil(c.eventDate) : null, due = payDue(c), bal = balText(c) || "נשמח להסדיר את יתרת התשלום";
+    var when = c.eventDate ? " ב-" + fmtDate(c.eventDate) : "";
+    if (dd != null && dd < 0) return "היי " + n + ", מקווים שנהניתם באירוע" + when + " 🥂 נשארה יתרה פתוחה: " + bal.replace("היתרה לתשלום היא ", "") + ". נשמח שתסדירו אותה בהקדם. תודה!";
+    if (dd != null && dd < PAY_DUE_DAYS) return "היי " + n + ", האירוע" + when + " ממש קרוב ועוד לא קיבלנו את התשלום המלא. " + bal + ". בלי תשלום מלא לא נוכל לספק את החבילה, אז נשמח לקבל את ההעברה עוד היום ולשלוח לנו אישור. תודה!";
+    if (dd === PAY_DUE_DAYS) return "היי " + n + ", היום המועד האחרון לתשלום לקראת האירוע" + when + ". " + bal + ". נשמח לקבל את ההעברה היום, כדי שהכול יגיע בזמן. תודה!";
+    return "היי " + n + ", תזכורת קטנה לקראת האירוע" + when + ": " + bal + ". נשמח לקבל את ההעברה עד " + (due ? fmtDate(due) : "יומיים לפני האירוע") + ", כדי שהכול יגיע בזמן. תודה!";
+  }
+  function payWaLink(c) { var w = waNum(c.phone); return w ? "https://wa.me/" + w + "?text=" + encodeURIComponent(payReminderText(c)) : ""; }
+  /* last reminder that went out to the client (logged when the WhatsApp button is clicked) */
+  function lastPayRem(c) { var l = (state.logs || []).find(function (x) { return x.client_id === c.id && x.kind === "message_sent" && x.details && x.details.source === "pay_reminder"; }); return l ? l.created_at : ""; }
+  function payRemSentToday(c) { var t = lastPayRem(c); return !!t && jerDate(t) === todayStr(); }
+  function payRemBtn(c) {
+    if (payState(c).k === "paid") return "";
+    var wl = payWaLink(c), last = lastPayRem(c), sent = payRemSentToday(c);
+    return (wl ? '<a class="btn ' + (payToday(c) && !sent ? "" : "ghost ") + 'sm" data-payrem="' + esc(c.id) + '" href="' + wl + '" target="_blank" rel="noopener">' + (sent ? "תזכורת נוספת בווטסאפ" : "שליחת תזכורת תשלום") + '</a>' : '<span class="chip bad">אין טלפון</span>') +
+      (last ? '<span class="chip ' + (sent ? "good" : "warn") + '">' + (sent ? "תזכורת נשלחה היום ✓" : "תזכורת אחרונה " + esc(ago(last))) + '</span>' : (payToday(c) ? '<span class="chip bad">עוד לא נשלחה תזכורת</span>' : ""));
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[data-payrem]"); if (!a || !sb) return;
+    var id = a.dataset.payrem, c = byId(state.clients, id); if (!c) return;
+    var p = payOf(c);
+    logAct(id, "message_sent", "whatsapp_business", { source: "pay_reminder", note: "נשלחה ללקוח תזכורת תשלום" + (p.bal ? " על יתרה של " + shekel(p.bal) : ""), balance: p.bal })
+      .then(function () { toast("נרשם: תזכורת תשלום נשלחה ל" + c.name); agentMessageDone(id); }).catch(function () {});
+  });
+  /* red bar under the tiles, on every tab: payments that must be closed now */
+  function renderPayAlert() {
+    var el = $("pay-alert"); if (!el) return;
+    var list = loaded.clients ? openPayList().filter(payToday) : [];
+    if (!list.length) { el.hidden = true; el.innerHTML = ""; return; }
+    var sum = list.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0), notSent = list.filter(function (c) { return !payRemSentToday(c) && payState(c).k !== "novalue"; }).length, blk = list.filter(payBlocks).length;
+    el.hidden = false;
+    el.innerHTML = '<div><b>🔴 ' + list.length + ' תשלומים חייבים להיסגר עכשיו · ' + shekel(sum) + '</b><span>' + (blk ? blk + " חוסמים אספקה · " : "") + (notSent ? notSent + " לקוחות עוד לא קיבלו היום תזכורת" : "כל הלקוחות קיבלו היום תזכורת ✓") + '</span></div><button class="btn sm" type="button" data-act="go-pay">לטיפול בתשלומים</button>';
   }
   /* quick "money came in" dialog: ADDS to what was already paid (payments usually arrive in parts) */
   var payDlgId = null;
@@ -1380,7 +1426,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var p = payOf(c), s = payState(c), wl = s.k !== "paid" ? payWaLink(c) : "";
       return '<tr data-cid="' + esc(c.id) + '"><td><b>' + esc(c.name) + '</b></td><td class="num">' + (c.eventDate ? fmtDate(c.eventDate) : "–") + '</td><td class="num">' + (payDue(c) ? fmtDate(payDue(c)) : "–") + '</td>' +
         '<td class="num">' + (p.value ? shekel(p.value) : '<span class="chip bad">חסר</span>') + '</td><td class="num">' + shekel(p.amount) + '</td><td class="num"><b>' + (p.value ? shekel(p.bal) : "?") + '</b></td>' +
-        '<td><span class="chip ' + s.cls + '">' + esc(s.t) + '</span></td><td>' + (s.k !== "paid" ? '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' : "") + (wl ? '<a class="btn ghost sm" href="' + wl + '" target="_blank" rel="noopener">תזכורת בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-act="open-id">כרטיס</button></td></tr>';
+        '<td><span class="chip ' + s.cls + '">' + esc(s.t) + '</span></td><td>' + (s.k !== "paid" ? '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' : "") + payRemBtn(c) + '<button class="btn ghost sm" data-act="open-id">כרטיס</button></td></tr>';
     }).join("");
   }
   function payChip(c) {
@@ -1437,9 +1483,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return t.length ? '<div class="av-banner bad">התאריך תפוס, ' + d + ': כבר יש אירוע של ' + names + '</div>' : '<div class="av-banner good">התאריך פנוי, ' + d + ': אין אירוע אחר</div>';
   }
   function debtBanner(c) {
-    if (!hasDebt(c)) return "";
-    var p = payOf(c);
-    return '<div class="av-banner bad" style="font-size:16px">⚠ יש חוב פתוח: ' + shekel(p.bal) + ' · עסקה ' + shekel(p.value) + ' (ההצעה האחרונה) · שולם ' + shekel(p.amount) + (p.mismatch ? ' · הסטטוס "שולם מלא" לא תואם לסכום, כדאי לתקן' : "") + '</div>';
+    if (!payOpen(c)) return "";
+    var p = payOf(c), s = payState(c);
+    return '<div class="av-banner bad" style="font-size:16px">' + (payBlocks(c) ? "⛔ חוסם אספקה. " : "⚠ ") + (p.value ? "יש חוב פתוח: " + shekel(p.bal) + ' · עסקה ' + shekel(p.value) + ' · שולם ' + shekel(p.amount) : "שווי העסקה לא הוזן, ולכן אי אפשר לדעת כמה נשאר לגבות") +
+      (payDue(c) ? ' · לשלם עד <b>' + fmtDate(payDue(c)) + '</b>' : "") + ' · ' + esc(s.t) + (p.mismatch ? ' · הסטטוס "שולם מלא" לא תואם לסכום, כדאי לתקן' : "") +
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + payRemBtn(c) + '</div></div>';
   }
   function sheetExtra(c) {
     if (!isWon(c)) return "";
@@ -2032,7 +2080,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var payAll = openPayList(), rP = payAll.filter(function (c) { return !payUrgent(c); }).map(function (c) {
       var p = payOf(c), s = payState(c), wl = payWaLink(c);
       return arow({ cid: c.id, title: c.name, sub: (c.eventDate ? esc(fmtDate(c.eventDate)) + " · לשלם עד " + esc(fmtDate(payDue(c))) + " · " : "") + (p.value ? "יתרה לתשלום " + shekel(p.bal) : "שווי עסקה לא הוזן"), chips: [[s.t, s.cls || "warn"]],
-        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + (wl ? '<a class="btn ghost sm" href="' + wl + '" target="_blank" rel="noopener">תזכורת בווטסאפ</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
+        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + payRemBtn(c) + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
     var rR = rsvpInbox().map(function (f) {
       var c = byId(state.clients, f.client_id), a = f.answers || {};
@@ -2430,7 +2478,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     { t: "פולואפ למתלבטים", b: "היי {name}, רציתי לבדוק איפה אתם עומדים לגבי חבילת האלכוהול לאירוע{date}. אם יש שאלה או משהו בהצעה שמעכב, נשמח לעזור. המחיר ננעל ברגע שמשריינים את התאריך." },
     { t: "תיאום לפני האירוע", b: "היי {name}, האירוע{date} מתקרב. נשמח לאשר מספר מוזמנים סופי, שעת סיום וכתובת האולם, כדי להכין את האספקה בהתאם." },
     { t: "טופס אישורי הגעה (שבוע לפני)", b: "היי {name}, האירוע{date} בעוד שבוע. כדי שנדייק לכם את החבילה והכמויות, נשמח שתמלאו את הטופס הקצר עם מספר אישורי ההגעה ומה תרצו לשנות, אם בכלל: {form}" },
-    { t: "תזכורת תשלום", b: "היי {name}, תזכורת קטנה לקראת האירוע{date}: {bal}. נשמח לקבל את ההעברה עד 3 ימים לפני האירוע, כדי שהכול יגיע בזמן. תודה!" },
+    { t: "תזכורת תשלום", b: "היי {name}, תזכורת קטנה לקראת האירוע{date}: {bal}. נשמח לקבל את ההעברה עד יומיים לפני האירוע, כדי שהכול יגיע בזמן. תודה!" },
     { t: "בקשת פירוט לזיכוי", b: RF_TEXT }
   ];
   var msgTexts = [];
@@ -2477,7 +2525,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     sel.innerHTML = sourceNames().map(function (n) { return '<option>' + esc(n) + '</option>'; }).join("");
     if (cur) sel.value = cur;
   }
-  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
+  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderPayAlert(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
 
   /* ---- tabs ---- */
   var VIEWS = ["today", "availability", "clients", "payments", "sources", "events", "messages", "activity"];
@@ -2647,6 +2695,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "backup") doBackup();
     else if (act === "pay-add") { var pid = cid || openId; if (pid) payDlg(pid); }
     else if (act === "pd-save") payDlgSave();
+    else if (act === "go-pay") { var pf = $("pay-filter"); if (pf) pf.value = "open"; location.hash = "payments"; showView("payments"); renderPayments(); window.scrollTo(0, $("view-payments").offsetTop - 10); }
     else if (act === "camp-months") campMonthsDlg(b.closest("tr").dataset.id);
     else if (act === "x-close") xClose();
     else if (act === "cm-add") cmAddRow();
@@ -2887,7 +2936,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest('a[href^="https://wa.me/"]');
-    if (!a || !sb || !unlocked) return;
+    if (!a || !sb || !unlocked || a.dataset.payrem) return; /* payment reminders are logged by their own handler */
     var card = a.closest("[data-id],[data-cid]"), cid = (card && (card.dataset.id || card.dataset.cid)) || openId;
     if (cid && byId(state.clients, cid)) logAct(cid, "message_sent", "whatsapp_business", { source: "wa_link", note: "נפתחה שיחת וואטסאפ מהמערכת" }).then(function () { return agentMessageDone(cid); }).catch(function () {});
   }, true);
@@ -2961,6 +3010,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var act = b.dataset.sb, c = openId && byId(state.clients, openId);
     if (act === "rm-done") { guard(async function () { chk(await sb.from("reminders").update({ done: true }).eq("id", b.dataset.id)); await loadAll(); }); return; }
     if (!c) return;
+    if (act === "step-owner" && c.pipelineStage === 9 && payOpen(c)) { var pb = payOf(c); toast("⛔ אי אפשר לסמן שהשליח יצא: " + (pb.value ? "נשארה יתרה של " + shekel(pb.bal) : "שווי העסקה לא הוזן") + ". קודם רושמים את התשלום"); return; }
     if (act === "step-owner" && c.pipelineStage) { var sid0 = c.pipelineStage; guard(async function () { var adv = await markStep(c.id, sid0, "o"); if (sid0 === 9 || sid0 === 11) { /* system step follows Shay's mark */ } renderSheet(true); toast(adv ? "עברנו לשלב " + (sid0 + 1) + " מתוך 11" : sid0 === 11 ? "התהליך הסתיים" : "נרשם. ממתינים לצד של המערכת"); }); }
     else if (act === "calc-max") {
       var cq0 = computeQuote(c); if (!cq0) { toast("הזינו מספר מוזמנים (20 ומעלה) בכרטיס"); return; }
@@ -3436,13 +3486,22 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var dirHandle = null, dirName = "";
   async function loadDir() { try { dirHandle = await idb("readonly", function (s) { return s.get(DIRKEY); }); dirName = dirHandle ? dirHandle.name : ""; } catch (e) { dirHandle = null; } }
+  /* Shay picks ONE main folder once. Inside it every kind of file has its own sub-folder (created automatically). */
+  var FOLDERS = { quote: "חבילות קלוד", agr: "הסכמי לקוחות", rsvp: "אישורי הגעה לקוחות" };
   async function pickDir() {
     if (!window.showDirectoryPicker) { toast("הדפדפן הזה לא תומך בבחירת תיקייה. השתמשו ב-Chrome או Edge במחשב"); return; }
     try {
       var h = await window.showDirectoryPicker({ id: "sms-quotes", mode: "readwrite", startIn: "documents" });
+      for (var k in FOLDERS) await h.getDirectoryHandle(FOLDERS[k], { create: true });
       dirHandle = h; dirName = h.name; await idb("readwrite", function (s) { return s.put(h, DIRKEY); });
-      toast("הקבצים יישמרו בתיקייה: " + h.name); renderSheet(true);
+      toast("נבחרה התיקייה " + h.name + ". בתוכה נוצרו: " + FOLDERS.quote + ", " + FOLDERS.agr + ", " + FOLDERS.rsvp); renderSheet(true); renderFolderInfo();
     } catch (e) { if (!e || e.name !== "AbortError") toast("בחירת התיקייה נכשלה"); }
+  }
+  function savedNote(where, kind, file) { return where === "dir" ? "נשמר בתיקייה " + folderPath(kind) + ": " + file : "ירד לתיקיית ההורדות (לא נבחרה תיקייה): " + file; }
+  function folderPath(kind) { return (dirName ? dirName + " › " : "") + FOLDERS[kind]; }
+  function renderFolderInfo() {
+    var el = $("folder-info"); if (!el) return;
+    el.innerHTML = dirName ? 'הקבצים נשמרים בתיקייה <b>' + esc(dirName) + '</b>, בתוכה: ' + esc(FOLDERS.quote) + ' · ' + esc(FOLDERS.agr) + ' · ' + esc(FOLDERS.rsvp) : '<span style="color:var(--bad);font-weight:600">עוד לא נבחרה תיקייה. בינתיים הקבצים יורדים לתיקיית ההורדות.</span>';
   }
   async function dirReady(ask) {
     if (!dirHandle) return false;
@@ -3452,9 +3511,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return p === "granted";
     } catch (e) { return false; }
   }
-  async function saveBlob(blob, name, useDir) {
+  async function saveBlob(blob, name, useDir, kind) {
     if (useDir && dirHandle) {
-      try { var fh = await dirHandle.getFileHandle(name, { create: true }), w = await fh.createWritable(); await w.write(blob); await w.close(); return "dir"; } catch (e) { /* fall through to download */ }
+      try {
+        var dh = kind && FOLDERS[kind] ? await dirHandle.getDirectoryHandle(FOLDERS[kind], { create: true }) : dirHandle;
+        var fh = await dh.getFileHandle(name, { create: true }), w = await fh.createWritable(); await w.write(blob); await w.close(); return "dir";
+      } catch (e) { /* fall through to download */ }
     }
     var a = document.createElement("a"), u = URL.createObjectURL(blob);
     a.href = u; a.download = name; document.body.appendChild(a); a.click();
@@ -3470,13 +3532,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     quoting[id] = true; renderSheet(true);
     try {
       var q = packQuote(c, cq), blob = await makePdf(c, q);
-      var where = await saveBlob(blob, q.file, useDir);
+      var where = await saveBlob(blob, q.file, useDir, "quote");
       var d = { quote: q }; var keepV = lastOffered(c) || Number(c.value) || 0; if (keepV) d.value = keepV; /* debt follows the last SENT quote, not the last generated */
       d.quotes = quotesOf(c).filter(function (k) { return k.id !== "legacy"; }).concat([{ id: q.id, qk: q.qk, no: q.no, at: q.at, file: q.file, en: q.en, pkg: q.pkg, guests: q.guests, liters: q.liters, total: q.total, perGuest: q.perGuest, date: q.date, note: q.note || "", sentAt: "" }]);
       if (q.qk === "final") { d.finalPkgName = q.pkg; d.finalPkgAmount = q.total; } else { d.maxPkgName = q.pkg; d.maxPkgAmount = q.total; }
       await patch("clients", id, d);
-      await logAct(id, "pdf_generated", null, { file: q.file, total: q.total, package: q.en, liters: q.liters, guests: q.guests, phase: q.phase, quote_kind: q.qk, quote_no: q.no, source: "quote_engine", saved_to: where === "dir" ? dirName : "downloads" });
-      toast((QK[q.qk].label) + (where === "dir" ? " הופקה ונשמרה בתיקייה " + dirName + ": " + q.file : " הופקה והקובץ ירד: " + q.file));
+      await logAct(id, "pdf_generated", null, { file: q.file, total: q.total, package: q.en, liters: q.liters, guests: q.guests, phase: q.phase, quote_kind: q.qk, quote_no: q.no, source: "quote_engine", saved_to: where === "dir" ? folderPath("quote") : "downloads", note: savedNote(where, "quote", q.file) });
+      toast("✓ " + QK[q.qk].label + " " + savedNote(where, "quote", q.file));
       if (q.qk === "final") await stepAgentDone(id, c, q);
     } catch (e) { toast("הפקת ההצעה נכשלה: " + ((e && e.message) || "שגיאה")); }
     finally { delete quoting[id]; renderSheet(true); }
@@ -3552,7 +3614,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0"><button class="btn" data-act="quote-start"' + (busy || !canWrite ? " disabled" : "") + '>' + (busy ? "מפיק PDF…" : "הפק " + QK[kindFor(c)].label + " ו-PDF") + '</button>' +
       (Object.keys(b.qover).length ? '<button class="btn ghost sm" data-act="quote-reset"' + d + '>אפס שינויים ידניים</button>' : "") +
       '<label class="btn ghost sm" style="cursor:pointer">' + (state.logo ? "החלפת לוגו" : "העלאת לוגו להצעות") + '<input type="file" accept="image/*" data-logo hidden' + d + '></label>' + (state.logo ? '<button class="btn ghost sm" data-act="logo-reset"' + d + '>חזרה ללוגו ברירת מחדל</button>' : "") + '<button class="btn ghost sm" data-act="pick-dir">' + (dirName ? "שינוי תיקייה" : "בחירת תיקייה לשמירה") + '</button>' +
-      '<span class="muted" style="font-size:13px">הקובץ ' + esc(safeFile(c.name)) + '_(' + esc(cq.en) + ').pdf ' + (dirName ? "יישמר ישירות בתיקייה <b>" + esc(dirName) + "</b>" : "יירד לתיקיית ההורדות. לשמירה בתיקייה קבועה במחשב לחצו על בחירת תיקייה (Chrome או Edge)") + ', והכרטיס מתעדכן אוטומטית</span></div>';
+      '<span class="muted" style="font-size:13px">הקובץ ' + esc(safeFile(c.name)) + '_(' + esc(cq.en) + ').pdf ' + (dirName ? "יישמר בתיקייה <b>" + esc(folderPath("quote")) + "</b>" : '<b style="color:var(--bad)">יירד לתיקיית ההורדות כי עוד לא נבחרה תיקייה.</b> לחצו "בחירת תיקייה לשמירה" ובחרו תיקייה ראשית, ובתוכה ייווצרו חבילות קלוד, הסכמי לקוחות ואישורי הגעה לקוחות (Chrome או Edge)') + ', והכרטיס מתעדכן אוטומטית</span></div>';
     if (!q) return h + '</section>';
     var w = waNum(c.phone), link = w ? "https://wa.me/" + w + "?text=" + encodeURIComponent(q.text || "") : "";
     return h + (stale ? '<div class="av-banner warn">ההצעה האחרונה שהופקה: ' + shekel(q.total) + ' (' + esc(q.en) + '). לפי הנתונים הנוכחיים החישוב הוא ' + shekel(cq.total) + '. להפיק מחדש כדי לעדכן.</div>' : '<div class="av-banner">הכרטיס מסונכרן להצעה האחרונה: <b>' + esc(q.en) + '</b> · ' + shekel(q.total) + ' · קובץ: ' + esc(q.file) + '</div>') +
@@ -3616,7 +3678,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     4: { e: "🤔", t: "מתלבטים? אנחנו כאן", m: "" },
     5: { e: "📋", t: "שבוע לפני: ספירה לאחור", m: "היי {n} 🎉 הספירה לאחור התחילה, בעוד שבוע חוגגים! כדי שנדייק לכם את החבילה, כמה אישורי הגעה יש כרגע? ואם יש איש קשר באולם, נשמח לפרטים כדי לתאם איתו את ההגעה 🙌" },
     6: { e: "✨", t: "ההצעה הסופית", m: "היי {n} 🥂 החבילה שלכם מעודכנת לפי אישורי ההגעה, מצורפת ההצעה הסופית. אם משהו לא מדויק, אנחנו עוד יכולים לשנות." },
-    7: { e: "🧾", t: "סוגרים חשבון", m: "היי {n} 😊 כדי שהכול יהיה סגור ורגוע ביום האירוע, נשמח להסדיר את התשלום עד 3 ימים לפני{bal}. שימו לב: ללא תשלום מלא לא נוכל לספק את החבילה. תודה רבה!" },
+    7: { e: "🧾", t: "סוגרים חשבון", m: "היי {n} 😊 כדי שהכול יהיה סגור ורגוע ביום האירוע, נשמח להסדיר את התשלום עד יומיים לפני האירוע{bal}. שימו לב: ללא תשלום מלא לא נוכל לספק את החבילה. תודה רבה!" },
     8: { e: "⏰", t: "תזכורת קטנה", m: "היי {n} 🙏 תזכורת קטנה, נשארו 3 ימים לאירוע ועוד לא קיבלנו את התשלום{bal}. נשמח לסגור אותו כדי שהכול יגיע בזמן." },
     9: { e: "🚚", t: "יום האירוע: החבילה בדרך", m: "בוקר טוב {n} ☀️ היום זה היום! החבילה בדרך אליכם לאולם. מאחלים לכם ערב מושלם 🥂" },
     10: { e: "🎉", t: "איך היה?", m: "{n} מזל טוב! 🥳 איך היה? נשמח לשמוע. ואם נשארו בקבוקים סגורים, נתאם איתכם איסוף כדי להחזיר לכם את הכסף." },
@@ -3798,9 +3860,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var c = byId(state.clients, a.client_id); if (agrSaving[a.id]) return; agrSaving[a.id] = true;
     try {
       var useDir = await dirReady(!!manual); if (!manual && !useDir) return;
-      var blob = await agrPdf(a), where = await saveBlob(blob, agrFile(a, c), useDir);
+      var fn = agrFile(a, c), blob = await agrPdf(a), where = await saveBlob(blob, fn, useDir, "agr");
       try { localStorage.setItem("sms_agr_" + a.id, "1"); } catch (e) {}
-      toast("ההסכם החתום של " + ((c && c.name) || "הלקוח") + (where === "dir" ? " נשמר בתיקייה " + dirName : " ירד למחשב"));
+      toast("✓ ההסכם החתום של " + ((c && c.name) || "הלקוח") + " " + savedNote(where, "agr", fn));
+      try { if (c) await logAct(c.id, "pdf_generated", null, { file: fn, source: "agreement_pdf", saved_to: where === "dir" ? folderPath("agr") : "downloads", note: "הסכם חתום " + savedNote(where, "agr", fn) }); } catch (e) {}
     } catch (e) { if (manual) toast("שמירת ההסכם נכשלה: " + ((e && e.message) || "שגיאה")); }
     finally { delete agrSaving[a.id]; }
   }
@@ -3935,7 +3998,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         chk(await sb.from("rsvp_forms").update({ status: "handled", handled_at: new Date().toISOString() }).eq("id", fid));
         try { chk(await sb.from("reminders").update({ done: true }).eq("dedupe_key", "rsvp:" + fid)); } catch (e) {}
         await loadAll();
-        toast("ההצעה הסופית הופקה לפי הטופס: " + shekel(c2.quote.total) + ". ההודעה ללקוח מוכנה למטה בכרטיס");
+        toast("✓ ההצעה הסופית הופקה לפי הטופס: " + shekel(c2.quote.total) + " · " + (dirName ? "הקובץ נשמר בתיקייה " + folderPath("quote") : "הקובץ ירד לתיקיית ההורדות") + " · ההודעה ללקוח מוכנה בכרטיס");
       }
     } catch (e) { toast("ההפקה נכשלה: " + ((e && e.message) || "שגיאה")); }
     finally { delete rsvpBusy[id]; renderSheet(true); }
@@ -3947,7 +4010,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       ln("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return '<span class="chip ' + (x.act === "remove" ? "bad" : "warn") + '">' + esc(CH_ACT[x.act] + ": " + (x.n || x.key)) + '</span>'; }).join(" ") : "ביקשו שינויים (פירוט למטה)") : '<span class="chip good">החבילה מתאימה כמו שהיא</span>') +
       (a.tier && a.tier !== s.tier && BPK[a.tier] ? ln("חבילה", '<span class="chip acc">רוצים לעבור ל-' + esc(BPK[a.tier].en) + '</span>') : "") +
       ((a.add || "").trim() ? ln("בקשות נוספות", esc(a.add)) : "") + ((a.notes || "").trim() ? ln("הערות", esc(a.notes)) : "") +
-      (a.hall_name || a.hall_phone ? ln("איש קשר באולם", esc((a.hall_name || "") + (a.hall_phone ? " · " + a.hall_phone : ""))) : "") +
+      (a.hall_name || a.hall_phone ? ln("מקבל את החבילה", '<b>' + esc(a.hall_name || "") + '</b>' + (a.hall_phone ? ' · <a href="' + esc(telHref(a.hall_phone)) + '">' + esc(a.hall_phone) + '</a>' : "")) : ln("מקבל את החבילה", '<span class="chip bad">לא מולא</span>')) +
       (a.end_time ? ln("שעת סיום משוערת", esc(a.end_time)) : "") +
       ln("נחתם", esc((f.signer_name || "") + " · " + (f.submitted_at ? new Date(f.submitted_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Jerusalem" }) : "")) + " " + (au.phone_match === true ? '<span class="chip good">טלפון החותם תואם לכרטיס ✓</span>' : au.phone_match === false ? '<span class="chip bad">⚠ הטלפון שהוקלד (' + esc(f.signer_phone || "") + ') לא תואם לכרטיס</span>' : "")) +
       (f.signature_png ? '<img class="rsv-sig" src="' + esc(f.signature_png) + '" alt="חתימת הלקוח">' : "") + '</div>';
@@ -3979,7 +4042,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       "<h2>פרטי האירוע</h2>" + k("שם", s.name || "") + k("תאריך האירוע", s.date ? fmtDate(s.date) : "—") + k("אולם / מקום", s.venue || "—") + k("החבילה בהצעה", s.en || "—") +
       "<h2>מה הלקוח מילא</h2>" + k("מספר אישורי הגעה", String(a.guests || "")) + k("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return CH_ACT[x.act] + ": " + (x.n || x.key); }).join(" · ") : "כן, ראו בקשות") : "החבילה מתאימה כמו שהיא") +
       (a.tier && a.tier !== s.tier && BPK[a.tier] ? k("מעבר חבילה", BPK[a.tier].en) : "") + ((a.add || "").trim() ? k("בקשות נוספות", a.add) : "") + ((a.notes || "").trim() ? k("הערות", a.notes) : "") +
-      (a.hall_name || a.hall_phone ? k("איש קשר באולם", (a.hall_name || "") + " " + (a.hall_phone || "")) : "") + (a.end_time ? k("שעת סיום משוערת", a.end_time) : "") +
+      (a.hall_name || a.hall_phone ? k("מקבל את החבילה באירוע", (a.hall_name || "") + " " + (a.hall_phone || "")) : "") + (a.end_time ? k("שעת סיום משוערת", a.end_time) : "") +
       "<p style='margin-top:14px;font-size:13px'>הלקוח אישר: הפרטים נכונים, וההצעה הסופית תתעדכן לפי מספר המאשרים והבקשות שבטופס. שינויים במחיר יישלחו לאישורו לפני הביצוע.</p>" +
       "<div class='sg'><h2 style='margin-top:0'>חתימת הלקוח</h2><p>נחתם על ידי <b>" + esc(f.signer_name || "") + "</b> ב-" + esc(f.submitted_at ? new Date(f.submitted_at).toLocaleString("he-IL", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Jerusalem" }) : "") + "</p>" +
       (f.signature_png ? "<img src='" + esc(f.signature_png) + "' alt='חתימה'>" : "") +
@@ -3991,9 +4054,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var c = byId(state.clients, f.client_id); if (rsvpSaving[f.id]) return; rsvpSaving[f.id] = true;
     try {
       var useDir = await dirReady(!!manual); if (!manual && !useDir) return;
-      var blob = await agrPdf({ __html: rsvpHtml(f, c) }), where = await saveBlob(blob, rsvpFile(f, c), useDir);
+      var fn = rsvpFile(f, c), blob = await agrPdf({ __html: rsvpHtml(f, c) }), where = await saveBlob(blob, fn, useDir, "rsvp");
       try { localStorage.setItem("sms_rsvp_" + f.id, "1"); } catch (e) {}
-      toast("הטופס החתום של " + ((c && c.name) || "הלקוח") + (where === "dir" ? " נשמר בתיקייה " + dirName : " ירד למחשב"));
+      toast("✓ טופס אישורי ההגעה של " + ((c && c.name) || "הלקוח") + " " + savedNote(where, "rsvp", fn));
+      try { if (c) await logAct(c.id, "pdf_generated", null, { file: fn, source: "rsvp_pdf", saved_to: where === "dir" ? folderPath("rsvp") : "downloads", note: "טופס אישורי הגעה חתום " + savedNote(where, "rsvp", fn) }); } catch (e) {}
     } catch (e) { if (manual) toast("שמירת הטופס נכשלה: " + ((e && e.message) || "שגיאה")); }
     finally { delete rsvpSaving[f.id]; }
   }
@@ -4024,7 +4088,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var when = dd == null ? "אין תאריך אירוע" : dd < 0 ? "האירוע היה לפני " + (-dd) + " ימים" : dd === 0 ? "האירוע היום" : "האירוע בעוד " + dd + " ימים";
       return arow({ cid: c.id, title: c.name, sub: esc((c.eventDate ? fmtDate(c.eventDate) + " · " : "") + when) + (c.quote && c.quote.en ? " · חבילה " + esc(c.quote.en) : "") + (p.value ? " · שולם " + shekel(p.amount) + " מתוך " + shekel(p.value) : ""),
         chips: [[p.value ? "יתרה " + shekel(p.bal) : "שווי עסקה לא הוזן", "bad"], [s.t, s.cls || "warn"]],
-        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + (wl ? '<a class="btn ghost sm" href="' + wl + '" target="_blank" rel="noopener">תזכורת בווטסאפ</a>' : "") + (tel ? '<a class="btn ghost sm" href="' + tel + '">חיוג לאולם</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
+        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + payRemBtn(c) + (tel ? '<a class="btn ghost sm" href="' + tel + '">חיוג לאולם</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     }).join("");
   }
 
@@ -4049,7 +4113,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   async function agentMessageDone(id) { /* a message went out (WhatsApp link / manual log) at steps 7, 8, 10 */
     var c = byId(state.clients, id); if (c && c.status === "נסגרה עסקה" && [7, 8, 10].indexOf(c.pipelineStage) >= 0) { try { await markStep(id, c.pipelineStage, "a"); } catch (e) {} }
   }
-  loadDir();
+  loadDir().then(renderFolderInfo);
 
   /* ---------- boot ---------- */
   function setStatus(ok, text) { $("dot").className = "dot" + (ok ? " ok" : ""); $("statusText").textContent = text; $("reload-btn").hidden = ok; }

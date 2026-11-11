@@ -136,18 +136,19 @@ h1 em{font-style:normal;color:var(--acc)}
       '<section class="step"><h2><i>1</i>כמה אורחים אישרו הגעה?</h2><p class="hint">לפי אישורי ההגעה שקיבלתם. אנחנו מחשבים את הכמויות לפי המספר הזה, עם רזרבה.</p>' +
         '<div class="num"><button type="button" data-d="-10" aria-label="פחות 10">−</button><input id="g" type="number" inputmode="numeric" min="1" max="5000" value="' + (s.guests || '') + '" aria-label="מספר אישורי הגעה"><button type="button" data-d="10" aria-label="עוד 10">+</button></div>' +
         (s.guests ? '<p class="hint" style="text-align:center;margin:6px 0 0">בהצעה המקורית: ' + esc(s.guests) + ' מוזמנים</p>' : '') + '</section>' +
-      '<section class="step"><h2><i>2</i>החבילה</h2><p class="hint">רוצים לשנות משהו? זה הזמן. אפשר להוסיף, להוריד או לעבור חבילה.</p><div class="choice">' +
+      '<section class="step"><h2><i>2</i>מי מקבל את החבילה באירוע?</h2><p class="hint">איש קשר שיהיה באולם ויקבל מאיתנו את החבילה. <b>לא החתן ולא הכלה</b>, כי אתם תהיו עסוקים בחגיגה. למשל הורה, אח או אחות, חבר קרוב או מנהל האולם.</p>' +
+        '<div class="two"><label class="f"><span>שם איש הקשר *</span><input id="hn" maxlength="80" autocomplete="off" value="' + esc(s.hall_name || '') + '"></label>' +
+        '<label class="f"><span>הטלפון שלו *</span><input id="hp" type="tel" inputmode="tel" maxlength="20" dir="ltr" style="text-align:right" value="' + esc(s.hall_phone || '') + '"></label></div></section>' +
+      '<section class="step"><h2><i>3</i>החבילה</h2><p class="hint">רוצים לשנות משהו? זה הזמן. אפשר להוסיף, להוריד או לעבור חבילה.</p><div class="choice">' +
         '<label class="opt"><input type="radio" name="wc" value="0" checked><span>החבילה מתאימה לנו כמו שהיא</span></label>' +
         '<label class="opt"><input type="radio" name="wc" value="1"><span>נרצה לשנות משהו<small>מסמנים ליד כל מוצר מה לעשות, או כותבים בקשה</small></span></label></div>' +
         '<div id="chg" hidden>' + (all.length ? '<div class="items">' + all.map(itemHtml).join('') + '</div>' : '') +
           (tiers ? '<label class="f" style="margin-top:14px"><span>לעבור לחבילה אחרת?</span><select id="tier">' + tiers + '</select></label>' : '') +
           '<label class="f"><span>מוצר להוסיף או להחליף (למשל: וויסקי אחר, בלי ערק, תוספת קוקטייל)</span><textarea id="add" maxlength="600"></textarea></label></div></section>' +
-      '<section class="step"><h2><i>3</i>פרטים לתיאום האספקה</h2><p class="hint">לא חובה, אבל עוזר לנו להגיע בדיוק בזמן.</p>' +
-        '<div class="two"><label class="f"><span>איש קשר באולם שמקבל את החבילה</span><input id="hn" maxlength="80" autocomplete="off" value="' + esc(s.hall_name || '') + '"></label>' +
-        '<label class="f"><span>הטלפון שלו</span><input id="hp" type="tel" inputmode="tel" maxlength="20" dir="ltr" style="text-align:right" value="' + esc(s.hall_phone || '') + '"></label></div>' +
+      '<section class="step"><h2><i>4</i>עוד כמה פרטים</h2><p class="hint">לא חובה, אבל עוזר לנו להכין הכול בדיוק.</p>' +
         '<label class="f"><span>עד מתי האירוע, בערך?</span><select id="end"><option value="">לא יודעים עדיין</option><option>עד 23:00</option><option>עד 00:00</option><option>עד 01:00</option><option>עד 02:00</option><option>עד 03:00 ואחרי</option></select></label>' +
         '<label class="f"><span>משהו נוסף שחשוב שנדע?</span><textarea id="nt" maxlength="600"></textarea></label></section>' +
-      '<section class="step"><h2><i>4</i>אישור וחתימה</h2>' +
+      '<section class="step"><h2><i>5</i>אישור וחתימה</h2>' +
         '<div class="two"><label class="f"><span>שם מלא</span><input id="nm" autocomplete="name" maxlength="80"></label>' +
         '<label class="f"><span>הטלפון שלכם (לאימות)</span><input id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" dir="ltr" style="text-align:right"></label></div>' +
         '<span class="f"><span>חתימה באצבע או בעכבר</span></span><div class="pad"><canvas id="cv" aria-label="אזור חתימה"></canvas><div class="ph" id="cvph">חתמו כאן</div></div>' +
@@ -165,6 +166,10 @@ h1 em{font-style:normal;color:var(--acc)}
       e.preventDefault(); er.textContent = '';
       var guests = Math.round(Number(g.value));
       if (!(guests >= 1 && guests <= 5000)) { er.textContent = 'נא לכתוב כמה אורחים אישרו הגעה.'; g.focus(); return; }
+      var hn = $('hn').value.trim(), hpD = $('hp').value.replace(/\D/g, ''), myD = $('ph').value.replace(/\D/g, '');
+      if (hn.length < 2) { er.textContent = 'נא לכתוב מי מקבל את החבילה באירוע (לא החתן ולא הכלה).'; $('hn').focus(); return; }
+      if (hpD.length < 9) { er.textContent = 'נא לכתוב את הטלפון של איש הקשר שמקבל את החבילה.'; $('hp').focus(); return; }
+      if (myD.length >= 9 && hpD.slice(-9) === myD.slice(-9)) { er.textContent = 'איש הקשר צריך להיות מישהו אחר, לא אתם. נא לכתוב טלפון של הורה, אח, חבר או מנהל האולם.'; $('hp').focus(); return; }
       var wc = app.querySelector('input[name=wc]:checked').value === '1';
       var changes = wc ? all.map(function (l, i) { var c = app.querySelector('input[name=it' + i + ']:checked'); return { key: l.key, n: l.n, q: l.q, act: c ? c.value : 'keep' }; }) : [];
       var tier = wc && $('tier') ? $('tier').value : (s.tier || '');
@@ -184,7 +189,7 @@ h1 em{font-style:normal;color:var(--acc)}
         .catch(function (x) {
           go.disabled = false; go.textContent = 'שליחה וחתימה';
           var m = String((x && x.message) || '');
-          er.textContent = /closed/.test(m) ? 'מועד האירוע כבר עבר, ולכן אי אפשר לשלוח את הטופס. כתבו לנו בוואטסאפ.' : /not open/.test(m) ? 'הטופס כבר נשלח או שהקישור הוחלף. רעננו את הדף.' : /signature/.test(m) ? 'החתימה קצרה מדי. נא לחתום שוב.' : 'השליחה נכשלה. בדקו את החיבור ונסו שוב, או כתבו לנו בוואטסאפ.';
+          er.textContent = /contact_self/.test(m) ? 'איש הקשר צריך להיות מישהו אחר, לא החתן או הכלה. נא לכתוב טלפון של מי שיקבל את החבילה באירוע.' : /contact/.test(m) ? 'נא למלא שם וטלפון של מי שמקבל את החבילה באירוע.' : /closed/.test(m) ? 'מועד האירוע כבר עבר, ולכן אי אפשר לשלוח את הטופס. כתבו לנו בוואטסאפ.' : /not open/.test(m) ? 'הטופס כבר נשלח או שהקישור הוחלף. רעננו את הדף.' : /signature/.test(m) ? 'החתימה קצרה מדי. נא לחתום שוב.' : 'השליחה נכשלה. בדקו את החיבור ונסו שוב, או כתבו לנו בוואטסאפ.';
         });
     });
   }
@@ -196,6 +201,7 @@ h1 em{font-style:normal;color:var(--acc)}
     app.innerHTML = '<div class="ok"><b>' + (fresh ? 'תודה, קיבלנו!' : 'הטופס כבר נשלח') + '</b>' + (fresh ? 'נכין לכם את ההצעה הסופית לפי מה שמילאתם ונשלח אותה בוואטסאפ.' : 'קיבלנו את הפרטים שלכם. רוצים לשנות משהו? כתבו לנו.') + '</div>' + evBox(s) +
       '<div class="sum"><dl><dt>אישורי הגעה</dt><dd><b>' + esc(a.guests) + '</b></dd><dt>שינויים בחבילה</dt><dd>' + (a.wants_changes ? (ch.map(function (c) { return esc(L[c.act] + ': ' + c.n); }).join('<br>') || 'כן') : 'החבילה מתאימה כמו שהיא') + '</dd>' +
       (tierName ? '<dt>מעבר חבילה</dt><dd>' + esc(tierName) + '</dd>' : '') + (a.add ? '<dt>בקשות</dt><dd>' + esc(a.add) + '</dd>' : '') +
+      (a.hall_name ? '<dt>מקבל את החבילה</dt><dd>' + esc(a.hall_name + (a.hall_phone ? ' · ' + a.hall_phone : '')) + '</dd>' : '') +
       '<dt>נחתם</dt><dd>' + esc((r.signer_name || '') + (when ? ' · ' + when : '')) + '</dd></dl></div>' +
       '<div class="row noprint" style="justify-content:center"><button class="btn ghost" type="button" onclick="window.print()">הדפסה / שמירה</button><a class="btn ghost" href="' + waLink('היי, מילאנו את טופס אישורי ההגעה ורצינו לעדכן משהו') + '" target="_blank" rel="noopener">לעדכון: כתבו לנו</a></div>' +
       '<p class="foot">ש.מ.ש משקאות · 054-5435939</p>';
