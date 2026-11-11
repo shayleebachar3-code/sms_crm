@@ -3088,7 +3088,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     rl.innerHTML = open.length ? open.map(function (r) {
       var cl = r.client_id && byId(state.clients, r.client_id);
       return arow({ cid: cl ? cl.id : "", title: r.title, sub: esc(r.body || ""), chips: [[fmtDate(String(r.due_at).slice(0, 10)), new Date(r.due_at).getTime() < Date.now() - 86400000 ? "bad" : "warn"]], acts: '<button class="btn sm" data-sb="rm-done" data-id="' + esc(r.id) + '"' + dis() + '>בוצע</button>' });
-    }).join("") : '<div class="empty">אין תזכורות פתוחות. המערכת יוצרת אותן אוטומטית שבוע לפני אירוע, 3 ימים לפניו ויום אחריו.</div>';
+    }).join("") : '<div class="empty">אין תזכורות פתוחות. המערכת יוצרת אותן אוטומטית: שבוע לפני אירוע, תזכורות תשלום כל יום מ-5 ימים לפניו כל עוד יש יתרה, ויום אחריו.</div>';
     var f = $("al-filter") ? $("al-filter").value : "", list = (state.logs || []).filter(function (l) { return !f || l.kind === f; });
     $("al-list").innerHTML = list.length ? '<ul class="tl">' + list.slice(0, 150).map(function (l) {
       return actRows([l]).replace("</div></div></li>", (l.client_name ? '<div class="t-text muted">' + esc(l.client_name) + '</div>' : "") + "</div></div></li>");
@@ -3820,7 +3820,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   /* ---- digital service agreement: built in the CRM, signed by the client on the website, PDF saved to the chosen folder ---- */
-  var AGR = { ver: "2026-11-v1", site: "https://sms-website-v2.vercel.app", deposit: 2500, payDays: 3, refundDays: 14, transferDays: 30, transferMonths: 12, collectDays: 30 };
+  /* v2 (11.11.2026): payment must arrive 2 days before the event (was 3), same rule as the CRM payment tracking */
+  var AGR = { ver: "2026-11-v2", site: "https://sms-website-v2.vercel.app", deposit: 2500, payDays: PAY_DUE_DAYS, refundDays: 14, transferDays: 30, transferMonths: 12, collectDays: 30 };
+  function agrPayTxt() { return AGR.payDays === 1 ? "יום אחד" : AGR.payDays === 2 ? "יומיים" : AGR.payDays + " ימים"; }
   function agrSnapshot(c, remote) {
     var total = lastOffered(c) || dealValue(c) || 0, dep = AGR.deposit, pkg = (c.finalPkgName || c.maxPkgName || (c.quote && (c.quote.en || c.quote.pkg)) || "לפי הצעת המחיר");
     var ev = c.eventDate ? fmtDate(c.eventDate) : "יתואם", guests = Number(c.rsvpConfirmed) || Number(c.guests) || 0;
@@ -3830,7 +3832,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       summary: [
         { k: "מועד האירוע", v: ev }, { k: "אולם / מקום", v: c.venue || "יתואם" }, { k: "מספר מוזמנים", v: guests ? String(guests) : "לפי הצעת המחיר" },
         { k: "חבילה", v: pkg }, { k: "מחיר לפי הצעה אחרונה", v: total ? shekel(total) : "לפי הצעת המחיר שנשלחה" }, { k: "מקדמה לשריון התאריך", v: shekel(dep) },
-        { k: "יתרה לתשלום", v: total ? shekel(Math.max(0, total - dep)) + " עד " + AGR.payDays + " ימים לפני האירוע" : "עד " + AGR.payDays + " ימים לפני האירוע" },
+        { k: "יתרה לתשלום", v: total ? shekel(Math.max(0, total - dep)) + " עד " + agrPayTxt() + " לפני האירוע" : "עד " + agrPayTxt() + " לפני האירוע" },
         { k: "אופן סגירת העסקה", v: remote ? "מרחוק (טלפון / הודעות / אינטרנט)" : "פנים מול פנים" }
       ], sections: []
     }, S = s.sections;
@@ -3839,7 +3841,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       "אפיון: הלקוח מוסר פרטי אירוע והעדפות, והספק בונה הצעה מותאמת.",
       "הצעה ראשונית: נבנית למספר המוזמנים המרבי. עם שריון התאריך, מחיר ההצעה נעול.",
       "כשבוע לפני האירוע: הלקוח מעביר אישורי הגעה, והספק מוציא הצעה סופית מעודכנת לפי מספר המאשרים. החבילה יכולה לקטון לפי אישורי ההגעה. הגדלה מעבר להצעה הראשונית תיעשה בהסכמה ובהתאם למחיר שיעודכן.",
-      "תשלום: מלוא התמורה תשולם בהעברה בנקאית, וההעברה צריכה להתקבל עד " + AGR.payDays + " ימים לפני האירוע. אם התשלום לא התקבל במועד, העסקה לא תוכל להתקיים והדבר ייחשב כביטול מצד הלקוח, בהתאם לסעיף הביטול להלן.",
+      "תשלום: מלוא התמורה תשולם בהעברה בנקאית, וההעברה צריכה להתקבל עד " + agrPayTxt() + " לפני האירוע. אם התשלום לא התקבל במועד, העסקה לא תוכל להתקיים והדבר ייחשב כביטול מצד הלקוח, בהתאם לסעיף הביטול להלן.",
       "אספקה: הספק יביא את החבילה לאולם במועד ובמקום שסוכמו, בתיאום עם איש הקשר של הלקוח באולם.",
       "איסוף אחרי האירוע: לאחר האירוע ייקבע תאריך לאיסוף הבקבוקים הסגורים, עד " + AGR.collectDays + " ימים מהאירוע, על ידי שליח מטעם הספק, מהכתובת שימסור הלקוח. השליח כלול במחיר העסקה ואין בגינו תשלום נוסף.",
       "זיכוי: הבקבוקים הסגורים והשלמים שנאספו יזוכו לפי מחירון הזיכוי שצורף להצעה, והזיכוי יועבר ללקוח בתוך 7 ימים מיום האיסוף.",
@@ -3856,7 +3858,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     cx.push("ביטול על ידי הלקוח " + (remote ? "אחרי תום התקופה האמורה" : "") + ": המקדמה אינה מוחזרת. היא מהווה פיצוי מוסכם על סגירת היומן והפסד אירועים אחרים. הצדדים מצהירים כי הסכום סביר ביחס לנזק שניתן היה לצפות מראש.");
     cx.push("דחיית מועד: אם הלקוח מבקש לדחות את האירוע לתאריך אחר בתוך " + AGR.transferMonths + " חודשים, בהודעה של לפחות " + AGR.transferDays + " ימים לפני האירוע המקורי, וכל עוד התאריך החדש פנוי, המקדמה תועבר לתאריך החדש פעם אחת ללא עלות.");
     cx.push("החזר כספי: בביטול על ידי הלקוח עד " + AGR.refundDays + " ימים לפני האירוע יוחזר ללקוח כל סכום ששילם, למעט המקדמה בסך " + shekel(dep) + ". בביטול סמוך יותר יוחזרו סכומים ששולמו בניכוי עלות הסחורה שנרכשה והוכנה בפועל לאירוע, שתוצג ללקוח לפי דרישה, וכן בניכוי המקדמה.");
-    cx.push("אי תשלום במועד: אם ההעברה הבנקאית לא התקבלה עד " + AGR.payDays + " ימים לפני האירוע, העסקה מתבטלת והדבר נחשב לביטול על ידי הלקוח. המקדמה לא תוחזר, וההחזר יחול על יתר הסכומים ששולמו, אם שולמו, לפי הכלל שלמעלה.");
+    cx.push("אי תשלום במועד: אם ההעברה הבנקאית לא התקבלה עד " + agrPayTxt() + " לפני האירוע, העסקה מתבטלת והדבר נחשב לביטול על ידי הלקוח. המקדמה לא תוחזר, וההחזר יחול על יתר הסכומים ששולמו, אם שולמו, לפי הכלל שלמעלה.");
     cx.push("ביטול על ידי הספק, למעט כוח עליון: הספק יחזיר ללקוח את כל הסכומים ששולמו, לרבות המקדמה.");
     cx.push("כוח עליון: אם האירוע לא יכול להתקיים בשל הגבלה או הוראה של רשות מוסמכת, או מצב ביטחוני או אירוע שאינו בשליטת הצדדים, הצדדים יתאמו תאריך חדש בתוך " + AGR.transferMonths + " חודשים והמקדמה תועבר אליו. סכומים ששולמו מעבר למקדמה יוחזרו.");
     S.push({ h: "הזמנה, מקדמה וביטול", ul: cx });
