@@ -339,6 +339,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
 .nextstep{border:2px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface);display:grid;gap:6px}.nextstep .ns-t{font-weight:700;font-size:17px}.nextstep .ns-b{font-size:14px;color:var(--ink-2)}.nextstep .ns-a{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
 .nextstep.bad{border-color:var(--bad);background:var(--bad-soft)}.nextstep.warn{border-color:var(--warn)}.nextstep.good{border-color:var(--good);background:var(--good-soft)}
 @media (max-width:600px){.btn.sm{padding:9px 14px;font-size:14px}.tabs{flex-wrap:wrap;overflow-x:visible}.tabs .tab{padding:10px 10px;font-size:15px}.more-btn{margin-inline-start:0}.kpis3{gap:8px}.kpis3 .kpi{padding:10px}.kpis3 .kpi .val{font-size:21px}.kpis3 .kpi .sub{font-size:11.5px}.arow .ar-acts{width:100%}.arow .ar-acts .btn{flex:1 1 auto;text-align:center}.tgrp>summary{font-size:18px}}
+.ratiobox{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}.ratiobox.on{border:2px solid var(--accent);background:var(--accent-soft)}
 .big-n{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.1}
 td .btn{margin-inline-end:4px}
 .qtab{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:8px}.qtab th{text-align:right;color:var(--ink-2);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}.qtab td{padding:4px 6px;border-bottom:1px solid var(--line)}.qtab input{width:70px;min-height:34px}.btn.sm{text-decoration:none}.steps{display:grid;gap:8px;margin:8px 0}.stp{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;line-height:1.55}.stp.ok{opacity:.8}
@@ -359,7 +360,7 @@ td .btn{margin-inline-end:4px}
     <div class="kpi" id="k-week-box" data-go="events" role="button" tabindex="0"><div class="lbl">אירועים השבוע</div><div class="val num" id="k-week">0</div><div class="sub" id="k-week-sub">&nbsp;</div></div>
   </section>
   <section class="payalert" id="pay-alert" role="alert" hidden></section>
-  <div class="av-banner warn" id="folder-warn" hidden style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span>📁 עוד לא נבחרה תיקייה לשמירת הקבצים (חבילות קלוד, הסכמי לקוחות, אישורי הגעה לקוחות). בינתיים הקבצים יורדים לתיקיית ההורדות.</span><button class="btn sm" type="button" data-act="pick-dir">בחירת תיקייה</button></div>
+  <div class="av-banner warn" id="folder-warn" hidden style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span>📁 עוד לא נבחרה תיקייה לשמירת הקבצים. לחצו "בחירת תיקייה" ובחרו את <b>CRM › גיבויים</b> (בתוך "שמש משקאות"). בתוכה יישמרו: חבילות קלוד, הסכמי לקוחות, אישורי הגעה לקוחות וגיבוי נתוני CRM. בינתיים הקבצים יורדים לתיקיית ההורדות.</span><button class="btn sm" type="button" data-act="pick-dir">בחירת תיקייה</button></div>
 
   <details class="setbar" id="setbar"><summary>⚙️ הגדרות: יומן Google, תיקיית קבצים, גיבוי</summary>
   <section class="calbar" aria-label="יומן Google">
@@ -1142,6 +1143,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---- bar profile + package (same model as the website calculator) ---- */
   var BCFG = { b: { v: 0.32, w: 0.19, a: 0.26, g: 0.06, t: 0.04, f: 0.13 }, r: [1.7, 1.3, 1, 0.75, 0.55], p: [8, 10], l: 7, e: 4, c: 6, k: 400 };
+  /* Shay's formula (11.11.2026): guests per liter of spirits, by the weekday of the event.
+     Sun-Mon 8.5 · Tue 8 · Wed 7.5 · Thu-Fri 7. A special ratio typed in the client card ("יחס מיוחד לאירוע") always wins. */
+  var DOW_RATIO = { 0: 8.5, 1: 8.5, 2: 8, 3: 7.5, 4: 7, 5: 7, 6: 7 }, DOW_NAME = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+  function ratioFor(c, a) {
+    var own = Number(a && a.ratio);
+    if (own >= 3 && own <= 20) return { per: own, src: "own", label: "לפי ההנחיה שלך לאירוע הזה" };
+    if (!c.eventDate) return { per: DOW_RATIO[2], src: "nodate", label: "אין תאריך בכרטיס, מחושב לפי יום שלישי" };
+    var d = new Date(c.eventDate + "T12:00:00").getDay();
+    return { per: DOW_RATIO[d], src: "dow", label: "לפי יום " + DOW_NAME[d] };
+  }
   var BNAME = { v: "וודקה", w: "וויסקי", a: "ערק", g: "ג'ין", t: "טקילה", f: "וודקה בטעמים" };
   var BORD = ["v", "w", "a", "g", "t", "f"];
   var BUDL = { u10: "עד 10,000 ₪", m20: "10,000 עד 20,000 ₪", m30: "20,000 עד 30,000 ₪", na: "עוד לא החליט" };
@@ -1165,8 +1176,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function barCompute(c, a) {
     var g = Number(c.guests) || 0; if (g < 20) return null;
     var dow = c.eventDate ? new Date(c.eventDate + "T12:00:00").getDay() : 2, per;
-    if (dow > 2 || a.end === "3") per = BCFG.l;
-    else { var au = { young: 0, mixed: 0.5, mature: 1 }[a.aud], vb = { party: 0, mid: 0.5, quiet: 1 }[a.vibe]; per = BCFG.p[0] + (BCFG.p[1] - BCFG.p[0]) * ((au + vb) / 2); }
+    per = ratioFor(c, a).per;
     var L = Math.ceil(g / per), sh = {};
     a.rank.forEach(function (k, i) { sh[k] = BCFG.b[k] * BCFG.r[i]; });
     sh.f = a.flav ? BCFG.b.f : 0;
@@ -1215,6 +1225,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         field("קוקטייל בר", "b-cock", sel("cock", [["yes", "כן"], ["no", "לא"], ["rec", "ממליצים"]], b.cock)) +
         field("תקציב משוער", "b-bud", sel("budget", [["u10", BUDL.u10], ["m20", BUDL.m20], ["m30", BUDL.m30], ["na", BUDL.na]], b.budget)) +
         '<div class="field check"><input id="b-flav" type="checkbox" data-bar="flav"' + (b.flav ? " checked" : "") + d + '><label for="b-flav">וודקה בטעמים לשוטים</label></div>' +
+      '</div>' + (function () {
+        var def = ratioFor(c, {}), own = Number(b.ratio) >= 3 && Number(b.ratio) <= 20;
+        return '<div class="ratiobox' + (own ? " on" : "") + '"><label for="b-ratio"><b>יחס מיוחד לאירוע הזה</b> (לא חובה): ליטר אלכוהול על כל</label>' +
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="b-ratio" type="number" min="3" max="20" step="0.5" inputmode="decimal" data-bar="ratio" value="' + esc(b.ratio || "") + '" placeholder="' + def.per + '" style="width:90px"' + d + '><span>אורחים</span>' +
+          (own ? '<button type="button" class="btn ghost sm" data-act="ratio-clear"' + d + '>חזרה לנוסחה</button>' : "") + '</div>' +
+          '<div class="muted" style="font-size:12.5px">' + (own ? "<b>פעיל:</b> החישוב לפי ההנחיה שלך, ליטר על כל " + esc(b.ratio) + " אורחים. בלי הנחיה היה " + def.per + " (" + esc(def.label) + ")." : "ריק = לפי הנוסחה: ראשון-שני 8.5 · שלישי 8 · רביעי 7.5 · חמישי-שישי 7. כרגע: <b>" + def.per + "</b> (" + esc(def.label) + ").") + '</div></div>';
+      })() + '<div class="fields" style="display:none">' +
       '</div><div class="fl">מה שותים הכי הרבה באירוע שלו? (מקום 1 הוא הכי הרבה)</div>' + rank +
       '<div class="fl">להסיר מההצעה לגמרי (מה שמסומן לא ייכנס לחבילה ולא ל-PDF)</div><div class="opts">' + EXCL.map(function (x) { return '<label class="opt"><input type="checkbox" data-bex="' + x[0] + '"' + (b.excl.indexOf(x[0]) >= 0 ? " checked" : "") + d + '>' + x[1] + '</label>'; }).join("") + '</div>' +
       field("הערות אפיון", "b-note", '<textarea id="b-note" data-bar="note" rows="2"' + d + '>' + esc(b.note || "") + '</textarea>') + '</div>';
@@ -1223,7 +1240,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else {
       var pk = BPK[b.pkg], mx = Math.max.apply(null, BORD.concat(["c"]).map(function (k) { return res.qty[k] || 0; })) || 1, inten = res.L / res.g;
       var lv = inten < 0.112 ? "ערב רגוע" : inten < 0.135 ? "ערב מאוזן" : "ערב אנרגטי";
-      out = '<div class="barout"><div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><span class="bigl num">' + res.L + '</span><span>ליטר אלכוהול · ' + lv + ' · ליטר על כל ' + (Math.round(res.per * 10) / 10) + ' אורחים</span></div>' +
+      out = '<div class="barout"><div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap"><span class="bigl num">' + res.L + '</span><span>ליטר אלכוהול · ליטר על כל ' + (Math.round(res.per * 10) / 10) + ' אורחים (' + esc(ratioFor(c, b).label) + ')</span></div>' +
         BORD.concat(["c"]).filter(function (k) { return res.qty[k] > 0; }).map(function (k) {
           var rows = pk ? brandSplit(b.pkg, k, res.qty[k]) : [];
           return '<div><div class="brow"><span>' + BNAME[k] + '</span><div class="track"><i style="width:' + Math.round(res.qty[k] / mx * 100) + '%"></i></div><b class="num">' + res.qty[k] + '</b></div>' +
@@ -1612,8 +1629,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (!dl) { toast("ההורדה לא זמינה בתצוגה הזו. פתחו את הדף ב-claude.ai"); return; }
     if (!loaded.clients) { toast("הנתונים עוד נטענים"); return; }
     try {
-      await dl.save({ filename: "sms-crm-backup-" + todayStr() + ".json", data: JSON.stringify(backupData(), null, 2) });
-      toast("הגיבוי נשמר בקובץ");
+      var bfn = "sms-crm-backup-" + todayStr() + ".json", bdata = JSON.stringify(backupData(), null, 2), useDir = await dirReady(true);
+      if (useDir) { var where = await saveBlob(new Blob([bdata], { type: "application/json" }), bfn, true, "backup"); toast("✓ הגיבוי " + savedNote(where, "backup", bfn)); }
+      else { await dl.save({ filename: bfn, data: bdata }); toast("✓ הגיבוי ירד לתיקיית ההורדות: " + bfn + ". כדי שיישמר בתיקיית הגיבויים, בחרו תיקייה בהגדרות"); }
       if (db && canWrite) guard(function () { return saveSettings({ lastBackup: new Date().toISOString() }); });
     } catch (e) { toast(e && e.code === "declined" ? "ההורדה בוטלה" : "ההורדה נכשלה, נסו שוב"); }
   }
@@ -1719,7 +1737,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       "",
       "כללי העסק:",
       "- ארבע חבילות, מחיר לראש ב-350 אורחים: Classic 22.8, חצי חצי (פרימיום וסטנדרטי) 24.4, Supreme (פרימיום) 26.9, סופר פרימיום 55.4. אל תמליץ על Classic אלא אם הלקוח ביקש במפורש חבילה חסכונית.",
-      "- כמות אלכוהול חריף: ראשון עד שלישי ליטר על כל 8 עד 10 אורחים (8 לקהל צעיר או אפטר פארטי, 10 לאירוע רגוע שמסתיים מוקדם עם הרבה מבוגרים). רביעי עד שישי 1:7. אירוע שמתוכנן להימשך עד 3 בלילה 1:7. סופרים את כל המוזמנים. יין ובירה האולם מגיש ולא נכללים. הרזרבה כבר בחשבון, אל תגדיל.",
+      "- כמות אלכוהול חריף, ליטר על כל X אורחים לפי היום בשבוע: ראשון ושני 8.5, שלישי 8, רביעי 7.5, חמישי ושישי 7. אם בכרטיס יש 'יחס מיוחד לאירוע', הוא גובר. סופרים את כל המוזמנים. יין ובירה האולם מגיש ולא נכללים. הרזרבה כבר בחשבון, אל תגדיל.",
       "- אם הלקוח ביקש קוקטיילים, הרכיבים (לרוב אפרול שפריץ) נכללים בכמות האלכוהול של החבילה.",
       "- בהצעה: המחיר סופי, אחרי שריון אין עליית מחיר גם אם מחירי השוק עולים. המחיר והתאריך נשמרים יומיים, והסבר למה כדי שלא יורגש לחץ. אפשר להחליף חבילה עד שבוע לפני האירוע. אין קישורי יצירת קשר.",
       "- הלקוח לא קונה בקבוק אלא מעטפת שכוללת שירות וחוסר התעסקות. טון חם ומקצועי, שכנוע עדין, בלי לחץ.",
@@ -2752,6 +2770,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "backup") doBackup();
     else if (act === "pay-add") { var pid = cid || openId; if (pid) payDlg(pid); }
     else if (act === "pd-save") payDlgSave();
+    else if (act === "ratio-clear" && openId) { patchBar(openId, { ratio: "" }); toast("חזרנו לנוסחה לפי היום בשבוע"); }
     else if (act === "go-grp") { var gk = b.dataset.g, ge = document.querySelector('#sheet details[data-k="' + gk + '"]'); if (ge) { ge.open = true; OPEN[gk] = true; ge.scrollIntoView({ behavior: "smooth", block: "start" }); } }
     else if (act === "go-pay") { var pf = $("pay-filter"); if (pf) pf.value = "open"; location.hash = "payments"; showView("payments"); renderPayments(); window.scrollTo(0, $("view-payments").offsetTop - 10); }
     else if (act === "camp-months") campMonthsDlg(b.closest("tr").dataset.id);
@@ -3402,8 +3421,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   barCompute = function (c, a) {
     var g = Number(c.guests) || 0; if (g < 20) return null;
     var ex = a.excl || [], dow = c.eventDate ? new Date(c.eventDate + "T12:00:00").getDay() : 2, per;
-    if (dow > 2 || a.end === "3") per = BCFG.l;
-    else { var au = { young: 0, mixed: 0.5, mature: 1 }[a.aud], vb = { party: 0, mid: 0.5, quiet: 1 }[a.vibe]; per = BCFG.p[0] + (BCFG.p[1] - BCFG.p[0]) * ((au + vb) / 2); }
+    per = ratioFor(c, a).per;
     var L = Math.ceil(g / per), sh = {};
     a.rank.forEach(function (k, i) {
       var bs = BCFG.b[k] != null ? BCFG.b[k] : 0.08, m = BCFG.r[i] != null ? BCFG.r[i] : 0.4;
@@ -3428,14 +3446,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   /* ---- custom basket: lines, price ---- */
   function buildLines(tier, res, b) {
     var lines = [], ov = b.qover || {};
-    function add(cat, name, qty) {
+    /* liters=true: qty is LITERS of that spirit (from the ratio). It becomes a bottle count by the real bottle size,
+       rounded up, so a 700 ml bottle never counts as a full liter and the event gets at least the liters of the formula. */
+    function add(cat, name, qty, liters) {
       var p = PROD[name]; if (!p) return;
-      var has = ov[name] !== undefined && ov[name] !== null && ov[name] !== "", q = has ? Math.max(0, Math.round(Number(ov[name])) || 0) : qty;
       var sw = (b.swaps || {})[name], nm = name, cost = p[0], size = p[1], cr = creditOf(name, p[0]);
       if (sw && sw.name) { nm = sw.name; cost = Number(sw.cost) || 0; size = Number(sw.size) || 1; cr = Number(sw.credit) > 0 ? Number(sw.credit) : creditOf(sw.name, cost); }
+      if (liters && size > 0) qty = Math.ceil(qty / size - 1e-9);
+      var has = ov[name] !== undefined && ov[name] !== null && ov[name] !== "", q = has ? Math.max(0, Math.round(Number(ov[name])) || 0) : qty;
       lines.push({ cat: cat, name: nm, key: name, qty: q, base: qty, size: size, cost: cost, credit: cr, edited: has && q !== qty, swapped: !!(sw && sw.name), was: sw && sw.name ? name : "" });
     }
-    ["v", "w", "a", "g", "t", "f"].forEach(function (k) { if (res.qty[k] > 0) brandSplit(tier, k, res.qty[k]).forEach(function (r) { if (r[1] > 0) add(k, r[0], r[1]); }); });
+    ["v", "w", "a", "g", "t", "f"].forEach(function (k) { if (res.qty[k] > 0) brandSplit(tier, k, res.qty[k]).forEach(function (r) { if (r[1] > 0) add(k, r[0], r[1], true); }); });
     if (res.qty.c > 0) { var sets = Math.max(1, Math.round(res.qty.c / 3)); add("c", APEROL, sets); add("c", PROSECCO, sets * 2); }
     if (res.trays > 0) add("m", BPK[tier].energy === "XL" ? "משקה אנרגיה XL (מגש)" : "משקה אנרגיה BLUE (מגש)", res.trays);
     if (res.juiceC > 0) add("m", "משקה חמוציות", res.juiceC);
@@ -3545,14 +3566,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var dirHandle = null, dirName = "";
   async function loadDir() { try { dirHandle = await idb("readonly", function (s) { return s.get(DIRKEY); }); dirName = dirHandle ? dirHandle.name : ""; } catch (e) { dirHandle = null; } }
   /* Shay picks ONE main folder once. Inside it every kind of file has its own sub-folder (created automatically). */
-  var FOLDERS = { quote: "חבילות קלוד", agr: "הסכמי לקוחות", rsvp: "אישורי הגעה לקוחות" };
+  var FOLDERS = { quote: "חבילות קלוד", agr: "הסכמי לקוחות", rsvp: "אישורי הגעה לקוחות", backup: "גיבוי נתוני CRM" };
   async function pickDir() {
     if (!window.showDirectoryPicker) { toast("הדפדפן הזה לא תומך בבחירת תיקייה. השתמשו ב-Chrome או Edge במחשב"); return; }
     try {
       var h = await window.showDirectoryPicker({ id: "sms-quotes", mode: "readwrite", startIn: "documents" });
       for (var k in FOLDERS) await h.getDirectoryHandle(FOLDERS[k], { create: true });
       dirHandle = h; dirName = h.name; await idb("readwrite", function (s) { return s.put(h, DIRKEY); });
-      toast("נבחרה התיקייה " + h.name + ". בתוכה נוצרו: " + FOLDERS.quote + ", " + FOLDERS.agr + ", " + FOLDERS.rsvp); renderSheet(true); renderFolderInfo();
+      toast("✓ נבחרה התיקייה " + h.name + ". בתוכה: " + FOLDERS.quote + ", " + FOLDERS.agr + ", " + FOLDERS.rsvp + ", " + FOLDERS.backup); renderSheet(true); renderFolderInfo();
     } catch (e) { if (!e || e.name !== "AbortError") toast("בחירת התיקייה נכשלה"); }
   }
   function savedNote(where, kind, file) { return where === "dir" ? "נשמר בתיקייה " + folderPath(kind) + ": " + file : "ירד לתיקיית ההורדות (לא נבחרה תיקייה): " + file; }
@@ -3560,7 +3581,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function renderFolderInfo() {
     var fw = $("folder-warn"); if (fw) fw.hidden = !!dirName || !window.showDirectoryPicker;
     var el = $("folder-info"); if (!el) return;
-    el.innerHTML = dirName ? 'הקבצים נשמרים בתיקייה <b>' + esc(dirName) + '</b>, בתוכה: ' + esc(FOLDERS.quote) + ' · ' + esc(FOLDERS.agr) + ' · ' + esc(FOLDERS.rsvp) : '<span style="color:var(--bad);font-weight:600">עוד לא נבחרה תיקייה. בינתיים הקבצים יורדים לתיקיית ההורדות.</span>';
+    el.innerHTML = dirName ? 'הקבצים נשמרים בתיקייה <b>' + esc(dirName) + '</b>, בתוכה: ' + esc(FOLDERS.quote) + ' · ' + esc(FOLDERS.agr) + ' · ' + esc(FOLDERS.rsvp) + ' · ' + esc(FOLDERS.backup) : '<span style="color:var(--bad);font-weight:600">עוד לא נבחרה תיקייה. בחרו את CRM › גיבויים. בינתיים הקבצים יורדים לתיקיית ההורדות.</span>';
   }
   async function dirReady(ask) {
     if (!dirHandle) return false;
