@@ -327,6 +327,18 @@ details.pull[open] > summary { margin-bottom: 10px; }
 .rsv-sig{max-width:220px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px;display:block}
 .rsv-box{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:12px 14px;display:grid;gap:8px}
 .payalert{display:flex;gap:10px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--bad);color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px}.payalert b{font-size:17px;display:block}.payalert span{font-size:14px;opacity:.95}.payalert .btn{background:#fff;color:var(--bad)}
+.kpis3{grid-template-columns:repeat(3,minmax(0,1fr))}.kpis3 .kpi .val{font-size:28px}
+.setbar{margin-bottom:14px}.setbar>summary{cursor:pointer;font-size:14px;color:var(--ink-2);padding:6px 2px}.setbar[open]>summary{margin-bottom:8px}.setbar .calbar{margin-bottom:0}
+.tabs .tab{font-size:16px;padding:12px 18px}.more-btn{margin-inline-start:auto}.more-btn.on{color:var(--accent);font-weight:700}
+.tabs2{margin-top:-14px;border-bottom:1px dashed var(--line)}.tabs2 .tab{font-size:14px;padding:8px 14px}
+.tgrp{margin-bottom:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 12px}.tgrp>summary{cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 2px;font-family:var(--font-display);font-size:21px;font-weight:700;list-style:none}.tgrp>summary::-webkit-details-marker{display:none}
+.tgrp>summary .count{font-family:var(--font-body);font-size:13px;background:var(--surface-2);color:var(--ink);border-radius:99px;padding:1px 10px}.tgrp.g-now{border-color:var(--bad)}.tgrp.g-now>summary .count{background:var(--bad);color:#fff}.tgrp.g-today>summary .count{background:var(--warn-soft);color:var(--warn)}
+.tgrp .att{margin-bottom:12px}.tgrp .att h3{font-size:15px;color:var(--ink-2)}.tgrp .arow{background:var(--bg)}
+.cgrp{border:1px solid var(--line);border-radius:10px;background:var(--surface)}.cgrp>summary{cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;padding:13px 16px;font-weight:700;font-size:16px}.cgrp>summary small{font-weight:400;color:var(--ink-2);font-size:13px}.cgrp[open]>summary{border-bottom:1px solid var(--line)}
+.cgrp-in{padding:12px;display:flex;flex-direction:column;gap:14px;background:var(--bg);border-radius:0 0 10px 10px}
+.nextstep{border:2px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface);display:grid;gap:6px}.nextstep .ns-t{font-weight:700;font-size:17px}.nextstep .ns-b{font-size:14px;color:var(--ink-2)}.nextstep .ns-a{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.nextstep.bad{border-color:var(--bad);background:var(--bad-soft)}.nextstep.warn{border-color:var(--warn)}.nextstep.good{border-color:var(--good);background:var(--good-soft)}
+@media (max-width:600px){.btn.sm{padding:9px 14px;font-size:14px}.tabs{flex-wrap:wrap;overflow-x:visible}.tabs .tab{padding:10px 10px;font-size:15px}.more-btn{margin-inline-start:0}.kpis3{gap:8px}.kpis3 .kpi{padding:10px}.kpis3 .kpi .val{font-size:21px}.kpis3 .kpi .sub{font-size:11.5px}.arow .ar-acts{width:100%}.arow .ar-acts .btn{flex:1 1 auto;text-align:center}.tgrp>summary{font-size:18px}}
 .big-n{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.1}
 td .btn{margin-inline-end:4px}
 .qtab{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:8px}.qtab th{text-align:right;color:var(--ink-2);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}.qtab td{padding:4px 6px;border-bottom:1px solid var(--line)}.qtab input{width:70px;min-height:34px}.btn.sm{text-decoration:none}.steps{display:grid;gap:8px;margin:8px 0}.stp{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;line-height:1.55}.stp.ok{opacity:.8}
@@ -341,15 +353,15 @@ td .btn{margin-inline-end:4px}
     <div class="status"><span class="dot" id="dot"></span><span id="statusText">טוען נתונים…</span><button class="btn ghost sm" id="reload-btn" hidden>רענון</button><button class="btn ghost sm" id="lock-btn">נעילה</button></div>
   </header>
 
-  <section class="kpis" aria-label="סיכום">
-    <div class="kpi" id="k-new-box" data-go="new" role="button" tabindex="0"><div class="lbl">לידים חדשים</div><div class="val num" id="k-new">0</div><div class="sub" id="k-new-sub">&nbsp;</div></div>
-    <div class="kpi" id="k-hes-box" data-go="follow" role="button" tabindex="0"><div class="lbl">פולואפ</div><div class="val num" id="k-hes">0</div><div class="sub" id="k-hes-sub">&nbsp;</div></div>
-    <div class="kpi" id="k-pay-box" data-go="pay" role="button" tabindex="0"><div class="lbl">תשלומים פתוחים</div><div class="val num" id="k-pay">0</div><div class="sub" id="k-pay-sub">&nbsp;</div></div>
-    <div class="kpi" data-go="won" role="button" tabindex="0"><div class="lbl">סגרו (₪)</div><div class="val num" id="k-won">0</div><div class="sub" id="k-won-sub">&nbsp;</div></div>
-    <div class="kpi" data-go="events" role="button" tabindex="0"><div class="lbl">אירועים קרובים</div><div class="val num" id="k-events">0</div><div class="sub" id="k-events-sub">&nbsp;</div></div>
+  <section class="kpis kpis3" aria-label="סיכום">
+    <div class="kpi" id="k-pay-box" data-go="pay" role="button" tabindex="0"><div class="lbl">לגבות עכשיו</div><div class="val num" id="k-pay">0</div><div class="sub" id="k-pay-sub">&nbsp;</div></div>
+    <div class="kpi" id="k-todo-box" data-go="todo" role="button" tabindex="0"><div class="lbl">לטפל היום</div><div class="val num" id="k-todo">0</div><div class="sub" id="k-todo-sub">&nbsp;</div></div>
+    <div class="kpi" id="k-week-box" data-go="events" role="button" tabindex="0"><div class="lbl">אירועים השבוע</div><div class="val num" id="k-week">0</div><div class="sub" id="k-week-sub">&nbsp;</div></div>
   </section>
   <section class="payalert" id="pay-alert" role="alert" hidden></section>
+  <div class="av-banner warn" id="folder-warn" hidden style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span>📁 עוד לא נבחרה תיקייה לשמירת הקבצים (חבילות קלוד, הסכמי לקוחות, אישורי הגעה לקוחות). בינתיים הקבצים יורדים לתיקיית ההורדות.</span><button class="btn sm" type="button" data-act="pick-dir">בחירת תיקייה</button></div>
 
+  <details class="setbar" id="setbar"><summary>⚙️ הגדרות: יומן Google, תיקיית קבצים, גיבוי</summary>
   <section class="calbar" aria-label="יומן Google">
     <div class="cs"><b>יומן Google</b><span id="cal-state" class="muted">בודק חיבור…</span></div>
     <button class="btn sm" id="cal-btn" disabled>חיבור ליומן Google</button>
@@ -380,31 +392,26 @@ td .btn{margin-inline-end:4px}
       </div>
     </details>
   </section>
+  </details>
 
   <nav class="tabs" role="tablist" aria-label="תצוגות">
     <button class="tab" role="tab" data-view="today" aria-selected="true">היום<span class="badge" id="today-badge" hidden>0</span></button>
-    <button class="tab" role="tab" data-view="availability" aria-selected="false">זמינות</button>
     <button class="tab" role="tab" data-view="clients" aria-selected="false">לקוחות</button>
     <button class="tab" role="tab" data-view="payments" aria-selected="false">תשלומים<span class="badge" id="pay-badge" hidden>0</span></button>
+    <button class="tab" role="tab" data-view="events" aria-selected="false">יומן אירועים</button>
+    <button class="tab more-btn" type="button" id="more-btn" aria-expanded="false">עוד ▾</button>
+  </nav>
+  <nav class="tabs tabs2" id="more-tabs" aria-label="עוד" hidden>
     <button class="tab" role="tab" data-view="sources" aria-selected="false">מקורות והמרות</button>
-    <button class="tab" role="tab" data-view="events" aria-selected="false">אירועים</button>
-    <button class="tab" role="tab" data-view="messages" aria-selected="false">הודעות ווטסאפ</button>
+    <button class="tab" role="tab" data-view="messages" aria-selected="false">תבניות הודעה</button>
     <button class="tab" role="tab" data-view="activity" aria-selected="false">תזכורות ויומן פעולות</button>
   </nav>
 
-  <!-- TODAY -->
+  <!-- TODAY: one list, most important first -->
   <section class="view" id="view-today">
-    <section class="att urgent" id="charges" hidden></section>
-    <section class="digest" id="digest"></section>
-    <section class="att" id="nudges" hidden></section>
     <div class="summary" id="today-summary"></div>
     <div id="today-body"></div>
-  </section>
-
-  <!-- AVAILABILITY -->
-  <section class="view" id="view-availability" hidden>
-    <div class="row-head"><h2>זמינות תאריכים</h2></div>
-    <div id="avail-body"></div>
+    <details class="pull" data-k="digest" style="margin-top:18px"><summary><span>סיכום בוקר לשליחה לעצמך בווטסאפ</span></summary><section class="digest" id="digest"></section></details>
   </section>
 
   <!-- CLIENTS -->
@@ -473,7 +480,8 @@ td .btn{margin-inline-end:4px}
 
   <!-- EVENTS -->
   <section class="view" id="view-events" hidden>
-    <div class="row-head"><h2>אירועים</h2><button class="btn" id="toggle-event-form">אירוע ללא כרטיס לקוח</button></div>
+    <div class="row-head"><h2>יומן אירועים</h2><button class="btn ghost" id="toggle-event-form">אירוע ללא כרטיס לקוח</button></div>
+    <details class="pull sec" data-k="avail" open style="margin-bottom:16px"><summary><span>לוח זמינות תאריכים</span><small>לבדוק אם תאריך פנוי</small></summary><div id="avail-body"></div></details>
     <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל עסקה שנסגרה מופיעה כאן אוטומטית. אירוע ידני נחוץ רק כשאין לו כרטיס לקוח.</p>
     <form class="form" id="event-form" hidden>
       <div class="fields">
@@ -1091,7 +1099,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }).join("");
   }
   var OPEN = {};
-  document.addEventListener("toggle", function (e) { var t = e.target; if (t && t.tagName === "DETAILS" && t.dataset && t.dataset.k) OPEN[t.dataset.k] = t.open; }, true);
+  document.addEventListener("toggle", function (e) { var t = e.target; if (t && t.tagName === "DETAILS" && t.dataset && t.dataset.k && !t.classList.contains("cgrp") && !t.classList.contains("tgrp")) OPEN[t.dataset.k] = t.open; }, true);
+  /* card / today groups remember only what Shay clicked (a freshly rendered "open" group must not change the defaults of the next client) */
+  document.addEventListener("click", function (e) { var s = e.target.closest && e.target.closest("details.cgrp > summary, details.tgrp > summary"); if (s) OPEN[s.parentNode.dataset.k] = !s.parentNode.open; }, true);
 
   /* ---- pull-out date calendar (client sheet + new lead form) ---- */
   var MC = {}, MCSEL = {};
@@ -1362,7 +1372,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function payRemBtn(c) {
     if (payState(c).k === "paid") return "";
     var wl = payWaLink(c), last = lastPayRem(c), sent = payRemSentToday(c);
-    return (wl ? '<a class="btn ' + (payToday(c) && !sent ? "" : "ghost ") + 'sm" data-payrem="' + esc(c.id) + '" href="' + wl + '" target="_blank" rel="noopener">' + (sent ? "תזכורת נוספת בווטסאפ" : "שליחת תזכורת תשלום") + '</a>' : '<span class="chip bad">אין טלפון</span>') +
+    return (wl ? '<a class="btn ' + (payToday(c) && !sent && payState(c).k !== "novalue" ? "" : "ghost ") + 'sm" data-payrem="' + esc(c.id) + '" href="' + wl + '" target="_blank" rel="noopener">' + (sent ? "תזכורת נוספת בווטסאפ" : "שליחת תזכורת תשלום") + '</a>' : '<span class="chip bad">אין טלפון</span>') +
       (last ? '<span class="chip ' + (sent ? "good" : "warn") + '">' + (sent ? "תזכורת נשלחה היום ✓" : "תזכורת אחרונה " + esc(ago(last))) + '</span>' : (payToday(c) ? '<span class="chip bad">עוד לא נשלחה תזכורת</span>' : ""));
   }
   document.addEventListener("click", function (e) {
@@ -2095,25 +2105,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     });
     var lbk = cfg().lastBackup;
     var rB = state.clients.length && dl && (!lbk || daysAgo(lbk) >= 30) ? [arow({ title: "הגיע הזמן לגיבוי חודשי", sub: lbk ? "הגיבוי האחרון היה לפני " + daysAgo(lbk) + " ימים" : "עוד לא הורד גיבוי", chips: [["גיבוי", "warn"]], acts: '<button class="btn sm" data-act="backup">הורד גיבוי חודשי</button>' })] : [];
-    var nPayU = payAll.length - rP.length;
-    var total = rN.length + rH.length + rC.length + missing.length + rE.length + rF1.length + rF2.length + rP.length + rX.length + rB.length + rR.length + nPayU;
-    var urgentCount = rN.length + rH.length + missing.length + rfUrg + rX.length + rR.length + nPayU;
-    return { html: section("כפל אירועים באותו תאריך", rX, true) + section("טפסי אישורי הגעה שהתקבלו: להפיק הצעה סופית", rR, true, "sec-rsvp") + section("זיכויים: להחזיר כסף לפני התקרה", rF2, rfUrg > 0) + section("לידים חדשים שלא טופלו", rN, true, "sec-new") + section("פולואפים להיום ובאיחור", rH, true, "sec-follow") + section("עסקאות סגורות עם מידע חסר", missing, true) + section("מתלבטים בלי קשר " + NO_CONTACT_DAYS + "+ ימים", rC, false) + section("אירועים שהסתיימו: לבקש פירוט לזיכוי", rF1, false) + section("תשלומים פתוחים (לא דחופים עדיין)", rP, false, "sec-pay") + section("גיבוי חודשי", rB, false) + section("אירועים ב-" + SOON_DAYS + " הימים הקרובים", rE, false), total: total, urgent: urgentCount, nNew: rN.length, nHes: rH.length, nMissing: missing.length, nRf: rfUrg, nX: rX.length, nR: rR.length, nPay: nPayU };
+    /* ONE list in three groups, most important first. Urgent payments are always at the very top (no service without payment). */
+    var rPayU = chargeRows(), nud = nudgeRows();
+    var nOwner = nud.filter(function (r) { return r.k === 0; }).map(function (r) { return r.html; }), nSys = nud.filter(function (r) { return r.k === 1; }).map(function (r) { return r.html; }), nWait = nud.filter(function (r) { return r.k === 2; }).map(function (r) { return r.html; });
+    var rF2u = rF2.filter(function (x, i) { return rfOf(rfList[i]).left <= RF_WARN; }), rF2l = rF2.filter(function (x, i) { return rfOf(rfList[i]).left > RF_WARN; });
+    var G = {
+      now: [["💰 תשלומים שחייבים להיסגר", rPayU, "sec-pay-now"], ["📝 טפסים שהתקבלו: להפיק הצעה סופית", rR, "sec-rsvp"], ["⚠️ שני אירועים באותו תאריך", rX], ["💳 זיכויים: להחזיר כסף לפני התקרה", rF2u], ["🟢 תורך בתהליך של לקוח", nOwner]],
+      today: [["👋 לידים חדשים", rN, "sec-new"], ["📞 פולואפים להיום ובאיחור", rH, "sec-follow"], ["✉️ הודעות מוכנות לשליחה ללקוחות", nSys], ["❗ עסקאות סגורות עם מידע חסר", missing], ["📦 אירועים שהסתיימו: לבקש פירוט לזיכוי", rF1], ["💳 זיכויים בתהליך", rF2l]],
+      later: [["💰 תשלומים פתוחים (עוד לא דחופים)", rP, "sec-pay"], ["🤔 מתלבטים בלי קשר " + NO_CONTACT_DAYS + "+ ימים", rC], ["⏳ שלבים שמגיעים בקרוב", nWait], ["📅 אירועים ב-" + SOON_DAYS + " הימים הקרובים", rE], ["💾 גיבוי חודשי", rB]]
+    };
+    var cnt = function (g) { return G[g].reduce(function (t, s) { return t + s[1].length; }, 0); };
+    var grp = function (g, title, cls, open) {
+      var n = cnt(g); if (!n) return "";
+      var inner = G[g].map(function (s) { return section(s[0], s[1], g === "now", s[2]); }).join("");
+      return '<details class="tgrp ' + cls + '" data-k="t-' + g + '"' + (OPEN["t-" + g] === false ? "" : open ? " open" : (OPEN["t-" + g] ? " open" : "")) + '><summary><span>' + title + '</span><span class="count num">' + n + '</span></summary>' + inner + '</details>';
+    };
+    var nNow = cnt("now"), nToday = cnt("today"), nLater = cnt("later");
+    todoCount = { now: nNow, today: nToday };
+    return { html: grp("now", "🔴 עכשיו", "g-now", true) + grp("today", "🟡 היום", "g-today", true) + grp("later", "⚪ בהמשך ולידיעה", "g-later", false),
+      total: nNow + nToday + nLater, urgent: nNow, nNow: nNow, nToday: nToday, nLater: nLater, nPay: rPayU.length, nR: rR.length };
   }
   function renderToday() {
     var d = todayData(), b = $("today-badge");
     b.textContent = d.urgent; b.hidden = !d.urgent;
     if (!loaded.clients) { $("today-summary").textContent = ""; $("today-body").innerHTML = '<div class="empty">טוען…</div>'; return; }
-    if (!d.total) { $("today-summary").textContent = ""; $("today-body").innerHTML = '<div class="allok">הכל מטופל. אין לידים חדשים, פולואפים או חוסרים.</div>'; return; }
-    var parts = [];
-    if (d.nNew) parts.push(d.nNew + " לידים חדשים");
-    if (d.nHes) parts.push(d.nHes + " פולואפים");
-    if (d.nMissing) parts.push(d.nMissing + " עסקאות עם מידע חסר");
-    if (d.nRf) parts.push(d.nRf + " זיכויים דחופים");
-    if (d.nX) parts.push(d.nX + " כפילויות אירועים");
-    if (d.nR) parts.push(d.nR + " טפסי אישורי הגעה להפקת הצעה");
-    if (d.nPay) parts.push(d.nPay + " תשלומים דחופים");
-    $("today-summary").innerHTML = parts.length ? "<b>דורש טיפול עכשיו:</b> " + parts.join(", ") : "<b>אין משהו דחוף.</b> למטה מה שכדאי לעקוב אחריו.";
+    if (!d.total) { $("today-summary").textContent = ""; $("today-body").innerHTML = '<div class="allok">הכל מטופל ✓ אין תשלומים פתוחים, לידים או משימות.</div>'; return; }
+    $("today-summary").innerHTML = d.nNow ? "<b>" + d.nNow + " דברים דחופים עכשיו</b>" + (d.nToday ? " · עוד " + d.nToday + " להיום" : "") + ". מתחילים מלמעלה, ובכל שורה הכפתור הראשון הוא הפעולה הבאה." : d.nToday ? "<b>אין משהו דחוף.</b> " + d.nToday + " דברים להיום." : "<b>אין משהו להיום.</b> למטה מה שכדאי לעקוב אחריו.";
     $("today-body").innerHTML = d.html;
   }
 
@@ -2222,40 +2239,81 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       '<div class="tools"><select data-act="sheet-stage" aria-label="סטטוס"' + dis() + '>' + stOpts + '</select>' +
       (wa ? '<a class="btn ghost sm" href="https://wa.me/' + wa + '" target="_blank" rel="noopener">ווטסאפ</a>' : "") +
       '<button class="btn sm" id="close-sheet" data-act="close">סגירה</button></div></div>' +
-      '<div class="sheet-body">' + sheetBanner(c) +
-      '<section class="sec"><h3>פרטי הלקוח</h3><div class="fields">' +
-        field("שם", "p-name", fi("name", "text", c.name)) +
-        field("טלפון", "p-phone", fi("phone", "tel", c.phone, ' dir="ltr"')) +
-        field("אימייל", "p-email", fi("email", "email", c.email, ' dir="ltr"')) +
-        field("סוג אירוע", "p-type", '<select data-field="eventType"' + dis() + '>' + typeOpts + '</select>') +
-        field("תאריך האירוע", "p-date", fi("eventDate", "date", c.eventDate)) +
-        field("מוזמנים", "p-guests", fi("guests", "number", c.guests, ' min="0" inputmode="numeric"')) +
-        field("אולם / מקום", "p-venue", fi("venue", "text", c.venue)) +
-        field("מקור הגעה", "p-source", '<select data-field="source"' + dis() + '>' + srcOpts + '</select>') +
-        field("שווי העסקה (₪)", "p-value", fi("value", "number", c.value, ' min="0" inputmode="numeric"')) +
-        field("פולואפ בתאריך", "p-fu", fi("followUp", "date", c.followUp)) +
-      '</div></section>' +
-      calSection(c) + barSection(c) + quoteSection(c) +
-      '<section class="sec"><h3>הצעות שנשלחו <small>' + offers.length + ' הצעות</small></h3>' +
-        '<div class="addrow">' +
-          field("חבילה", "o-pkg", '<input id="o-pkg" placeholder="SUPREME"' + dis() + '>') +
-          field("סכום (₪)", "o-amt", '<input id="o-amt" type="number" min="0" inputmode="numeric"' + dis() + '>') +
-          field("תאריך", "o-date", '<input id="o-date" type="date" value="' + todayStr() + '"' + dis() + '>') +
-          field("סטטוס", "o-status", '<select id="o-status"' + dis() + '>' + statusOpts + '</select>') +
-          field("מה כללה ההצעה", "o-note", '<input id="o-note" placeholder="למשל: כולל קוקטיילים"' + dis() + '>') +
-          '<button class="btn" data-act="add-offer"' + dis() + '>הוספת הצעה</button></div>' +
-        offersHtml + '</section>' +
-      '<section class="sec"><h3>היסטוריית התהליך <small>החדש למעלה</small></h3>' +
-        '<div class="addrow" style="grid-template-columns:130px 1fr auto">' +
-          field("סוג", "g-type", '<select id="g-type"' + dis() + '>' + typeLogOpts + '</select>') +
-          field("מה קרה / מה סוכם", "g-text", '<textarea id="g-text" rows="2"' + dis() + '></textarea>') +
-          '<button class="btn" data-act="add-log"' + dis() + '>הוספה</button></div>' + logHtml + '</section>' +
-      debtBanner(c) + closedEdit(c) + sbSection(c) + sheetExtra(c) +
-      '<section class="sec"><h3>ביומן Google</h3>' + calHtml + '</section>' +
-      '<section class="sec"><h3>הערות כלליות</h3><textarea data-field="notes" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px"' + dis() + '>' + esc(c.notes || "") + '</textarea></section>' +
-      '<div><button class="btn danger sm" data-act="del-client"' + dis() + '>מחיקת הלקוח</button></div>' +
+      '<div class="sheet-body">' + nextStepHtml(c) + sheetBanner(c) +
+      (function () {
+        /* the card is split into short groups that open with one click; the most relevant ones start open */
+        var won = isWon(c), sb = sbSection(c);
+        var details = '<section class="sec"><h3>פרטי הלקוח</h3><div class="fields">' +
+          field("שם", "p-name", fi("name", "text", c.name)) +
+          field("טלפון", "p-phone", fi("phone", "tel", c.phone, ' dir="ltr"')) +
+          field("אימייל", "p-email", fi("email", "email", c.email, ' dir="ltr"')) +
+          field("סוג אירוע", "p-type", '<select data-field="eventType"' + dis() + '>' + typeOpts + '</select>') +
+          field("תאריך האירוע", "p-date", fi("eventDate", "date", c.eventDate)) +
+          field("מוזמנים", "p-guests", fi("guests", "number", c.guests, ' min="0" inputmode="numeric"')) +
+          field("אולם / מקום", "p-venue", fi("venue", "text", c.venue)) +
+          field("מקור הגעה", "p-source", '<select data-field="source"' + dis() + '>' + srcOpts + '</select>') +
+          field("שווי העסקה (₪)", "p-value", fi("value", "number", c.value, ' min="0" inputmode="numeric"')) +
+          field("פולואפ בתאריך", "p-fu", fi("followUp", "date", c.followUp)) +
+          '</div></section>' + sb.hall +
+          '<section class="sec"><h3>הערות כלליות</h3><textarea data-field="notes" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px"' + dis() + '>' + esc(c.notes || "") + '</textarea></section>';
+        var offersSec = '<section class="sec"><h3>הצעות שנשלחו <small>' + offers.length + ' הצעות</small></h3>' +
+          '<div class="addrow">' +
+            field("חבילה", "o-pkg", '<input id="o-pkg" placeholder="SUPREME"' + dis() + '>') +
+            field("סכום (₪)", "o-amt", '<input id="o-amt" type="number" min="0" inputmode="numeric"' + dis() + '>') +
+            field("תאריך", "o-date", '<input id="o-date" type="date" value="' + todayStr() + '"' + dis() + '>') +
+            field("סטטוס", "o-status", '<select id="o-status"' + dis() + '>' + statusOpts + '</select>') +
+            field("מה כללה ההצעה", "o-note", '<input id="o-note" placeholder="למשל: כולל קוקטיילים"' + dis() + '>') +
+            '<button class="btn" data-act="add-offer"' + dis() + '>הוספת הצעה</button></div>' + offersHtml + '</section>';
+        var hist = '<section class="sec"><h3>שיחות והודעות <small>החדש למעלה</small></h3>' +
+          '<div class="addrow" style="grid-template-columns:130px 1fr auto">' +
+            field("סוג", "g-type", '<select id="g-type"' + dis() + '>' + typeLogOpts + '</select>') +
+            field("מה קרה / מה סוכם", "g-text", '<textarea id="g-text" rows="2"' + dis() + '></textarea>') +
+            '<button class="btn" data-act="add-log"' + dis() + '>הוספה</button></div>' + logHtml + '</section>' + sb.act;
+        var p = payOf(c);
+        return grpS("g-details", "👤 פרטי הלקוח והאירוע", details, !won, (c.eventDate ? fmtDate(c.eventDate) : "אין תאריך") + (c.guests ? " · " + c.guests + " מוזמנים" : "") + (c.hallName ? " · מקבל: " + c.hallName : "")) +
+          grpS("g-pkg", "🥃 חבילה והצעת מחיר", barSection(c) + quoteSection(c) + sb.pk + offersSec, !won, (c.quote && c.quote.en ? c.quote.en + " · " + shekel(c.quote.total) : "עוד לא הופקה הצעה")) +
+          (won ? grpS("g-pay", "💰 תשלום וזיכוי", debtBanner(c) + sheetExtra(c), true, p.value ? (p.bal ? "יתרה " + shekel(p.bal) : "שולם במלואו ✓") : "חסר שווי עסקה") : "") +
+          (sb.docs ? grpS("g-docs", "📄 טופס אישורי הגעה והסכם", sb.docs, won, docsSummary(c)) : "") +
+          grpS("g-hist", "🕘 שיחות, הודעות ויומן פעולות", hist, false, (c.log || []).length + " רשומות") +
+          grpS("g-more", "⚙️ עוד פרטים (שלבים, יומן Google, מחיקה)", sb.pipe + sb.journey + calSection(c) + closedEdit(c) + '<section class="sec"><h3>ביומן Google</h3>' + calHtml + '</section>' + '<div><button class="btn danger sm" data-act="del-client"' + dis() + '>מחיקת הלקוח</button></div>', false, won && c.pipelineStage ? "שלב " + c.pipelineStage + " מתוך 11" : "");
+      })() +
       '</div>';
     $("overlay").scrollTop = scroll;
+  }
+  function grpS(k, title, html, defOpen, sub) {
+    var open = OPEN[k] === undefined ? defOpen : OPEN[k];
+    return '<details class="cgrp" data-k="' + k + '"' + (open ? " open" : "") + '><summary><span>' + title + '</span>' + (sub ? '<small>' + esc(sub) + '</small>' : "") + '</summary><div class="cgrp-in">' + html + '</div></details>';
+  }
+  function docsSummary(c) {
+    var f = rsvpOf(c.id)[0], a = agrOf(c.id)[0];
+    return [f ? (f.submitted_at ? "טופס: מולא ✓" : "טופס: נשלח, ממתין") : "טופס: לא נשלח", a ? (a.status === "signed" ? "הסכם: נחתם ✓" : a.status === "sent" ? "הסכם: ממתין לחתימה" : "הסכם: בוטל") : "הסכם: לא נוצר"].join(" · ");
+  }
+  /* the one thing to do next for this client, with its button */
+  function nextStepHtml(c) {
+    var box = function (cls, title, body, acts) { return '<div class="nextstep ' + cls + '"><div class="ns-t">' + title + '</div>' + (body ? '<div class="ns-b">' + body + '</div>' : "") + (acts ? '<div class="ns-a">' + acts + '</div>' : "") + '</div>'; };
+    var w = waNum(c.phone), st = stageOf(c), won = isWon(c), f = rsvpOf(c.id)[0];
+    if (won && payOpen(c) && payToday(c)) {
+      var p = payOf(c), s = payState(c);
+      return box("bad", "💰 הצעד הבא: לגבות את התשלום", esc(s.t) + " · " + (p.value ? "יתרה <b>" + shekel(p.bal) + "</b> · לשלם עד " + esc(fmtDate(payDue(c))) : "חסר שווי עסקה בכרטיס. מזינים אותו ב\"רישום תשלום\""), payRemBtn(c) + '<button class="btn ' + (p.value ? "ghost " : "") + 'sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>');
+    }
+    if (f && f.status === "submitted") return box("good", "📝 הצעד הבא: הלקוח מילא את הטופס, להפיק הצעה סופית", esc(((f.answers || {}).guests || "?") + " אישורי הגעה · מקבל החבילה: " + ((f.answers || {}).hall_name || "לא מולא")), '<button class="btn sm" data-rs="apply" data-fid="' + esc(f.id) + '"' + (rsvpBusy[c.id] ? " disabled" : "") + dis() + '>' + (rsvpBusy[c.id] ? "מפיק הצעה…" : "הפקת הצעה סופית לפי הטופס") + '</button>');
+    if (won && rsvpReady && !f && (!c.eventDate || c.eventDate >= todayStr())) return box("warn", "📝 הצעד הבא: לשלוח ללקוח טופס אישורי הגעה", "הלקוח ימלא כמה אורחים אישרו הגעה ומי מקבל את החבילה, ויחתום.", '<button class="btn sm" data-rs="new"' + dis() + '>יצירת טופס ושליחה בווטסאפ</button>');
+    var L0 = won ? journeyLight(c) : null;
+    if (L0 && (L0.k === "system" || L0.k === "owner")) {
+      var info = stageInfo(c.pipelineStage);
+      return box(L0.k === "owner" ? "good" : "warn", (L0.k === "owner" ? "🟢 הצעד הבא, תורך: " : "✉️ הצעד הבא: ") + esc(JOURNEY[L0.sid].t), esc(L0.k === "owner" && info ? info.owner_role || L0.txt : L0.txt) + (L0.msg ? '<div class="muted" style="margin-top:4px;white-space:pre-wrap">' + esc(L0.msg) + '</div>' : ""),
+        (L0.k === "system" && L0.msg && w ? '<a class="btn sm" data-jsend="' + esc(c.id) + '" href="https://wa.me/' + w + '?text=' + encodeURIComponent(L0.msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "") + (L0.k === "owner" ? '<button class="btn sm" data-sb="step-owner"' + dis() + '>סימנתי שביצעתי</button>' : ""));
+    }
+    if (won && payOpen(c)) { var p2 = payOf(c); return box("", "💰 יתרה פתוחה", (p2.value ? "יתרה " + shekel(p2.bal) + " · לשלם עד " + esc(fmtDate(payDue(c))) : "חסר שווי עסקה") + ". תזכורת יומית ללקוח מתחילה 5 ימים לפני האירוע.", '<button class="btn ghost sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>'); }
+    if (st === "ליד חדש") return box("warn", "👋 הצעד הבא: ליצור קשר ראשון", "לשלוח הודעת פתיחה, ואחרי השיחה לרשום מה סוכם בחלק \"שיחות והודעות\".", w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(journeyMsg(c, 1)) + '" target="_blank" rel="noopener">הודעת פתיחה בווטסאפ</a>' : '<span class="chip bad">אין טלפון בכרטיס</span>');
+    if (st === "מתלבטים") {
+      var q = c.quote && c.quote.kind === "custom" ? c.quote : null;
+      if (!q && !(c.offers || []).length) return box("warn", "🥃 הצעד הבא: להכין הצעת מחיר", "ממלאים את אפיון החבילה ומפיקים PDF בחלק \"חבילה והצעת מחיר\".", '<button class="btn sm" data-act="go-grp" data-g="g-pkg">לחבילה והצעה</button>');
+      if (q && !q.sentAt) return box("warn", "🥃 הצעד הבא: לשלוח את ההצעה ללקוח", "ההצעה " + esc(q.en || "") + " · " + shekel(q.total) + " הופקה ועוד לא סומנה כנשלחה.", '<button class="btn sm" data-act="go-grp" data-g="g-pkg">לשליחת ההצעה</button>');
+      var fu = c.followUp;
+      return box(fu && fu <= todayStr() ? "warn" : "", "📞 הצעד הבא: פולואפ" + (fu ? " ב-" + esc(fmtDate(fu)) : ""), "ההצעה נשלחה. אם הלקוח סוגר, משנים סטטוס ל\"נסגרה עסקה\" למעלה.", (w ? waBtn(c) : "") + '<button class="btn ghost sm" data-act="snooze">דחייה ב-3 ימים</button>');
+    }
+    return box("", "✓ אין פעולה דחופה ללקוח הזה", "", "");
   }
   function openSheet(id) {
     openId = id; delete MC.sheet; delete MCSEL.sheet; $("overlay").hidden = false; document.body.style.overflow = "hidden";
@@ -2501,40 +2559,39 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function openPayList() { return state.clients.filter(payOpen).sort(function (a, b) { return payState(a).rank - payState(b).rank || (a.eventDate || "9").localeCompare(b.eventDate || "9"); }); }
+  /* three numbers only: money to collect now, things to do today, events this week */
+  var todoCount = { now: 0, today: 0 };
   function renderKpis() {
-    var today = todayStr();
-    var nw = state.clients.filter(function (c) { return stageOf(c) === "ליד חדש"; });
-    $("k-new").textContent = nw.length; $("k-new-box").classList.toggle("alert", nw.length > 0);
-    $("k-new-sub").textContent = nw.length ? "ממתינים לטיפול" : "אין לידים חדשים";
-    var hes = state.clients.filter(function (c) { return stageOf(c) === "מתלבטים"; });
-    var due = hes.filter(function (c) { return !c.followUp || c.followUp <= today; });
-    $("k-hes").textContent = hes.length;
-    $("k-hes-sub").textContent = due.length ? due.length + " לפולואפ היום או באיחור" : (hes.length ? "אין פולואפ דחוף" : "אין מתלבטים");
-    $("k-hes-box").classList.toggle("alert", due.length > 0);
-    var payL = openPayList(), payU = payL.filter(payUrgent).length; $("k-pay").textContent = payL.length; $("k-pay-box").classList.toggle("alert", payU > 0);
-    $("k-pay-sub").textContent = payL.length ? shekel(payL.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0)) + " לגבייה" + (payU ? " · " + payU + " דחופים" : "") : "אין תשלומים פתוחים";
-    var won = state.clients.filter(function (c) { return isWon(c); });
-    $("k-won").textContent = nf.format(won.reduce(function (t, c) { return t + dealValue(c); }, 0));
-    $("k-won-sub").textContent = won.length + " לקוחות שסגרו";
-    var up = allEvents().filter(function (e) { return e.date && e.date >= today; });
-    $("k-events").textContent = up.length;
-    $("k-events-sub").textContent = up.length ? nf.format(up.reduce(function (t, e) { return t + (Number(e.guests) || 0); }, 0)) + " מוזמנים" : "אין אירועים קרובים";
+    var now = openPayList().filter(payToday), all = openPayList();
+    var sumNow = now.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0), sumAll = all.reduce(function (t, c) { return t + (payOf(c).bal || 0); }, 0);
+    $("k-pay").textContent = shekel(sumNow); $("k-pay-box").classList.toggle("alert", now.length > 0);
+    $("k-pay-sub").textContent = now.length ? now.length + " לקוחות · סה״כ פתוח " + shekel(sumAll) : all.length ? "אין דחוף · סה״כ פתוח " + shekel(sumAll) : "אין תשלומים פתוחים";
+    var n = todoCount.now + todoCount.today;
+    $("k-todo").textContent = n; $("k-todo-box").classList.toggle("alert", todoCount.now > 0);
+    $("k-todo-sub").textContent = todoCount.now ? todoCount.now + " דחופים עכשיו" : n ? "אין משהו דחוף" : "הכל מטופל ✓";
+    var wk = allEvents().filter(function (e) { return e.date && daysUntil(e.date) >= 0 && daysUntil(e.date) <= 7; });
+    $("k-week").textContent = wk.length;
+    $("k-week-sub").textContent = wk.length ? nf.format(wk.reduce(function (t, e) { return t + (Number(e.guests) || 0); }, 0)) + " מוזמנים" : "אין אירועים השבוע";
   }
   function renderFormSources() {
     var sel = $("l-source"), cur = sel.value;
     sel.innerHTML = sourceNames().map(function (n) { return '<option>' + esc(n) + '</option>'; }).join("");
     if (cur) sel.value = cur;
   }
-  function renderAll() { renderKpis(); renderFormSources(); renderToday(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderPayAlert(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
+  function renderAll() { renderFormSources(); renderToday(); renderKpis(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderPayAlert(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
 
   /* ---- tabs ---- */
-  var VIEWS = ["today", "availability", "clients", "payments", "sources", "events", "messages", "activity"];
+  var VIEWS = ["today", "clients", "payments", "events", "sources", "messages", "activity"], MORE_VIEWS = ["sources", "messages", "activity"];
   function showView(v) {
+    if (v === "availability") v = "events"; /* old links: availability now lives inside the events calendar */
     if (VIEWS.indexOf(v) < 0) v = "today";
+    var mt = $("more-tabs"); if (mt && MORE_VIEWS.indexOf(v) >= 0) { mt.hidden = false; $("more-btn").setAttribute("aria-expanded", "true"); }
+    var mb = $("more-btn"); if (mb) mb.classList.toggle("on", MORE_VIEWS.indexOf(v) >= 0);
     document.querySelectorAll(".view").forEach(function (el) { el.hidden = el.id !== "view-" + v; });
     document.querySelectorAll(".tab").forEach(function (t) { t.setAttribute("aria-selected", t.dataset.view === v ? "true" : "false"); });
   }
-  document.querySelectorAll(".tab").forEach(function (t) { t.addEventListener("click", function () { location.hash = t.dataset.view; showView(t.dataset.view); }); });
+  document.querySelectorAll(".tab[data-view]").forEach(function (t) { t.addEventListener("click", function () { location.hash = t.dataset.view; showView(t.dataset.view); }); });
+  $("more-btn").addEventListener("click", function () { var mt = $("more-tabs"); mt.hidden = !mt.hidden; this.setAttribute("aria-expanded", mt.hidden ? "false" : "true"); });
   window.addEventListener("hashchange", function () { showView(location.hash.slice(1)); });
 
   /* ---- top tiles: every tile jumps straight to its topic ---- */
@@ -2545,7 +2602,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (el && el.scrollIntoView) { el.scrollIntoView({ behavior: "smooth", block: "start" }); el.classList.add("flash-go"); setTimeout(function () { el.classList.remove("flash-go"); }, 1700); }
     }, 60);
   }
-  var GO = { "new": ["today", "sec-new", "clients", "col-ליד חדש"], follow: ["today", "sec-follow", "clients", "col-מתלבטים"], pay: ["payments", "view-payments"], won: ["clients", "col-סגרו"], events: ["events"] };
+  var GO = { "new": ["today", "sec-new", "clients", "col-ליד חדש"], follow: ["today", "sec-follow", "clients", "col-מתלבטים"], pay: ["payments", "view-payments"], todo: ["today", "today-body"], won: ["clients", "col-סגרו"], events: ["events", "view-events"] };
   window.__goTile = function (k) { var g = GO[k]; if (!g) return; var el = g[1] && $(g[1]); if (g.length > 2 && (!el || el.hidden)) goTo(g[2], g[3]); else goTo(g[0], g[1]); };
   document.querySelectorAll(".kpi[data-go]").forEach(function (k) {
     k.addEventListener("click", function () { window.__goTile(k.dataset.go); });
@@ -2655,7 +2712,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var cid = rowEl ? (rowEl.dataset.cid || rowEl.dataset.id) : null;
     if (act === "open" || act === "open-id") { if (cid) openSheet(cid); }
     else if (act === "start" && cid) openSheet(cid);
-    else if (act === "snooze" && cid) guard(function () { return patch("clients", cid, { followUp: addDays(3) }); });
+    else if (act === "snooze" && (cid || openId)) { var sid = cid || openId; guard(function () { return patch("clients", sid, { followUp: addDays(3) }); }); toast("הפולואפ נדחה ב-3 ימים"); }
     else if (act === "close") closeSheet();
     else if (act === "add-offer" && openId) {
       var c = byId(state.clients, openId); if (!c) return;
@@ -2695,6 +2752,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "backup") doBackup();
     else if (act === "pay-add") { var pid = cid || openId; if (pid) payDlg(pid); }
     else if (act === "pd-save") payDlgSave();
+    else if (act === "go-grp") { var gk = b.dataset.g, ge = document.querySelector('#sheet details[data-k="' + gk + '"]'); if (ge) { ge.open = true; OPEN[gk] = true; ge.scrollIntoView({ behavior: "smooth", block: "start" }); } }
     else if (act === "go-pay") { var pf = $("pay-filter"); if (pf) pf.value = "open"; location.hash = "payments"; showView("payments"); renderPayments(); window.scrollTo(0, $("view-payments").offsetTop - 10); }
     else if (act === "camp-months") campMonthsDlg(b.closest("tr").dataset.id);
     else if (act === "x-close") xClose();
@@ -2994,7 +3052,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         field("פרט (קובץ / תוכן)", "al-note", '<input id="al-note" placeholder="למשל: ' + esc((c.name || "") + "_(" + (c.finalPkgName || c.maxPkgName || "Supreme") + ").pdf") + '"' + dis() + '>') +
         '<button class="btn" data-sb="log-act"' + dis() + '>תיעוד</button></div>' +
       (logs.length ? '<ul class="tl">' + actRows(logs.slice(0, 40)) + '</ul>' : '<div class="empty">עוד אין פעולות מתועדות ללקוח הזה. מעברי סטטוס, שלבים ותשלומים נרשמים אוטומטית.</div>') + '</section>';
-    return pipe + journeySection(c) + rsvpSection(c) + agreementSection(c) + hall + pk + act;
+    return { pipe: pipe, journey: journeySection(c), docs: rsvpSection(c) + agreementSection(c), hall: hall, pk: pk, act: act };
   }
   document.addEventListener("change", function (e) {
     var t = e.target, f = t.dataset && t.dataset.sbf; if (!f || !openId || !canWrite) return;
@@ -3500,6 +3558,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function savedNote(where, kind, file) { return where === "dir" ? "נשמר בתיקייה " + folderPath(kind) + ": " + file : "ירד לתיקיית ההורדות (לא נבחרה תיקייה): " + file; }
   function folderPath(kind) { return (dirName ? dirName + " › " : "") + FOLDERS[kind]; }
   function renderFolderInfo() {
+    var fw = $("folder-warn"); if (fw) fw.hidden = !!dirName || !window.showDirectoryPicker;
     var el = $("folder-info"); if (!el) return;
     el.innerHTML = dirName ? 'הקבצים נשמרים בתיקייה <b>' + esc(dirName) + '</b>, בתוכה: ' + esc(FOLDERS.quote) + ' · ' + esc(FOLDERS.agr) + ' · ' + esc(FOLDERS.rsvp) : '<span style="color:var(--bad);font-weight:600">עוד לא נבחרה תיקייה. בינתיים הקבצים יורדים לתיקיית ההורדות.</span>';
   }
@@ -3708,6 +3767,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var rdone = sid === 11 && c.refund && c.refund.status === "done"; /* refund already done: no waiting for the date, the client can be closed now */
     if (rdone) { dd = 0; ad = true; if (!od) return { k: "owner", sid: sid, due: due, dd: 0, msg: "", txt: "הזיכוי הושלם. לחיצה על ״סימנתי שביצעתי את החלק שלי״ סוגרת את הלקוח והוא עובר ל״הושלם״." }; }
     var auto = !!AGENT_AUTO[sid] && sid !== 4;
+    /* step 4 ("follow-up until closing") means nothing once the deal is closed: wait quietly for step 5, a week before the event */
+    if (sid === 4 && c.eventDate) { var d5 = journeyDue(c, 5), n5 = d5 ? daysUntil(d5) : 0; if (n5 > 0) return { k: "wait", sid: 4, due: d5, dd: n5, msg: "", txt: "העסקה סגורה. השלב הבא (אישורי הגעה) מתחיל ב-" + fmtDate(d5) + "." }; }
     if (due && dd > 0) return { k: "wait", sid: sid, due: due, dd: dd, msg: msg, txt: "עוד " + dd + " ימים. מגיע ב-" + fmtDate(due) + ". עד אז אין מה לעשות." };
     if (!od && auto) return { k: "owner", sid: sid, due: due, dd: dd, msg: msg, txt: "אור ירוק: תורך קודם. אחרי שתסמן, המערכת ממשיכה." };
     if (!ad) return { k: "system", sid: sid, due: due, dd: dd, msg: msg, txt: msg ? "ההודעה ללקוח מוכנה. לחיצה על ״שליחה בווטסאפ״ שולחת ומסמנת שהמערכת סיימה." : "המערכת משלימה את החלק שלה." };
@@ -3742,23 +3803,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var c = byId(state.clients, id); if (!c || c.status !== "נסגרה עסקה") return;
     try { await markStep(id, c.pipelineStage, "a", "הודעה נשלחה"); await logAct(id, "message_sent", "whatsapp_business", { note: "מסע לקוח: " + JOURNEY[c.pipelineStage].t, source: "journey" }); renderSheet(true); toast("נרשם שההודעה נשלחה"); } catch (er) {}
   }
-  function renderNudges() {
-    var el = $("nudges"); if (!el) return;
-    if (!loaded.clients) { el.hidden = true; return; }
+  function renderNudges() { /* merged into the single "today" list (nudgeRows) */ }
+  function nudgeRows() {
+    if (!loaded.clients) return [];
     var rows = [];
     state.clients.forEach(function (c) {
       var L1 = journeyLight(c); if (!L1 || L1.k === "done") return;
       var soon = L1.k === "wait" && L1.dd <= 7;
       if (L1.k === "wait" && !soon) return;
       var w = waNum(c.phone), tel = "";
-      var acts = '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' + (L1.k === "system" && L1.msg && w ? '<a class="btn sm" data-jsend="' + esc(c.id) + '" href="https://wa.me/' + w + '?text=' + encodeURIComponent(L1.msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "");
+      var acts = (L1.k === "system" && L1.msg && w ? '<a class="btn sm" data-jsend="' + esc(c.id) + '" href="https://wa.me/' + w + '?text=' + encodeURIComponent(L1.msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "") + '<button class="btn ' + (L1.k === "owner" ? "" : "ghost ") + 'sm" data-act="open-id">' + (L1.k === "owner" ? "לטיפול בכרטיס" : "פתיחת כרטיס") + '</button>';
       var title = L1.k === "owner" ? "🟢 תורך עכשיו" : L1.k === "system" ? "🟡 הודעה מוכנה לשליחה" : "⏳ בקרוב";
       rows.push({ k: L1.k === "wait" ? 2 : L1.k === "owner" ? 0 : 1, html: arow({ cid: c.id, title: c.name, sub: esc(title + " · שלב " + L1.sid + ": " + JOURNEY[L1.sid].t + (L1.due ? " · " + fmtDate(L1.due) : "")), chips: [[LIGHT[L1.k][2], LIGHT[L1.k][1]]], acts: acts }) });
     });
-    if (!rows.length) { el.hidden = true; el.innerHTML = ""; return; }
-    rows.sort(function (a, b) { return a.k - b.k; });
-    el.hidden = false;
-    el.innerHTML = '<h3>הפעולות שלך לפי מסע הלקוח <span class="count num">' + rows.length + '</span> <small>🟢 תורך · 🟡 המערכת מחכה לשליחה · ⏳ בקרוב עם תאריך</small></h3>' + rows.map(function (r) { return r.html; }).join("");
+    return rows;
   }
 
   /* ---- digital service agreement: built in the CRM, signed by the client on the website, PDF saved to the chosen folder ---- */
@@ -4075,21 +4133,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---- open charges panel (top of the dashboard) ---- */
   function telHref(p) { var d = String(p || "").replace(/[^\d+]/g, ""); if (!d) return ""; if (d[0] === "+") return "tel:" + d; if (d.indexOf("972") === 0) return "tel:+" + d; if (d[0] === "0") return "tel:+972" + d.slice(1); return "tel:" + d; }
-  function renderCharges() {
-    var el = $("charges"); if (!el) return;
-    if (!loaded.clients) { el.hidden = true; return; }
+  function renderCharges() { /* merged into the top of the "today" list (chargeRows) */ }
+  function chargeRows() {
+    if (!loaded.clients) return [];
     /* urgent = no value entered, event within a week, payment due date passed, or the event already happened. No lower limit: an old balance stays until it is paid. */
     var list = openPayList().filter(payUrgent);
-    if (!list.length) { el.hidden = true; el.innerHTML = ""; return; }
-    var sum = list.reduce(function (s, c) { return s + (payOf(c).bal || 0); }, 0);
-    el.hidden = false;
-    el.innerHTML = '<h3>תשלומים דחופים <span class="count num">' + list.length + '</span> <small>סה״כ לגבייה ' + shekel(sum) + ' · <a href="#payments" style="color:inherit">כל התשלומים</a></small></h3>' + list.map(function (c) {
+    return list.map(function (c) {
       var p = payOf(c), s = payState(c), dd = c.eventDate ? daysUntil(c.eventDate) : null, tel = telHref(c.hallPhone), wl = payWaLink(c);
       var when = dd == null ? "אין תאריך אירוע" : dd < 0 ? "האירוע היה לפני " + (-dd) + " ימים" : dd === 0 ? "האירוע היום" : "האירוע בעוד " + dd + " ימים";
       return arow({ cid: c.id, title: c.name, sub: esc((c.eventDate ? fmtDate(c.eventDate) + " · " : "") + when) + (c.quote && c.quote.en ? " · חבילה " + esc(c.quote.en) : "") + (p.value ? " · שולם " + shekel(p.amount) + " מתוך " + shekel(p.value) : ""),
         chips: [[p.value ? "יתרה " + shekel(p.bal) : "שווי עסקה לא הוזן", "bad"], [s.t, s.cls || "warn"]],
-        acts: '<button class="btn sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>' + payRemBtn(c) + (tel ? '<a class="btn ghost sm" href="' + tel + '">חיוג לאולם</a>' : "") + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
-    }).join("");
+        acts: (s.k === "novalue" ? '<button class="btn sm" data-act="pay-add"' + dis() + '>הזנת שווי עסקה ותשלום</button>' + payRemBtn(c) : payRemBtn(c) + '<button class="btn ' + (payToday(c) ? "ghost " : "") + 'sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>') + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
+    });
   }
 
   /* ---- 11-step process: the system marks its own steps, Shay marks his, then we move on together ---- */
