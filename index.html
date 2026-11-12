@@ -1632,8 +1632,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (!loaded.clients) { toast("הנתונים עוד נטענים"); return; }
     try {
       var bfn = "sms-crm-backup-" + todayStr() + ".json", bdata = JSON.stringify(backupData(), null, 2), useDir = await dirReady(true);
-      if (useDir) { var where = await saveBlob(new Blob([bdata], { type: "application/json" }), bfn, true, "backup"); toast("✓ הגיבוי " + savedNote(where, "backup", bfn)); }
-      else { await dl.save({ filename: bfn, data: bdata }); toast("✓ הגיבוי ירד לתיקיית ההורדות: " + bfn + ". כדי שיישמר בתיקיית הגיבויים, בחרו תיקייה בהגדרות"); }
+      var where = await saveBlob(new Blob([bdata], { type: "application/json" }), bfn, useDir, "backup"); toast("✓ הגיבוי " + savedNote(where, "backup", bfn));
       if (db && canWrite) guard(function () { return saveSettings({ lastBackup: new Date().toISOString() }); });
     } catch (e) { toast(e && e.code === "declined" ? "ההורדה בוטלה" : "ההורדה נכשלה, נסו שוב"); }
   }
@@ -2773,6 +2772,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "backup") doBackup();
     else if (act === "pay-add") { var pid = cid || openId; if (pid) payDlg(pid); }
     else if (act === "pd-save") payDlgSave();
+    else if (act === "ask-dir") askDir();
+    else if (act === "ask-dl") askDl();
+    else if (act === "dir-grant") { if (dirHandle && dirHandle.requestPermission) dirHandle.requestPermission({ mode: "readwrite" }).then(function (p) { renderFolderInfo(); if (p === "granted") { toast("✓ יש גישה לתיקייה " + dirName + ". הקבצים יישמרו בה"); try { agrAutoSave(); rsvpAutoSave(); } catch (e) {} } }); }
     else if (act === "ratio-clear" && openId) { patchBar(openId, { ratio: "" }); toast("חזרנו לנוסחה לפי היום בשבוע"); }
     else if (act === "go-grp") { var gk = b.dataset.g, ge = document.querySelector('#sheet details[data-k="' + gk + '"]'); if (ge) { ge.open = true; OPEN[gk] = true; ge.scrollIntoView({ behavior: "smooth", block: "start" }); } }
     else if (act === "go-pay") { var pf = $("pay-filter"); if (pf) pf.value = "open"; location.hash = "payments"; showView("payments"); renderPayments(); window.scrollTo(0, $("view-payments").offsetTop - 10); }
@@ -3582,7 +3584,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function savedNote(where, kind, file) { return where === "dir" ? "נשמר בתיקייה " + folderPath(kind) + ": " + file : "ירד לתיקיית ההורדות (לא נבחרה תיקייה): " + file; }
   function folderPath(kind) { return (dirName ? dirName + " › " : "") + FOLDERS[kind]; }
   function renderFolderInfo() {
-    var fw = $("folder-warn"); if (fw) fw.hidden = !!dirName || !window.showDirectoryPicker;
+    /* the yellow bar: no folder chosen / access needs one click after the browser was reopened / device that can't save to folders */
+    var fw = $("folder-warn");
+    if (fw) {
+      var setFw = function (html, btn) { fw.querySelector("span").innerHTML = html; var b = fw.querySelector("button"); b.hidden = !btn; if (btn) { b.textContent = btn[0]; b.dataset.act = btn[1]; } fw.hidden = false; };
+      if (!window.showDirectoryPicker) setFw("📁 במכשיר הזה אי אפשר לשמור קבצים ישירות לתיקיות. קבצים שתפיקו כאן יירדו להורדות של המכשיר. כדי שיישמרו בתיקיות <b>CRM › גיבויים</b>, מפיקים מהמחשב ב-Chrome או ב-Edge.", null);
+      else if (!dirName) setFw("📁 עוד לא נבחרה תיקייה במחשב הזה. לחצו ובחרו את <b>CRM › גיבויים</b> (בתוך שמש משקאות), פעם אחת בלבד. בתוכה יישמרו: חבילות קלוד, הסכמי לקוחות, אישורי הגעה לקוחות וגיבוי נתוני CRM.", ["בחירת תיקייה", "pick-dir"]);
+      else if (dirHandle && dirHandle.queryPermission) dirHandle.queryPermission({ mode: "readwrite" }).then(function (p) { if (p === "granted") fw.hidden = true; else setFw("📁 הדפדפן צריך אישור גישה לתיקייה <b>" + esc(dirName) + "</b> כדי לשמור בה קבצים. לחיצה אחת, ובחלון שנפתח בוחרים \"לאפשר בכל ביקור\".", ["אישור גישה לתיקייה", "dir-grant"]); }).catch(function () { fw.hidden = true; });
+      else fw.hidden = true;
+    }
     var el = $("folder-info"); if (!el) return;
     el.innerHTML = dirName ? 'הקבצים נשמרים בתיקייה <b>' + esc(dirName) + '</b>, בתוכה: ' + esc(FOLDERS.quote) + ' · ' + esc(FOLDERS.agr) + ' · ' + esc(FOLDERS.rsvp) + ' · ' + esc(FOLDERS.backup) : '<span style="color:var(--bad);font-weight:600">עוד לא נבחרה תיקייה. בחרו את CRM › גיבויים. בינתיים הקבצים יורדים לתיקיית ההורדות.</span>';
   }
@@ -3594,18 +3604,45 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return p === "granted";
     } catch (e) { return false; }
   }
-  async function saveBlob(blob, name, useDir, kind) {
-    if (useDir && dirHandle) {
-      try {
-        var dh = kind && FOLDERS[kind] ? await dirHandle.getDirectoryHandle(FOLDERS[kind], { create: true }) : dirHandle;
-        var fh = await dh.getFileHandle(name, { create: true }), w = await fh.createWritable(); await w.write(blob); await w.close(); return "dir";
-      } catch (e) { /* fall through to download */ }
-    }
+  async function writeToDir(blob, name, kind) {
+    var dh = kind && FOLDERS[kind] ? await dirHandle.getDirectoryHandle(FOLDERS[kind], { create: true }) : dirHandle;
+    var fh = await dh.getFileHandle(name, { create: true }), w = await fh.createWritable(); await w.write(blob); await w.close(); return "dir";
+  }
+  function plainDownload(blob, name) {
     var a = document.createElement("a"), u = URL.createObjectURL(blob);
     a.href = u; a.download = name; document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1500);
     return "download";
   }
+  async function saveBlob(blob, name, useDir, kind) {
+    if (useDir && dirHandle) { try { return await writeToDir(blob, name, kind); } catch (e) { /* ask below */ } }
+    /* never drop a client file silently into "Downloads": ask where to save it (the click gives the browser the permission it needs) */
+    if (kind && FOLDERS[kind]) return askSave(blob, name, kind);
+    return plainDownload(blob, name);
+  }
+  var askPending = null;
+  function askSave(blob, name, kind) {
+    return new Promise(function (resolve) {
+      askPending = { blob: blob, name: name, kind: kind, resolve: resolve };
+      var can = !!window.showDirectoryPicker, target = "CRM › גיבויים › " + FOLDERS[kind];
+      xDlg('<h2>📁 לאן לשמור את הקובץ?</h2><div class="dlg-body"><div><b>' + esc(name) + '</b></div>' +
+        (can ? '<div>הקובץ צריך להישמר בתיקייה <b>' + esc(target) + '</b>.' + (dirHandle ? " הדפדפן מבקש אישור גישה לתיקייה, לחיצה אחת ואישור." : " עוד לא נבחרה תיקייה במחשב הזה: לחצו, ובחלון שנפתח בחרו את התיקייה <b>גיבויים</b> שבתוך <b>CRM</b> (בתוך שמש משקאות). בוחרים פעם אחת בלבד.") + '</div>'
+          : '<div class="av-banner warn">במכשיר או בדפדפן הזה אי אפשר לשמור ישירות לתיקיות במחשב. הקובץ ירד לתיקיית ההורדות של המכשיר הזה. כדי שהקבצים יישמרו אוטומטית בתיקיות, מפיקים אותם מהמחשב ב-Chrome או ב-Edge.</div>') + '</div>' +
+        '<div class="form-actions" style="margin-top:0;flex-wrap:wrap">' + (can ? '<button class="btn" data-act="ask-dir">' + (dirHandle ? "אישור ושמירה בתיקייה" : "בחירת תיקייה ושמירה") + '</button>' : "") +
+        '<button class="btn' + (can ? " ghost" : "") + '" data-act="ask-dl">' + (can ? "הורדה רגילה במקום" : "הורדה") + '</button></div>');
+    });
+  }
+  async function askDir() {
+    var P = askPending; if (!P) return;
+    try {
+      if (dirHandle && dirHandle.requestPermission) { var perm = await dirHandle.requestPermission({ mode: "readwrite" }); if (perm !== "granted") throw new Error("denied"); }
+      else { await pickDir(); if (!dirHandle) throw new Error("none"); }
+      var r = await writeToDir(P.blob, P.name, P.kind);
+      askPending = null; xClose(); renderFolderInfo(); P.resolve(r);
+      try { agrAutoSave(); rsvpAutoSave(); } catch (e) {}
+    } catch (e) { toast("לא נשמר בתיקייה. אפשר לנסות שוב או ללחוץ \"הורדה רגילה\""); }
+  }
+  function askDl() { var P = askPending; if (!P) return; askPending = null; xClose(); P.resolve(plainDownload(P.blob, P.name)); }
   async function genQuote(id) {
     var c = byId(state.clients, id); if (!c || !canWrite || quoting[id]) return;
     if (kindFor(c) === "final" && !(Number(c.rsvpConfirmed) >= 20)) { toast("להצעה הסופית הזינו קודם את מספר אישורי ההגעה בכרטיס"); return; }
