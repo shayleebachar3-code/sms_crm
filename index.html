@@ -340,6 +340,7 @@ details.pull[open] > summary { margin-bottom: 10px; }
 .nextstep.bad{border-color:var(--bad);background:var(--bad-soft)}.nextstep.warn{border-color:var(--warn)}.nextstep.good{border-color:var(--good);background:var(--good-soft)}
 @media (max-width:600px){.btn.sm{padding:9px 14px;font-size:14px}.tabs{flex-wrap:wrap;overflow-x:visible}.tabs .tab{padding:10px 10px;font-size:15px}.more-btn{margin-inline-start:0}.kpis3{gap:8px}.kpis3 .kpi{padding:10px}.kpis3 .kpi .val{font-size:21px}.kpis3 .kpi .sub{font-size:11.5px}.arow .ar-acts{width:100%}.arow .ar-acts .btn{flex:1 1 auto;text-align:center}.tgrp>summary{font-size:18px}}
 .ratiobox{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}.ratiobox.on{border:2px solid var(--accent);background:var(--accent-soft)}
+.ftbox{border:2px solid var(--bad);background:var(--bad-soft);border-radius:10px;padding:10px 12px;display:grid;gap:8px}.ftbox.ok{border-color:var(--good);background:var(--good-soft)}.ftbox .ft-q{font-size:15px;background:var(--surface);border-radius:6px;padding:6px 10px}
 .big-n{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.1}
 td .btn{margin-inline-end:4px}
 .qtab{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:8px}.qtab th{text-align:right;color:var(--ink-2);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}.qtab td{padding:4px 6px;border-bottom:1px solid var(--line)}.qtab input{width:70px;min-height:34px}.btn.sm{text-decoration:none}.steps{display:grid;gap:8px;margin:8px 0}.stp{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;line-height:1.55}.stp.ok{opacity:.8}
@@ -1149,9 +1150,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function ratioFor(c, a) {
     var own = Number(a && a.ratio);
     if (own >= 3 && own <= 20) return { per: own, src: "own", label: "לפי ההנחיה שלך לאירוע הזה" };
-    if (!c.eventDate) return { per: DOW_RATIO[2], src: "nodate", label: "אין תאריך בכרטיס, מחושב לפי יום שלישי" };
-    var d = new Date(c.eventDate + "T12:00:00").getDay();
-    return { per: DOW_RATIO[d], src: "dow", label: "לפי יום " + DOW_NAME[d] };
+    if (!c.eventDate) return { per: DOW_RATIO[2] - (a && a.end === "3" ? 0.5 : 0), src: "nodate", label: "אין תאריך בכרטיס, מחושב לפי יום שלישי" + (a && a.end === "3" ? ", פחות חצי כי האירוע עד 3 בלילה" : "") };
+    var d = new Date(c.eventDate + "T12:00:00").getDay(), late = a && a.end === "3";
+    /* an event that ends at 3 a.m.: half a guest less per liter (8 becomes 7.5) */
+    return { per: DOW_RATIO[d] - (late ? 0.5 : 0), src: "dow", label: "לפי יום " + DOW_NAME[d] + (late ? ", פחות חצי כי האירוע עד 3 בלילה" : "") };
   }
   var BNAME = { v: "וודקה", w: "וויסקי", a: "ערק", g: "ג'ין", t: "טקילה", f: "וודקה בטעמים" };
   var BORD = ["v", "w", "a", "g", "t", "f"];
@@ -1226,11 +1228,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         field("תקציב משוער", "b-bud", sel("budget", [["u10", BUDL.u10], ["m20", BUDL.m20], ["m30", BUDL.m30], ["na", BUDL.na]], b.budget)) +
         '<div class="field check"><input id="b-flav" type="checkbox" data-bar="flav"' + (b.flav ? " checked" : "") + d + '><label for="b-flav">וודקה בטעמים לשוטים</label></div>' +
       '</div>' + (function () {
-        var def = ratioFor(c, {}), own = Number(b.ratio) >= 3 && Number(b.ratio) <= 20;
+        var def = ratioFor(c, Object.assign({}, b, { ratio: "" })), own = Number(b.ratio) >= 3 && Number(b.ratio) <= 20;
         return '<div class="ratiobox' + (own ? " on" : "") + '"><label for="b-ratio"><b>יחס מיוחד לאירוע הזה</b> (לא חובה): ליטר אלכוהול על כל</label>' +
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="b-ratio" type="number" min="3" max="20" step="0.5" inputmode="decimal" data-bar="ratio" value="' + esc(b.ratio || "") + '" placeholder="' + def.per + '" style="width:90px"' + d + '><span>אורחים</span>' +
           (own ? '<button type="button" class="btn ghost sm" data-act="ratio-clear"' + d + '>חזרה לנוסחה</button>' : "") + '</div>' +
-          '<div class="muted" style="font-size:12.5px">' + (own ? "<b>פעיל:</b> החישוב לפי ההנחיה שלך, ליטר על כל " + esc(b.ratio) + " אורחים. בלי הנחיה היה " + def.per + " (" + esc(def.label) + ")." : "ריק = לפי הנוסחה: ראשון-שני 8.5 · שלישי 8 · רביעי 7.5 · חמישי-שישי 7. כרגע: <b>" + def.per + "</b> (" + esc(def.label) + ").") + '</div></div>';
+          '<div class="muted" style="font-size:12.5px">' + (own ? "<b>פעיל:</b> החישוב לפי ההנחיה שלך, ליטר על כל " + esc(b.ratio) + " אורחים. בלי הנחיה היה " + def.per + " (" + esc(def.label) + ")." : "ריק = לפי הנוסחה: ראשון-שני 8.5 · שלישי 8 · רביעי 7.5 · חמישי-שישי 7, ואירוע עד 3:00 בלילה חצי פחות. כרגע: <b>" + def.per + "</b> (" + esc(def.label) + ").") + '</div></div>';
       })() + '<div class="fields" style="display:none">' +
       '</div><div class="fl">מה שותים הכי הרבה באירוע שלו? (מקום 1 הוא הכי הרבה)</div>' + rank +
       '<div class="fl">להסיר מההצעה לגמרי (מה שמסומן לא ייכנס לחבילה ולא ל-PDF)</div><div class="opts">' + EXCL.map(function (x) { return '<label class="opt"><input type="checkbox" data-bex="' + x[0] + '"' + (b.excl.indexOf(x[0]) >= 0 ? " checked" : "") + d + '>' + x[1] + '</label>'; }).join("") + '</div>' +
@@ -2314,6 +2316,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var p = payOf(c), s = payState(c);
       return box("bad", "💰 הצעד הבא: לגבות את התשלום", esc(s.t) + " · " + (p.value ? "יתרה <b>" + shekel(p.bal) + "</b> · לשלם עד " + esc(fmtDate(payDue(c))) : "חסר שווי עסקה בכרטיס. מזינים אותו ב\"רישום תשלום\""), payRemBtn(c) + '<button class="btn ' + (p.value ? "ghost " : "") + 'sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>');
     }
+    if (f && f.status === "submitted" && rsvpNeedsAck(c, f)) return box("bad", "📝 הצעד הבא: הלקוח ביקש שינוי במילים שלו, צריך אותך", '"' + esc(String((f.answers || {}).add || (f.answers || {}).notes || "").slice(0, 160)) + '"', '<button class="btn sm" data-act="go-grp" data-g="g-docs">לבדיקת הבקשה</button>');
     if (f && f.status === "submitted") return box("good", "📝 הצעד הבא: הלקוח מילא את הטופס, להפיק הצעה סופית", esc(((f.answers || {}).guests || "?") + " אישורי הגעה · מקבל החבילה: " + ((f.answers || {}).hall_name || "לא מולא")), '<button class="btn sm" data-rs="apply" data-fid="' + esc(f.id) + '"' + (rsvpBusy[c.id] ? " disabled" : "") + dis() + '>' + (rsvpBusy[c.id] ? "מפיק הצעה…" : "הפקת הצעה סופית לפי הטופס") + '</button>');
     if (won && rsvpReady && !f && (!c.eventDate || c.eventDate >= todayStr())) return box("warn", "📝 הצעד הבא: לשלוח ללקוח טופס אישורי הגעה", "הלקוח ימלא כמה אורחים אישרו הגעה ומי מקבל את החבילה, ויחתום.", '<button class="btn sm" data-rs="new"' + dis() + '>יצירת טופס ושליחה בווטסאפ</button>');
     var L0 = won ? journeyLight(c) : null;
@@ -3976,7 +3979,43 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   /* ======================= RSVP form: sent at closing, filled and signed by the client online, turned into the final quote ======================= */
   var rsvpReady = false, RSVP_PROD = "https://sms-crm-supabase.vercel.app";
   var TIER_KEYS = { "CLASSIC": "Classic", "BLEND": "חצי חצי", "SUPREME": "Supreme", "SUPER PREMIUM": "סופר פרימיום" };
-  var CH_ACT = { keep: "להשאיר", more: "יותר", less: "פחות", remove: "להוריד" };
+  var CH_ACT = { keep: "להשאיר", more: "יותר", less: "פחות", remove: "להוריד", swap: "להחליף" };
+  /* ---- stock: every product the business knows (built-in price list + products Shay added). Used for client swap requests. ---- */
+  function catOfName(n) { n = String(n || ""); if (/^וואן גוך/.test(n)) return "f"; if (/^וודקה/.test(n)) return "v"; if (/^וויסקי/.test(n)) return "w"; if (/^ערק/.test(n)) return "a"; if (/^ג['׳]ין/.test(n)) return "g"; if (/^טקילה/.test(n)) return "t"; if (/אפרול|פרוסקו/.test(n)) return "c"; if (/^משקה/.test(n)) return "m"; return ""; }
+  function invItem(key) {
+    var sp = (state.products || {})[key]; if (sp) return { key: key, n: dn(key), k: catOfName(key), cost: Number(sp.cost) || 0, size: Number(sp.size) || 1, credit: Number(sp.credit) || 0 };
+    var p = PROD[key]; return p ? { key: key, n: dn(key), k: catOfName(key), cost: p[0], size: p[1] || 1, credit: p[2] || 0 } : null;
+  }
+  function invList() { var o = {}; Object.keys(PROD).concat(Object.keys(state.products || {})).forEach(function (k) { if (!o[k]) { var it = invItem(k); if (it && it.k && it.k !== "m" && it.k !== "c") o[k] = it; } }); return Object.keys(o).map(function (k) { return o[k]; }); }
+  /* words that identify a product ("פינלנדיה", "בלוגה", "גולד"), without the generic ones */
+  var GENERIC_W = { "וודקה": 1, "וויסקי": 1, "ערק": 1, "ג'ין": 1, "ג׳ין": 1, "טקילה": 1, "ליטר": 1, "בטעמים": 1, "שנה": 1, "משקה": 1 };
+  function prodWords(key) { return dn(key).replace(/["()]/g, " ").split(/\s+/).filter(function (w) { return w.length >= 3 && !GENERIC_W[w] && !/^\d/.test(w); }); }
+  function textHasWord(text, w) { return (" " + text + " ").indexOf(w) >= 0; }
+  /* read the client's free text and find "replace X with Y" where Y is in stock. Returns suggestions + products we could not find. */
+  function rsvpTextScan(f, lines) {
+    var a = f.answers || {}, text = String((a.add || "") + " " + (a.notes || "")).replace(/[.,;:!?\n]/g, " ");
+    if (!text.trim()) return { text: "", sugg: [], unknown: [] };
+    var inv = invList(), have = {}; lines.forEach(function (l) { have[l.key] = l; });
+    var hitLines = lines.filter(function (l) { return prodWords(l.key).some(function (w) { return textHasWord(text, w); }); });
+    var best = {};
+    inv.forEach(function (p) {
+      if (have[p.key]) return;
+      var ws = prodWords(p.key), hit = ws.filter(function (w) { return textHasWord(text, w); }).length; if (!hit) return;
+      var score = hit - 0.5 * (ws.length - hit);
+      if (!best[p.k] || score > best[p.k].score) best[p.k] = { p: p, score: score };
+    });
+    var sugg = [];
+    Object.keys(best).forEach(function (k) {
+      var from = hitLines.filter(function (l) { return catOfName(l.key) === k; })[0] || (lines.filter(function (l) { return catOfName(l.key) === k; }).length === 1 ? lines.filter(function (l) { return catOfName(l.key) === k; })[0] : null);
+      if (from) sugg.push({ from: from.key, fromN: dn(from.key), to: best[k].p.key, toN: best[k].p.n });
+    });
+    return { text: text.trim(), sugg: sugg, unknown: [] };
+  }
+  function rsvpResOf(c, fid) { var r = (c.rsvpRes || {})[fid]; return r && typeof r === "object" ? r : { swaps: {}, ack: "" }; }
+  function setRsvpRes(c, fid, part) {
+    var all = Object.assign({}, c.rsvpRes || {}), cur = Object.assign({ swaps: {}, ack: "" }, all[fid] || {}, part); all[fid] = cur;
+    guard(async function () { await patch("clients", c.id, { rsvpRes: all }); renderSheet(true); });
+  }
   function rsvpBase() { return (/^https:/.test(location.origin) ? location.origin : RSVP_PROD) + "/rsvp.html"; }
   function rsvpOf(cid) { return (state.rsvp || []).filter(function (f) { return f.client_id === cid && f.status !== "void"; }).sort(function (x, y) { return x.created_at < y.created_at ? 1 : -1; }); }
   function rsvpLink(f) { return rsvpBase() + "?t=" + f.token; }
@@ -3988,8 +4027,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var cq = computeQuote(Object.assign({}, c, { rsvpConfirmed: "" })), q = c.quote && c.quote.kind === "custom" ? c.quote : null, lines = [], en = "", tier = "";
     if (cq) { tier = cq.tier; en = cq.en; lines = cq.lines.filter(function (l) { return l.qty > 0; }).map(function (l) { return { key: l.key || l.name, n: dn(l.name), q: l.qty, k: l.cat }; }); }
     else if (q) { tier = q.pkg; en = q.en; lines = (q.lines || []).map(function (l) { return { key: l.n, n: dn(l.n), q: l.q, k: l.k }; }); }
-    return { v: 1, name: c.name || "", first: String(c.name || "").split(" ")[0], date: c.eventDate || "", venue: c.venue || "", guests: Number(c.guests) || 0,
-      deadline: rsvpDeadline(c), tier: tier, en: en || (tier && BPK[tier] ? BPK[tier].en : ""), lines: lines,
+    /* in-stock alternatives per drink type, so the client can pick a replacement instead of writing free text */
+    var alts = {}, inv = invList();
+    lines.forEach(function (l) { var k = catOfName(l.key); if (!k || alts[k]) return; alts[k] = inv.filter(function (p) { return p.k === k; }).map(function (p) { return { key: p.key, n: p.n }; }); });
+    return { v: 2, name: c.name || "", first: String(c.name || "").split(" ")[0], date: c.eventDate || "", venue: c.venue || "", guests: Number(c.guests) || 0,
+      deadline: rsvpDeadline(c), tier: tier, en: en || (tier && BPK[tier] ? BPK[tier].en : ""), lines: lines.map(function (l) { return Object.assign({}, l, { c: catOfName(l.key) }); }), alts: alts,
       tiers: TIERS.map(function (t) { return { k: t, en: BPK[t].en, he: BPK[t].he, desc: BPK[t].desc }; }),
       hall_name: c.hallName || "", hall_phone: c.hallPhone || "", created: new Date().toISOString() };
   }
@@ -4027,19 +4069,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function rsvpVoid(fid) { guard(async function () { chk(await sb.from("rsvp_forms").update({ status: "void" }).eq("id", fid).eq("status", "sent")); await loadAll(); renderSheet(true); toast("הקישור בוטל"); }); }
 
   /* what the client asked for, in plain words (for the card, the quote note and the signed PDF) */
-  function rsvpSummary(f) {
-    var a = f.answers || {}, s = f.snapshot || {}, out = [];
+  /* all swaps for this form: picked by the client in the form + approved by Shay from the free text */
+  function rsvpSwaps(c, f) {
+    var o = {}; ((f.answers || {}).changes || []).forEach(function (x) { if (x && x.act === "swap" && x.to && invItem(x.to)) o[x.key] = x.to; });
+    var r = rsvpResOf(c, f.id).swaps || {}; Object.keys(r).forEach(function (k) { if (r[k] && invItem(r[k])) o[k] = r[k]; else delete o[k]; });
+    return o;
+  }
+  /* what actually changed in the package, in the client's words (this is what the quote shows) */
+  function rsvpSummary(f, c) {
+    var a = f.answers || {}, s = f.snapshot || {}, out = [], sw = c ? rsvpSwaps(c, f) : {};
     var W = { more: "יותר ", less: "פחות ", remove: "בלי " };
+    Object.keys(sw).forEach(function (k) { out.push(dn(sw[k]) + " במקום " + dn(k)); });
     (a.changes || []).forEach(function (x) { if (x && W[x.act]) out.push(W[x.act] + (x.n || x.key)); });
     if (a.tier && a.tier !== s.tier && BPK[a.tier]) out.push("מעבר לחבילת " + BPK[a.tier].en);
-    if ((a.add || "").trim()) out.push("ביקשתם: " + a.add.trim().slice(0, 200));
     return out;
   }
+  /* free text from the client that a person must read before the quote goes out */
+  function rsvpNeedsAck(c, f) { var a = f.answers || {}; return !!String((a.add || "") + (a.notes || "")).trim() && !rsvpResOf(c, f.id).ack; }
   /* turn the signed form into the final quote: RSVP count, package switch, per-product requests, then the normal PDF engine */
   var rsvpBusy = {};
   function rsvpPlan(c, f) {
     var a = f.answers || {}, g = Number(a.guests) || 0, b = barOf(c), tier = a.tier && BPK[a.tier] ? a.tier : (b.pkg || (f.snapshot || {}).tier || "");
     var nb = Object.assign({}, c.bar || {}, { qover: {} }); if (tier) nb.pkg = tier;
+    /* product swaps (from the form or approved from the free text) use the normal swap engine: price, liters and credit follow the new product */
+    var sw = rsvpSwaps(c, f); if (Object.keys(sw).length) { nb.swaps = Object.assign({}, nb.swaps || {}); Object.keys(sw).forEach(function (k) { var it = invItem(sw[k]); nb.swaps[k] = { name: it.key, cost: it.cost, size: it.size, credit: it.credit }; }); }
+    /* the end time from the form: until 3 a.m. lowers the ratio by half a guest per liter */
+    if (a.end_time) nb.end = /03/.test(a.end_time) ? "3" : "1";
     var probe = Object.assign({}, c, { guests: g, rsvpConfirmed: g, bar: nb }), calc = function () { return computeQuote(Object.assign({}, probe, { bar: nb, status: "" })); };
     var cq = g >= 20 ? calc() : null;
     if (!cq) return { g: g, ok: false };
@@ -4060,13 +4115,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       else if (x.act === "more") nb.qover[x.key] = q + Math.max(1, Math.ceil(q * 0.15));
       else if (x.act === "less") nb.qover[x.key] = Math.max(0, q - Math.max(1, Math.ceil(q * 0.15)));
     });
-    var req = rsvpSummary(f); nb.qnote = req.length ? "לפי הטופס שמילאתם: " + req.join(" · ") : (b.qnote || "");
+    var req = rsvpSummary(f, c); nb.qnote = req.length ? "לפי הטופס שמילאתם: " + req.join(" · ") : "";
     var after = calc();
-    return { g: g, ok: true, bar: nb, tier: after.tier, en: after.en, total: after.total, perGuest: after.perGuest, liters: after.liters };
+    return { g: g, ok: true, bar: nb, tier: after.tier, en: after.en, total: after.total, perGuest: after.perGuest, liters: after.liters, changes: req, scan: rsvpTextScan(f, cq.lines.filter(function (l) { return l.cat !== "m" && l.qty > 0; }).map(function (l) { return { key: l.key || l.name }; })), needsAck: rsvpNeedsAck(c, f) };
   }
   async function rsvpApply(id, fid) {
     var c = byId(state.clients, id), f = (state.rsvp || []).find(function (x) { return x.id === fid; }); if (!c || !f || !canWrite || rsvpBusy[id]) return;
     var plan = rsvpPlan(c, f); if (!plan.ok) { toast("במספר אישורי הגעה מתחת ל-20 צריך להכין הצעה ידנית"); return; }
+    if (plan.needsAck) { toast("⛔ הלקוח כתב בקשה בטקסט חופשי. קודם בודקים אותה בכרטיס ומסמנים \"טיפלתי בבקשה\", ורק אז מפיקים"); var ge = document.querySelector('#sheet details[data-k="g-docs"]'); if (ge) { ge.open = true; ge.scrollIntoView({ behavior: "smooth" }); } return; }
     rsvpBusy[id] = true; renderSheet(true);
     try {
       var a = f.answers || {}, d = { rsvpConfirmed: plan.g, bar: plan.bar };
@@ -4076,7 +4132,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       await genQuote(id); /* builds the final quote + PDF exactly like the manual button, and logs it */
       var c2 = byId(state.clients, id);
       if (c2 && c2.quote && c2.quote.qk === "final" && c2.quote.at > f.submitted_at) {
-        chk(await sb.from("rsvp_forms").update({ status: "handled", handled_at: new Date().toISOString() }).eq("id", fid));
+        if (f.status === "submitted") chk(await sb.from("rsvp_forms").update({ status: "handled", handled_at: new Date().toISOString() }).eq("id", fid));
         try { chk(await sb.from("reminders").update({ done: true }).eq("dedupe_key", "rsvp:" + fid)); } catch (e) {}
         await loadAll();
         toast("✓ ההצעה הסופית הופקה לפי הטופס: " + shekel(c2.quote.total) + " · " + (dirName ? "הקובץ נשמר בתיקייה " + folderPath("quote") : "הקובץ ירד לתיקיית ההורדות") + " · ההודעה ללקוח מוכנה בכרטיס");
@@ -4088,7 +4144,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var a = f.answers || {}, s = f.snapshot || {}, au = f.audit || {}, ch = (a.changes || []).filter(function (x) { return x && x.act && x.act !== "keep"; });
     var ln = function (k, v) { return '<div class="ln"><b>' + k + '</b><span>' + v + '</span></div>'; };
     return '<div class="rsv-ans">' + ln("אישורי הגעה", '<span class="big-n num">' + esc(a.guests) + '</span>' + (s.guests ? ' <span class="muted">(בהצעה המקורית: ' + s.guests + ')</span>' : "")) +
-      ln("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return '<span class="chip ' + (x.act === "remove" ? "bad" : "warn") + '">' + esc(CH_ACT[x.act] + ": " + (x.n || x.key)) + '</span>'; }).join(" ") : "ביקשו שינויים (פירוט למטה)") : '<span class="chip good">החבילה מתאימה כמו שהיא</span>') +
+      ln("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return '<span class="chip ' + (x.act === "remove" ? "bad" : "warn") + '">' + esc(x.act === "swap" ? "להחליף: " + (x.n || x.key) + " ← " + (x.toN || x.to || "?") : CH_ACT[x.act] + ": " + (x.n || x.key)) + '</span>'; }).join(" ") : "ביקשו שינויים (פירוט למטה)") : '<span class="chip good">החבילה מתאימה כמו שהיא</span>') +
       (a.tier && a.tier !== s.tier && BPK[a.tier] ? ln("חבילה", '<span class="chip acc">רוצים לעבור ל-' + esc(BPK[a.tier].en) + '</span>') : "") +
       ((a.add || "").trim() ? ln("בקשות נוספות", esc(a.add)) : "") + ((a.notes || "").trim() ? ln("הערות", esc(a.notes)) : "") +
       (a.hall_name || a.hall_phone ? ln("מקבל את החבילה", '<b>' + esc(a.hall_name || "") + '</b>' + (a.hall_phone ? ' · <a href="' + esc(telHref(a.hall_phone)) + '">' + esc(a.hall_phone) + '</a>' : "")) : ln("מקבל את החבילה", '<span class="chip bad">לא מולא</span>')) +
@@ -4108,11 +4164,24 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' + (w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(rsvpMsg(c, f, "")) + '" target="_blank" rel="noopener">שליחה שוב בווטסאפ</a>' : "") +
         '<button class="btn ghost sm" data-rs="copy" data-fid="' + esc(f.id) + '">העתקת קישור</button><a class="btn ghost sm" href="' + esc(link) + '" target="_blank" rel="noopener">תצוגה כמו שהלקוח רואה</a><button class="btn ghost sm" data-rs="void" data-fid="' + esc(f.id) + '"' + dis() + '>ביטול הקישור</button></div></section>';
     }
-    var plan = f.status === "submitted" ? rsvpPlan(c, f) : null, busy = !!rsvpBusy[c.id];
-    return h + (f.status === "submitted" ? '<div class="rsv-box"><b>🟢 הלקוח מילא וחתם. הצעד הבא: הצעה סופית לפי הטופס</b>' +
-        (plan && plan.ok ? '<div>ההצעה שתצא: <b>' + esc(plan.en) + '</b> ל-' + plan.g + ' אורחים · ' + plan.liters + ' ליטר · <b>' + shekel(plan.total) + '</b> (' + plan.perGuest + ' ₪ לאורח)</div><div class="muted" style="font-size:12.5px">כולל הבקשות מהטופס: סוג משקה שהורד יוצא מהחבילה והליטרים שלו עוברים לשאר הסוגים, יותר/פחות = כ-15% (אפשר לתקן אחר כך בטבלת ההצעה). בקשות בטקסט חופשי מופיעות בהצעה ולא משנות כמויות לבד. שינויים ידניים קודמים בכמויות מתאפסים כי הכמות מחושבת מחדש לפי אישורי ההגעה.</div>' : '<div class="av-banner warn">פחות מ-20 אישורי הגעה: מכינים הצעה ידנית.</div>') +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-rs="apply" data-fid="' + esc(f.id) + '"' + (busy || !canWrite || !(plan && plan.ok) ? " disabled" : "") + '>' + (busy ? "מפיק הצעה…" : "הפקת הצעה סופית לפי הטופס") + '</button></div></div>'
-      : '<div style="margin-bottom:6px"><span class="chip good">טופל ✓ הופקה הצעה ' + esc(f.handled_at ? ago(f.handled_at) : "") + '</span></div>') +
+    var plan = rsvpPlan(c, f), busy = !!rsvpBusy[c.id], res = rsvpResOf(c, f.id), applied = rsvpSwaps(c, f), sub = f.status === "submitted";
+    /* free text: show it, offer the swaps we recognised from stock, and require "handled" before any quote */
+    var ft = plan && plan.ok ? plan.scan : { text: "" }, ftHtml = "";
+    if (ft.text) {
+      ftHtml = '<div class="ftbox' + (res.ack ? " ok" : "") + '"><b>' + (res.ack ? "✓ הבקשה החופשית טופלה" : "⚠ הלקוח כתב בקשה במילים שלו. צריך אותך לפני שההצעה יוצאת") + '</b><div class="ft-q">"' + esc(ft.text) + '"</div>' +
+        (ft.sugg.length ? '<div class="muted" style="font-size:13px">זיהיתי מוצרים מהמלאי. לחיצה מחליפה בהצעה (המחיר, הליטרים והזיכוי מתעדכנים לבד):</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + ft.sugg.map(function (s) {
+          var on = applied[s.from] === s.to;
+          return '<button type="button" class="btn ' + (on ? "" : "ghost ") + 'sm" data-rs="sugg" data-fid="' + esc(f.id) + '" data-from="' + esc(s.from) + '" data-to="' + esc(on ? "" : s.to) + '"' + dis() + '>' + (on ? "✓ " : "") + esc(s.toN) + " במקום " + esc(s.fromN) + (on ? " (לחיצה מבטלת)" : "") + '</button>'; }).join("") + '</div>'
+          : '<div class="muted" style="font-size:13px">לא זיהיתי בבקשה מוצר מהמלאי. אם זה מוצר חדש: בחלק "חבילה והצעת מחיר" לוחצים "+ הוספת מוצר" או "החלפה" בשורה, וקובעים מחיר. אם זה משהו אחר, מטפלים ידנית.</div>') +
+        '<div><button type="button" class="btn ' + (res.ack ? "ghost " : "") + 'sm" data-rs="ack" data-fid="' + esc(f.id) + '"' + dis() + '>' + (res.ack ? "ביטול הסימון" : "✓ טיפלתי בבקשה, אפשר להפיק") + '</button></div></div>';
+    }
+    var chHtml = plan && plan.ok && plan.changes.length ? '<div><b>מה ישתנה בהצעה:</b> ' + plan.changes.map(function (x) { return '<span class="chip acc">' + esc(x) + '</span>'; }).join(" ") + '</div>' : plan && plan.ok ? '<div class="muted" style="font-size:13px">בלי שינויי מוצרים, רק כמות לפי אישורי ההגעה.</div>' : "";
+    var blocked = plan && plan.needsAck;
+    return h + '<div class="rsv-box"><b>' + (sub ? "🟢 הלקוח מילא וחתם. הצעד הבא: הצעה סופית לפי הטופס" : "✓ טופל, הופקה הצעה " + esc(f.handled_at ? ago(f.handled_at) : "")) + '</b>' +
+        (plan && plan.ok ? '<div>ההצעה ' + (sub ? "שתצא" : "לפי הטופס") + ': <b>' + esc(plan.en) + '</b> ל-' + plan.g + ' אורחים · ' + plan.liters + ' ליטר · <b>' + shekel(plan.total) + '</b> (' + plan.perGuest + ' ₪ לאורח)</div>' + chHtml +
+          '<div class="muted" style="font-size:12.5px">סוג משקה שהורד יוצא מהחבילה והליטרים שלו עוברים לשאר הסוגים. יותר או פחות = כ-15%. החלפה = המוצר החדש מהמלאי עם המחיר שלו. אפשר לתקן אחר כך בטבלת ההצעה.</div>' : '<div class="av-banner warn">פחות מ-20 אישורי הגעה: מכינים הצעה ידנית.</div>') +
+        ftHtml +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn' + (sub ? "" : " ghost") + '" data-rs="apply" data-fid="' + esc(f.id) + '"' + (busy || !canWrite || !(plan && plan.ok) || blocked ? " disabled" : "") + '>' + (busy ? "מפיק הצעה…" : blocked ? "⛔ קודם לטפל בבקשה של הלקוח" : sub ? "הפקת הצעה סופית לפי הטופס" : "הפקה מחדש לפי הטופס") + '</button></div></div>' +
       rsvpAnswersHtml(f) +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost sm" data-rs="pdf" data-fid="' + esc(f.id) + '">הורדת הטופס החתום (PDF)</button><button class="btn ghost sm" data-rs="new"' + dis() + '>טופס חדש לעדכון</button></div></section>';
   }
@@ -4121,7 +4190,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var k = function (l, v) { return "<div class='k'><b>" + esc(l) + "</b><span>" + esc(v) + "</span></div>"; };
     return "<style>" + AGR_CSS + "</style><div class='agr'><h1>טופס אישורי הגעה ושינויים בחבילה</h1><p class='v'>ש.מ.ש משקאות · " + esc((c && c.name) || s.name || "") + "</p>" +
       "<h2>פרטי האירוע</h2>" + k("שם", s.name || "") + k("תאריך האירוע", s.date ? fmtDate(s.date) : "—") + k("אולם / מקום", s.venue || "—") + k("החבילה בהצעה", s.en || "—") +
-      "<h2>מה הלקוח מילא</h2>" + k("מספר אישורי הגעה", String(a.guests || "")) + k("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return CH_ACT[x.act] + ": " + (x.n || x.key); }).join(" · ") : "כן, ראו בקשות") : "החבילה מתאימה כמו שהיא") +
+      "<h2>מה הלקוח מילא</h2>" + k("מספר אישורי הגעה", String(a.guests || "")) + k("שינויים בחבילה", a.wants_changes ? (ch.length ? ch.map(function (x) { return x.act === "swap" ? "להחליף " + (x.n || x.key) + " ב-" + (x.toN || x.to || "") : CH_ACT[x.act] + ": " + (x.n || x.key); }).join(" · ") : "כן, ראו בקשות") : "החבילה מתאימה כמו שהיא") +
       (a.tier && a.tier !== s.tier && BPK[a.tier] ? k("מעבר חבילה", BPK[a.tier].en) : "") + ((a.add || "").trim() ? k("בקשות נוספות", a.add) : "") + ((a.notes || "").trim() ? k("הערות", a.notes) : "") +
       (a.hall_name || a.hall_phone ? k("מקבל את החבילה באירוע", (a.hall_name || "") + " " + (a.hall_phone || "")) : "") + (a.end_time ? k("שעת סיום משוערת", a.end_time) : "") +
       "<p style='margin-top:14px;font-size:13px'>הלקוח אישר: הפרטים נכונים, וההצעה הסופית תתעדכן לפי מספר המאשרים והבקשות שבטופס. שינויים במחיר יישלחו לאישורו לפני הביצוע.</p>" +
@@ -4151,6 +4220,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (k === "copy" && f) { try { navigator.clipboard.writeText(rsvpLink(f)).then(function () { toast("הקישור הועתק"); }); } catch (x) { toast(rsvpLink(f)); } }
     else if (k === "void" && f) { if (confirm("לבטל את הקישור? הלקוח לא יוכל למלא אותו יותר.")) rsvpVoid(fid); }
     else if (k === "apply" && f) rsvpApply(openId, fid);
+    else if (k === "sugg" && f) { var cs = byId(state.clients, openId), r0 = rsvpResOf(cs, fid), sw0 = Object.assign({}, r0.swaps || {}); if (b.dataset.to) sw0[b.dataset.from] = b.dataset.to; else sw0[b.dataset.from] = ""; setRsvpRes(cs, fid, { swaps: sw0 }); toast(b.dataset.to ? "✓ המוצר הוחלף בהצעה" : "ההחלפה בוטלה"); }
+    else if (k === "ack" && f) { var ca = byId(state.clients, openId), r1 = rsvpResOf(ca, fid); setRsvpRes(ca, fid, { ack: r1.ack ? "" : new Date().toISOString() }); }
     else if (k === "pdf" && f) rsvpSave(f, true);
   });
 

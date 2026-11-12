@@ -43,7 +43,7 @@ h1 em{font-style:normal;color:var(--acc)}
 .it{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card2)}
 .it .nm{display:flex;justify-content:space-between;gap:8px;font-weight:500;margin-bottom:8px}
 .it .nm small{color:var(--soft);font-weight:400;white-space:nowrap}
-.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.seg.s5{grid-template-columns:repeat(5,1fr)}
 .seg label{position:relative}
 .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
 .seg span{display:block;text-align:center;border:1px solid var(--line);border-radius:10px;padding:8px 2px;font-size:14.5px;color:var(--soft)}
@@ -122,9 +122,13 @@ h1 em{font-style:normal;color:var(--acc)}
   function form(s) {
     var lines = (s.lines || []).filter(function (l) { return l && l.q > 0; });
     var alc = lines.filter(function (l) { return l.k !== 'm'; }), mix = lines.filter(function (l) { return l.k === 'm'; });
+    /* in-stock replacements of the same drink type (sent by the CRM). With them, a swap is applied automatically. */
+    var altsFor = function (l) { return ((s.alts || {})[l.c] || []).filter(function (p) { return p.key !== l.key; }); };
     var itemHtml = function (l, i) {
-      return '<div class="it"><div class="nm"><span>' + esc(l.n) + '</span><small>בהצעה: ' + esc(l.q) + '</small></div><div class="seg" role="radiogroup" aria-label="' + esc(l.n) + '">' +
-        ACT.map(function (a, j) { return '<label><input type="radio" name="it' + i + '" value="' + a[0] + '"' + (j === 0 ? ' checked' : '') + '><span' + (a[0] === 'remove' ? ' class="rm"' : '') + '>' + a[1] + '</span></label>'; }).join('') + '</div></div>';
+      var al = l.k !== 'm' ? altsFor(l) : [], acts = al.length ? ACT.concat([['swap', 'להחליף']]) : ACT;
+      return '<div class="it"><div class="nm"><span>' + esc(l.n) + '</span><small>בהצעה: ' + esc(l.q) + '</small></div><div class="seg' + (al.length ? ' s5' : '') + '" role="radiogroup" aria-label="' + esc(l.n) + '">' +
+        acts.map(function (a, j) { return '<label><input type="radio" name="it' + i + '" value="' + a[0] + '"' + (j === 0 ? ' checked' : '') + '><span' + (a[0] === 'remove' ? ' class="rm"' : '') + '>' + a[1] + '</span></label>'; }).join('') + '</div>' +
+        (al.length ? '<label class="f swapto" id="sw' + i + '" hidden style="margin:10px 0 0"><span>במה להחליף?</span><select id="swt' + i + '"><option value="">בחרו מוצר מהרשימה</option>' + al.map(function (p) { return '<option value="' + esc(p.key) + '">' + esc(p.n) + '</option>'; }).join('') + '</select></label>' : '') + '</div>';
     };
     var all = alc.concat(mix);
     var tiers = (s.tiers || []).map(function (t) { return '<option value="' + esc(t.k) + '"' + (t.k === s.tier ? ' selected' : '') + '>' + esc(t.en + ' · ' + t.he) + (t.k === s.tier ? ' (הנוכחית)' : '') + '</option>'; }).join('');
@@ -144,7 +148,7 @@ h1 em{font-style:normal;color:var(--acc)}
         '<label class="opt"><input type="radio" name="wc" value="1"><span>נרצה לשנות משהו<small>מסמנים ליד כל מוצר מה לעשות, או כותבים בקשה</small></span></label></div>' +
         '<div id="chg" hidden>' + (all.length ? '<div class="items">' + all.map(itemHtml).join('') + '</div>' : '') +
           (tiers ? '<label class="f" style="margin-top:14px"><span>לעבור לחבילה אחרת?</span><select id="tier">' + tiers + '</select></label>' : '') +
-          '<label class="f"><span>מוצר להוסיף או להחליף (למשל: וויסקי אחר, בלי ערק, תוספת קוקטייל)</span><textarea id="add" maxlength="600"></textarea></label></div></section>' +
+          '<label class="f"><span>משהו שלא מופיע ברשימה? כתבו כאן (למשל: תוספת קוקטייל, מותג מסוים). נבדוק ונעדכן אתכם לפני ההצעה הסופית</span><textarea id="add" maxlength="600"></textarea></label></div></section>' +
       '<section class="step"><h2><i>4</i>עוד כמה פרטים</h2><p class="hint">לא חובה, אבל עוזר לנו להכין הכול בדיוק.</p>' +
         '<label class="f"><span>עד מתי האירוע, בערך?</span><select id="end"><option value="">לא יודעים עדיין</option><option>עד 23:00</option><option>עד 00:00</option><option>עד 01:00</option><option>עד 02:00</option><option>עד 03:00 ואחרי</option></select></label>' +
         '<label class="f"><span>משהו נוסף שחשוב שנדע?</span><textarea id="nt" maxlength="600"></textarea></label></section>' +
@@ -160,6 +164,7 @@ h1 em{font-style:normal;color:var(--acc)}
     var $ = function (id) { return document.getElementById(id); }, g = $('g'), er = $('er');
     app.querySelectorAll('.num button').forEach(function (b) { b.addEventListener('click', function () { var v = (Number(g.value) || 0) + Number(b.dataset.d); g.value = Math.max(1, Math.min(5000, v)); }); });
     app.querySelectorAll('input[name=wc]').forEach(function (r) { r.addEventListener('change', function () { $('chg').hidden = r.value !== '1' || !r.checked; }); });
+    app.querySelectorAll('.it input[type=radio]').forEach(function (r) { r.addEventListener('change', function () { var i = r.name.slice(2), box = $('sw' + i); if (box) box.hidden = r.value !== 'swap'; }); });
     var P = pad($('cv'), function () { $('cvph').style.display = P && P.has() ? 'none' : 'flex'; });
     $('clr').addEventListener('click', function () { P.clear(); });
     $('f').addEventListener('submit', function (e) {
@@ -171,7 +176,13 @@ h1 em{font-style:normal;color:var(--acc)}
       if (hpD.length < 9) { er.textContent = 'נא לכתוב את הטלפון של איש הקשר שמקבל את החבילה.'; $('hp').focus(); return; }
       if (myD.length >= 9 && hpD.slice(-9) === myD.slice(-9)) { er.textContent = 'איש הקשר צריך להיות מישהו אחר, לא אתם. נא לכתוב טלפון של הורה, אח, חבר או מנהל האולם.'; $('hp').focus(); return; }
       var wc = app.querySelector('input[name=wc]:checked').value === '1';
-      var changes = wc ? all.map(function (l, i) { var c = app.querySelector('input[name=it' + i + ']:checked'); return { key: l.key, n: l.n, q: l.q, act: c ? c.value : 'keep' }; }) : [];
+      var badSwap = -1;
+      var changes = wc ? all.map(function (l, i) {
+        var c = app.querySelector('input[name=it' + i + ']:checked'), act = c ? c.value : 'keep', o = { key: l.key, n: l.n, q: l.q, act: act };
+        if (act === 'swap') { var sel = $('swt' + i), to = sel ? sel.value : ''; if (!to) { if (badSwap < 0) badSwap = i; } else { o.to = to; o.toN = sel.options[sel.selectedIndex].text; } }
+        return o;
+      }) : [];
+      if (badSwap >= 0) { er.textContent = 'בחרתם "להחליף": בחרו מהרשימה במה להחליף את ' + all[badSwap].n + '.'; $('swt' + badSwap).focus(); return; }
       var tier = wc && $('tier') ? $('tier').value : (s.tier || '');
       var add = wc ? $('add').value.trim() : '';
       if (wc && !add && tier === s.tier && !changes.some(function (c) { return c.act !== 'keep'; })) { er.textContent = 'סימנתם שתרצו שינוי: בחרו מה לשנות או כתבו בקשה.'; return; }
@@ -195,11 +206,11 @@ h1 em{font-style:normal;color:var(--acc)}
   }
 
   function done(r, fresh) {
-    var a = r.answers || {}, s = r.snapshot || {}, ch = (a.changes || []).filter(function (c) { return c.act && c.act !== 'keep'; }), L = { more: 'יותר', less: 'פחות', remove: 'להוריד' };
+    var a = r.answers || {}, s = r.snapshot || {}, ch = (a.changes || []).filter(function (c) { return c.act && c.act !== 'keep'; }), L = { more: 'יותר', less: 'פחות', remove: 'להוריד', swap: 'להחליף' };
     var tierName = ''; (s.tiers || []).forEach(function (t) { if (t.k === a.tier && a.tier !== s.tier) tierName = t.en; });
     var when = ''; try { when = new Date(r.submitted_at).toLocaleString('he-IL', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Jerusalem' }); } catch (e) {}
     app.innerHTML = '<div class="ok"><b>' + (fresh ? 'תודה, קיבלנו!' : 'הטופס כבר נשלח') + '</b>' + (fresh ? 'נכין לכם את ההצעה הסופית לפי מה שמילאתם ונשלח אותה בוואטסאפ.' : 'קיבלנו את הפרטים שלכם. רוצים לשנות משהו? כתבו לנו.') + '</div>' + evBox(s) +
-      '<div class="sum"><dl><dt>אישורי הגעה</dt><dd><b>' + esc(a.guests) + '</b></dd><dt>שינויים בחבילה</dt><dd>' + (a.wants_changes ? (ch.map(function (c) { return esc(L[c.act] + ': ' + c.n); }).join('<br>') || 'כן') : 'החבילה מתאימה כמו שהיא') + '</dd>' +
+      '<div class="sum"><dl><dt>אישורי הגעה</dt><dd><b>' + esc(a.guests) + '</b></dd><dt>שינויים בחבילה</dt><dd>' + (a.wants_changes ? (ch.map(function (c) { return esc(c.act === 'swap' ? 'להחליף ' + c.n + ' ב-' + (c.toN || '') : L[c.act] + ': ' + c.n); }).join('<br>') || 'כן') : 'החבילה מתאימה כמו שהיא') + '</dd>' +
       (tierName ? '<dt>מעבר חבילה</dt><dd>' + esc(tierName) + '</dd>' : '') + (a.add ? '<dt>בקשות</dt><dd>' + esc(a.add) + '</dd>' : '') +
       (a.hall_name ? '<dt>מקבל את החבילה</dt><dd>' + esc(a.hall_name + (a.hall_phone ? ' · ' + a.hall_phone : '')) + '</dd>' : '') +
       '<dt>נחתם</dt><dd>' + esc((r.signer_name || '') + (when ? ' · ' + when : '')) + '</dd></dl></div>' +
