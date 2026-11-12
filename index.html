@@ -2207,6 +2207,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   /* ---- client sheet ---- */
+  /* read-only: where a website lead came from (saved by the site in prefs.attribution) */
+  function attrBox(c) {
+    try {
+      var raw = (cache.clients || []).find(function (x) { return x.id === c.id; }), a = raw && raw.prefs && raw.prefs.attribution;
+      if (!a || typeof a !== "object") return "";
+      var APP = { instagram: "הדפדפן של אינסטגרם", facebook: "הדפדפן של פייסבוק" };
+      var rows = [["רשת", a.net || a.label], ["סוג", a.kind], ["קמפיין", a.utm_campaign], ["קהל", a.utm_term], ["מודעה / תוכן", a.utm_content],
+        ["הגיעו מ", a.referrer_host], ["נפתח ב", APP[a.app] || null], ["כניסה ראשונה", a.first_touch], ["תאריך הכניסה", a.at ? fmtDate(String(a.at).slice(0, 10)) : null]]
+        .filter(function (r) { return r[1]; });
+      if (!rows.length) return "";
+      return '<div class="field" style="grid-column:1/-1"><div class="sub" aria-label="פרטי ההגעה מהאתר"><b>הגיעו מהאתר דרך:</b> ' +
+        rows.map(function (r) { return esc(r[0]) + ': <bdi>' + esc(String(r[1]).slice(0, 120)) + '</bdi>'; }).join(" · ") + '</div></div>';
+    } catch (e) { return ""; }
+  }
   function sourceNames(extra) {
     var names = state.campaigns.map(function (c) { return c.name; });
     if (names.indexOf(DIRECT) < 0) names.push(DIRECT);
@@ -2270,7 +2284,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           field("תאריך האירוע", "p-date", fi("eventDate", "date", c.eventDate)) +
           field("מוזמנים", "p-guests", fi("guests", "number", c.guests, ' min="0" inputmode="numeric"')) +
           field("אולם / מקום", "p-venue", fi("venue", "text", c.venue)) +
-          field("מקור הגעה", "p-source", '<select data-field="source"' + dis() + '>' + srcOpts + '</select>') +
+          field("מקור הגעה", "p-source", '<select data-field="source"' + dis() + '>' + srcOpts + '</select>') + attrBox(c) +
           field("שווי העסקה (₪)", "p-value", fi("value", "number", c.value, ' min="0" inputmode="numeric"')) +
           field("פולואפ בתאריך", "p-fu", fi("followUp", "date", c.followUp)) +
           '</div></section>' + sb.hall +
