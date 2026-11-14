@@ -1754,7 +1754,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var tail = ["", "החבילה שהתאמתי לכם: " + pkg + (r.cocktails ? " (כולל רכיבים לקוקטיילים)" : "")];
     if (liters) tail.push("כמות אלכוהול לאירוע: " + liters + " ליטר");
     if (est) tail.push("מחיר סופי לאירוע" + (g ? " ל-" + g + " מוזמנים" : "") + ": " + shekel(est));
-    tail.push("המחיר והתאריך שמורים לכם יומיים, כדי שיהיה לכם זמן להחליט בנחת. אחרי השריון אין עליית מחיר, גם אם מחירי השוק עולים, ואפשר להחליף חבילה בכל שלב עד שבוע לפני האירוע.");
+    tail.push("אחרי השריון אין עליית מחיר, גם אם מחירי השוק עולים, ואפשר להחליף חבילה בכל שלב עד שבוע לפני האירוע.");
     return { at: new Date().toISOString(), pkg: pkg, ratio: ratio, liters: liters, est: est, cocktails: !!r.cocktails, why: String(r.why || "").slice(0, 300),
       questions: Array.isArray(r.questions) ? r.questions.slice(0, 3).map(String) : [], text: String(r.intro || "").trim() + "\n" + tail.join("\n"), basis: { guests: g, date: c.eventDate || "" } };
   }
@@ -3529,7 +3529,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         : "תודה שפניתם אלינו! הכנתי עבורכם הצעת מחיר אישית" + (date ? " לאירוע ב-" + date : "") + " ל-" + cq.g + " אורחים, לפי האיפיון שעשינו.",
       "החבילה שנבנתה עבורכם: " + cq.en + ", " + cq.liters + " ליטר אלכוהול ועוד ערבובים, עם רזרבה.",
       "מחיר סופי: " + shekel(cq.total) + " (" + cq.perGuest + " ₪ לאורח). אחרי השריון אין עליית מחיר, ובקבוק סגור שלא נפתח מזוכה.",
-      "ההצעה והתאריך שמורים לכם יומיים, כדי שיהיה לכם זמן להתייעץ ולהחליט בנחת. אפשר גם להחליף חבילה עד שבוע לפני האירוע.",
+      "אפשר להחליף חבילה עד שבוע לפני האירוע.",
       "קובץ ההצעה מצורף. יש שאלה? פשוט משיבים לנו כאן.", "שי, ש.מ.ש משקאות"].join("\n");
   }
   function safeFile(name) { return String(name || "לקוח").replace(/[\\\/:*?"<>|\r\n]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 60); }
