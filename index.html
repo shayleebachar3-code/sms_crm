@@ -412,6 +412,7 @@ td .btn{margin-inline-end:4px}
   <!-- TODAY: one list, most important first -->
   <section class="view" id="view-today">
     <div class="summary" id="today-summary"></div>
+    <div id="ptn-sum"></div>
     <div id="today-body"></div>
     <details class="pull" data-k="digest" style="margin-top:18px"><summary><span>סיכום בוקר לשליחה לעצמך בווטסאפ</span></summary><section class="digest" id="digest"></section></details>
   </section>
@@ -2654,6 +2655,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return chk(await sb.from("partners").insert({ name: name, phone: phone || null, slug: "p-" + Math.random().toString(36).slice(2, 8) }).select().single());
   }
   function renderPartners() {
+    try { renderPtnSummary(); } catch (e) {}
     var box = $("ptn-box"); if (!box) return;
     if (!ptnReady) { box.innerHTML = '<div class="empty">הנתונים של הספקים לא זמינים כרגע. לחצו רענון.</div>'; return; }
     if (!state.partners.length) { box.innerHTML = '<div class="empty">עוד אין ספקים. הוסיפו ספק בכפתור "+ ספק חדש", או מתוך כרטיס לקוח שמקור ההגעה שלו "שיתופי פעולה".</div>'; return; }
@@ -2691,6 +2693,36 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</details>';
     }).join("");
     box.innerHTML = html;
+  }
+  /* סיכום ספקים במסך הראשי: לכל ספק - לידים החודש, נסגרו, ותשלומים לפי חודש האירוע עם שמות הלקוחות */
+  function renderPtnSummary() {
+    var box = $("ptn-sum"); if (!box) return;
+    if (!ptnReady || !state.partners.length) { box.innerHTML = ""; return; }
+    var m0 = todayStr().slice(0, 7), dd = function (s) { var x = String(s || "").slice(0, 10).split("-"); return x.length === 3 ? Number(x[2]) + "." + Number(x[1]) + "." + x[0] : ""; };
+    var cards = state.partners.filter(function (p) { return p.active !== false; }).map(function (p) {
+      var refs = state.prefs.filter(function (x) { return x.partner_id === p.id; });
+      var newRefs = refs.filter(function (x) { return String(x.registered_at || "").slice(0, 7) === m0; });
+      var closedNew = newRefs.filter(function (x) { var c = byId(state.clients, x.client_id); return c && isWon(c); }).length;
+      var rows = state.pstmt.filter(function (r) { return r.partner_id === p.id && r.state !== "paid"; });
+      if (!refs.length && !rows.length) return "";
+      var byM = {}; rows.forEach(function (r) { (byM[r.event_month] = byM[r.event_month] || []).push(r); });
+      var lines = Object.keys(byM).sort().map(function (m) {
+        var rs = byM[m], isNow = String(m).slice(0, 7) <= m0;
+        var names = rs.map(function (r) {
+          var st = r.state === "due" ? "התקיים ושולם" : r.state === "held_unpaid" ? "התקיים, הזוג עוד לא שילם הכול" : "עוד לא התקיים";
+          return '<button class="linkbtn" data-ptn-act="open" data-id="' + esc(r.client_id) + '">' + esc(r.client_name) + '</button> <span class="muted num">(' + dd(r.event_date) + ', ' + st + ', ' + shekel(r.amount) + ')</span>';
+        }).join(" · ");
+        return '<div style="padding:6px 0;border-top:1px solid var(--line)"><b>' + (isNow ? "מגיע על אירועי " : "עתידי, אירועי ") + esc(ptnMonth(m)) + ': <span class="num">' + shekel(ptnSum(rs)) + '</span></b>' +
+          '<span class="muted" style="font-size:13px"> · התשלום יוצא ב' + esc(ptnMonth(rs[0].pay_in_month)) + '</span><div style="font-size:14px;margin-top:2px">' + names + '</div></div>';
+      }).join("");
+      var nowSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) <= m0; })), futSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) > m0; }));
+      return '<div class="form" style="padding:12px 16px;margin-bottom:10px"><div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline">' +
+        '<b style="font-size:16px">' + esc(p.name) + '</b><span class="muted">החודש: ' + newRefs.length + ' לידים, ' + closedNew + ' נסגרו</span>' +
+        '<span>עד החודש: <b class="num">' + shekel(nowSum) + '</b></span><span>עתידי: <b class="num">' + shekel(futSum) + '</b></span>' +
+        '<button class="btn ghost sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button></div>' +
+        (lines || '<div class="muted" style="font-size:14px;margin-top:6px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</div>';
+    }).join("");
+    box.innerHTML = cards ? '<details class="pull" data-k="ptnsum" open style="margin:14px 0"><summary><span>ספקים (שיתופי פעולה): מה מגיע החודש ומה עתידי</span></summary>' + cards + '</details>' : "";
   }
   function ptnReport(pid) {
     var p = ptnById(pid); if (!p) return;
