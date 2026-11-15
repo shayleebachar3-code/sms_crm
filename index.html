@@ -2630,6 +2630,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     } catch (e) { ptnReady = false; }
     renderPartners(); renderSheet(false);
   }
+  function ptnD(s) { var x = String(s || "").slice(0, 10).split("-"); return x.length === 3 ? Number(x[2]) + "." + Number(x[1]) + "." + x[0] : ""; }
   function ptnById(id) { return state.partners.find(function (p) { return p.id === id; }); }
   function ptnMonth(m) { return m ? new Date(String(m).slice(0, 10) + "T12:00:00").toLocaleDateString("he-IL", { month: "long", year: "numeric" }) : ""; }
   function ptnSum(a) { return a.reduce(function (t, r) { return t + (Number(r.amount) || 0); }, 0); }
@@ -2670,7 +2671,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var due = mine.filter(function (r) { return r.state === "due"; }), fut = mine.filter(function (r) { return r.state === "future" || r.state === "held_unpaid"; });
       var row = function (r) {
         var st = r.state === "due" ? '<span class="chip warn">לתשלום</span>' : r.state === "paid" ? '<span class="chip good">שולם ' + fmtDate(r.paid_on) + '</span>' : r.state === "held_unpaid" ? '<span class="chip">ממתין לתשלום מלא מהזוג</span>' : '<span class="chip">עתידי</span>';
-        return '<tr><td><b>' + esc(r.client_name) + '</b>' + (r.phone_seen_before ? ' <span class="chip bad">לבדיקה: הזוג היה במערכת לפני ההפניה</span>' : "") + '</td><td class="num">' + fmtDate(r.event_date) + '</td><td class="num">' + r.n_in_month + ' ב' + esc(ptnMonth(r.event_month)) + '</td><td class="num"><b>' + shekel(r.amount) + '</b></td><td>' + st + '</td><td><button class="btn ghost sm" data-ptn-act="open" data-id="' + esc(r.client_id) + '">כרטיס</button></td></tr>';
+        return '<tr><td><b>' + esc(r.client_name) + '</b>' + (r.phone_seen_before ? ' <span class="chip bad">לבדיקה: הזוג היה במערכת לפני ההפניה</span>' : "") + '</td><td class="num">' + fmtDate(r.event_date) + '</td><td class="num">' + r.n_in_month + '</td><td class="num"><b>' + shekel(r.amount) + '</b></td><td class="num">' + ptnD(r.pay_in_month) + '</td><td>' + st + '</td><td><button class="btn ghost sm" data-ptn-act="open" data-id="' + esc(r.client_id) + '">כרטיס</button></td></tr>';
       };
       var months = {}; mine.forEach(function (r) { if (r.state === "due" || r.state === "paid") (months[r.event_month] = months[r.event_month] || []).push(r); });
       var payBtns = Object.keys(months).sort().map(function (m) {
@@ -2689,7 +2690,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           (p.slug ? '<button class="btn ghost sm" data-ptn-act="link" data-pid="' + esc(p.id) + '">העתקת הקישור האישי</button>' : "") +
           (p.phone ? '<span class="muted ltr num" style="align-self:center">' + esc(p.phone) + '</span>' : "") +
           '<button class="btn ghost sm" data-ptn-act="toggle" data-pid="' + esc(p.id) + '"' + dis() + '>' + (p.active === false ? "החזרה לפעיל" : "סימון כלא פעיל") + '</button> ' + payBtns + '</div>' +
-        (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מספר בחודש</th><th>סכום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
+        (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מס׳ האירוע של הספק באותו חודש</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
           : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</details>';
     }).join("");
     box.innerHTML = html;
@@ -2713,7 +2714,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           return '<button class="linkbtn" data-ptn-act="open" data-id="' + esc(r.client_id) + '">' + esc(r.client_name) + '</button> <span class="muted num">(' + dd(r.event_date) + ', ' + st + ', ' + shekel(r.amount) + ')</span>';
         }).join(" · ");
         return '<div style="padding:6px 0;border-top:1px solid var(--line)"><b>' + (isNow ? "מגיע על אירועי " : "עתידי, אירועי ") + esc(ptnMonth(m)) + ': <span class="num">' + shekel(ptnSum(rs)) + '</span></b>' +
-          '<span class="muted" style="font-size:13px"> · התשלום יוצא ב' + esc(ptnMonth(rs[0].pay_in_month)) + '</span><div style="font-size:14px;margin-top:2px">' + names + '</div></div>';
+          '<span class="muted" style="font-size:13px"> · התשלום יוצא ב-' + ptnD(rs[0].pay_in_month) + '</span><div style="font-size:14px;margin-top:2px">' + names + '</div></div>';
       }).join("");
       var nowSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) <= m0; })), futSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) > m0; }));
       return '<div class="form" style="padding:12px 16px;margin-bottom:10px"><div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline">' +
@@ -2732,9 +2733,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var ils = function (n) { return nf.format(Math.round(n || 0)) + " ₪"; };
     var tbl = function (rows, lastCol, foot) {
       if (!rows.length) return '<p class="note">אין כרגע.</p>';
-      return '<table><thead><tr><th>שם הלקוח</th><th>תאריך האירוע</th><th>מספר האירוע בחודש</th><th>' + lastCol + '</th></tr></thead><tbody>' +
-        rows.map(function (r) { return '<tr><td>' + esc(r.client_name) + '</td><td>' + d(r.event_date) + (r.state === "held_unpaid" ? " (התקיים, ממתין לסגירת התשלום)" : "") + '</td><td>' + r.n_in_month + ' ב' + esc(ptnMonth(r.event_month)) + '</td><td class="amt">' + ils(r.amount) + '</td></tr>'; }).join("") +
-        '</tbody><tfoot><tr><td colspan="3">' + foot + '</td><td>' + ils(ptnSum(rows)) + '</td></tr></tfoot></table>';
+      return '<table><thead><tr><th>שם הלקוח</th><th>תאריך האירוע</th><th>מס׳ האירוע שלך באותו חודש</th><th>יוצא לתשלום</th><th>' + lastCol + '</th></tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr><td>' + esc(r.client_name) + '</td><td>' + d(r.event_date) + (r.state === "held_unpaid" ? " (התקיים, ממתין לסגירת התשלום)" : "") + '</td><td>' + r.n_in_month + '</td><td>' + d(r.pay_in_month) + '</td><td class="amt">' + ils(r.amount) + '</td></tr>'; }).join("") +
+        '</tbody><tfoot><tr><td colspan="4">' + foot + '</td><td>' + ils(ptnSum(rows)) + '</td></tr></tfoot></table>';
     };
     var payMonths = {}; now.forEach(function (r) { payMonths[r.pay_in_month] = 1; });
     var payWhen = Object.keys(payMonths).sort().map(ptnMonth).join(", ");
