@@ -2631,6 +2631,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     renderPartners(); renderSheet(false);
   }
   function ptnD(s) { var x = String(s || "").slice(0, 10).split("-"); return x.length === 3 ? Number(x[2]) + "." + Number(x[1]) + "." + x[0] : ""; }
+  /* גמר חשבון ב-1 לחודש: מה שמשלמים ב-1 לחודש הקרוב = כל האירועים עד סוף החודש הנוכחי שעוד לא שולמו לספק */
+  function ptnNext() { var t = todayStr(), y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7)) + 1; if (m > 12) { m = 1; y++; } return y + "-" + (m < 10 ? "0" : "") + m + "-01"; }
+  function ptnIsNext(r) { return r.state !== "paid" && String(r.pay_in_month || "").slice(0, 10) <= ptnNext(); }
   function ptnById(id) { return state.partners.find(function (p) { return p.id === id; }); }
   function ptnMonth(m) { return m ? new Date(String(m).slice(0, 10) + "T12:00:00").toLocaleDateString("he-IL", { month: "long", year: "numeric" }) : ""; }
   function ptnSum(a) { return a.reduce(function (t, r) { return t + (Number(r.amount) || 0); }, 0); }
@@ -2662,13 +2665,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (!state.partners.length) { box.innerHTML = '<div class="empty">עוד אין ספקים. הוסיפו ספק בכפתור "+ ספק חדש", או מתוך כרטיס לקוח שמקור ההגעה שלו "שיתופי פעולה".</div>'; return; }
     var all = state.pstmt, tot = function (s) { return ptnSum(all.filter(function (r) { return r.state === s; })); };
     var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
-    var html = '<div class="kpis">' + tile("לתשלום עכשיו לספקים", shekel(tot("due")), "אירועים שהתקיימו ושולמו", tot("due") > 0) +
-      tile("כסף עתידי לספקים", shekel(tot("future")), "אירועים שעוד לא התקיימו", false) +
-      tile("ממתין לתשלום מלא מהזוג", shekel(tot("held_unpaid")), "יעבור ל'לתשלום' כשהזוג ישלים", false) +
+    var nx = ptnD(ptnNext()), sNext = ptnSum(all.filter(ptnIsNext)), sFut = ptnSum(all.filter(function (r) { return r.state !== "paid" && !ptnIsNext(r); }));
+    var html = '<div class="kpis">' + tile("לתשלום לספקים ב-" + nx, shekel(sNext), "אירועי החודש ומה שנשאר מקודם", sNext > 0) +
+      tile("כסף עתידי לספקים", shekel(sFut), "אירועים בחודשים הבאים", false) +
+      tile("ממתין לתשלום מלא מהזוג", shekel(tot("held_unpaid")), "אירוע שהתקיים והזוג עוד לא שילם הכול", false) +
       tile("ספקים פעילים", state.partners.filter(function (p) { return p.active !== false; }).length, "", false) + '</div>';
     html += state.partners.map(function (p) {
       var mine = all.filter(function (r) { return r.partner_id === p.id; }), leads = state.prefs.filter(function (x) { return x.partner_id === p.id; }).length;
-      var due = mine.filter(function (r) { return r.state === "due"; }), fut = mine.filter(function (r) { return r.state === "future" || r.state === "held_unpaid"; });
+      var due = mine.filter(ptnIsNext), fut = mine.filter(function (r) { return r.state !== "paid" && !ptnIsNext(r); });
       var row = function (r) {
         var st = r.state === "due" ? '<span class="chip warn">לתשלום</span>' : r.state === "paid" ? '<span class="chip good">שולם ' + fmtDate(r.paid_on) + '</span>' : r.state === "held_unpaid" ? '<span class="chip">ממתין לתשלום מלא מהזוג</span>' : '<span class="chip">עתידי</span>';
         return '<tr><td><b>' + esc(r.client_name) + '</b>' + (r.phone_seen_before ? ' <span class="chip bad">לבדיקה: הזוג היה במערכת לפני ההפניה</span>' : "") + '</td><td class="num">' + fmtDate(r.event_date) + '</td><td class="num">' + r.n_in_month + '</td><td class="num"><b>' + shekel(r.amount) + '</b></td><td class="num">' + ptnD(r.pay_in_month) + '</td><td>' + st + '</td><td><button class="btn ghost sm" data-ptn-act="open" data-id="' + esc(r.client_id) + '">כרטיס</button></td></tr>';
@@ -2684,7 +2688,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       return '<details class="form" style="padding:12px 16px;margin-bottom:10px"' + (due.length ? " open" : "") + '><summary style="cursor:pointer;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline">' +
         '<b style="font-size:16px">' + esc(p.name) + '</b>' + (p.active === false ? '<span class="chip">לא פעיל</span>' : "") +
         '<span class="muted">' + leads + ' לידים · ' + mine.length + ' עסקאות סגורות</span>' +
-        '<span>מגיע עכשיו: <b class="num">' + shekel(ptnSum(due)) + '</b></span><span>עתידי: <b class="num">' + shekel(ptnSum(fut)) + '</b></span></summary>' +
+        '<span>לתשלום ב-' + ptnD(ptnNext()) + ': <b class="num">' + shekel(ptnSum(due)) + '</b></span><span>עתידי: <b class="num">' + shekel(ptnSum(fut)) + '</b></span></summary>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">' +
           '<button class="btn sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button>' +
           (p.slug ? '<button class="btn ghost sm" data-ptn-act="link" data-pid="' + esc(p.id) + '">העתקת הקישור האישי</button>' : "") +
@@ -2719,7 +2723,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var nowSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) <= m0; })), futSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) > m0; }));
       return '<div class="form" style="padding:12px 16px;margin-bottom:10px"><div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline">' +
         '<b style="font-size:16px">' + esc(p.name) + '</b><span class="muted">החודש: ' + newRefs.length + ' לידים, ' + closedNew + ' נסגרו</span>' +
-        '<span>עד החודש: <b class="num">' + shekel(nowSum) + '</b></span><span>עתידי: <b class="num">' + shekel(futSum) + '</b></span>' +
+        '<span>לתשלום ב-' + ptnD(ptnNext()) + ': <b class="num">' + shekel(nowSum) + '</b></span><span>עתידי: <b class="num">' + shekel(futSum) + '</b></span>' +
         '<button class="btn ghost sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button></div>' +
         (lines || '<div class="muted" style="font-size:14px;margin-top:6px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</div>';
     }).join("");
@@ -2728,17 +2732,35 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function ptnReport(pid) {
     var p = ptnById(pid); if (!p) return;
     var mine = state.pstmt.filter(function (r) { return r.partner_id === pid; });
-    var now = mine.filter(function (r) { return r.state === "due"; }), fut = mine.filter(function (r) { return r.state === "future" || r.state === "held_unpaid"; });
+    var now = mine.filter(ptnIsNext), fut = mine.filter(function (r) { return r.state !== "paid" && !ptnIsNext(r); });
     var d = function (s) { var x = String(s || "").slice(0, 10).split("-"); return x.length === 3 ? x[2] + "." + x[1] + "." + x[0] : ""; };
     var ils = function (n) { return nf.format(Math.round(n || 0)) + " ₪"; };
-    var tbl = function (rows, lastCol, foot) {
-      if (!rows.length) return '<p class="note">אין כרגע.</p>';
-      return '<table><thead><tr><th>שם הלקוח</th><th>תאריך האירוע</th><th>מס׳ האירוע שלך באותו חודש</th><th>יוצא לתשלום</th><th>' + lastCol + '</th></tr></thead><tbody>' +
-        rows.map(function (r) { return '<tr><td>' + esc(r.client_name) + '</td><td>' + d(r.event_date) + (r.state === "held_unpaid" ? " (התקיים, ממתין לסגירת התשלום)" : "") + '</td><td>' + r.n_in_month + '</td><td>' + d(r.pay_in_month) + '</td><td class="amt">' + ils(r.amount) + '</td></tr>'; }).join("") +
-        '</tbody><tfoot><tr><td colspan="4">' + foot + '</td><td>' + ils(ptnSum(rows)) + '</td></tr></tfoot></table>';
+    /* לפי חודש האירוע: כל העסקאות שעוד לא שולמו לספק, עם ההסבר של החישוב */
+    var open = now.concat(fut), byM = {};
+    open.forEach(function (r) { (byM[r.event_month] = byM[r.event_month] || []).push(r); });
+    var months = Object.keys(byM).sort();
+    var calc = function (rs) {
+      var t = {}; rs.forEach(function (r) { t[r.amount] = (t[r.amount] || 0) + 1; });
+      return Object.keys(t).sort(function (a, b) { return a - b; }).map(function (a) { return t[a] + (t[a] === 1 ? " אירוע" : " אירועים") + " × " + ils(Number(a)); }).join(" + ") + " = " + ils(ptnSum(rs));
     };
-    var payMonths = {}; now.forEach(function (r) { payMonths[r.pay_in_month] = 1; });
-    var payWhen = Object.keys(payMonths).sort().map(ptnMonth).join(", ");
+    var stTxt = function (r) { return r.state === "due" ? "התקיים ושולם" : r.state === "held_unpaid" ? "התקיים, ממתין לסגירת התשלום" : "עוד לא התקיים"; };
+    var mIsNow = function (rs) { return ptnIsNext(rs[0]); };
+    /* תיעוד מול הספק: כל הלידים שהפנה, ומה קרה עם כל אחד */
+    var refs = state.prefs.filter(function (x) { return x.partner_id === pid; }).map(function (x) { return { x: x, c: byId(state.clients, x.client_id) }; })
+      .filter(function (o) { return o.c && !o.c.example; }).sort(function (a, b) { return String(a.x.registered_at).localeCompare(String(b.x.registered_at)); });
+    var leadsTbl = refs.length ? '<table><thead><tr><th>שם הלקוח</th><th>נרשם על שמך</th><th>תאריך האירוע</th><th>מצב</th></tr></thead><tbody>' +
+      refs.map(function (o) { return '<tr><td>' + esc(o.c.name) + '</td><td>' + d(o.x.registered_at) + '</td><td>' + (o.c.eventDate ? d(o.c.eventDate) : "–") + '</td><td>' + (isWon(o.c) ? "<b>נסגר ✓</b>" : "עוד לא נסגר") + '</td></tr>'; }).join("") +
+      '</tbody><tfoot><tr><td colspan="4">' + refs.length + ' לידים · ' + refs.filter(function (o) { return isWon(o.c); }).length + ' נסגרו</td></tr></tfoot></table>' : '<p class="note">עוד לא נרשמו לידים על שמך.</p>';
+    var overview = months.length ? '<table><thead><tr><th>חודש האירועים</th><th>אירועים שנסגרו דרכך</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th></tr></thead><tbody>' +
+      months.map(function (m) { var rs = byM[m]; return '<tr><td>' + esc(ptnMonth(m)) + '</td><td>' + rs.length + '</td><td class="amt">' + ils(ptnSum(rs)) + '</td><td>' + d(rs[0].pay_in_month) + '</td><td>' + (mIsNow(rs) ? "לתשלום ב-" + d(ptnNext()) : "צפי") + '</td></tr>'; }).join("") +
+      '</tbody><tfoot><tr><td>סה"כ</td><td>' + open.length + '</td><td>' + ils(ptnSum(open)) + '</td><td colspan="2"></td></tr></tfoot></table>' : '<p class="note">אין כרגע עסקאות פתוחות דרכך.</p>';
+    var details = months.map(function (m) {
+      var rs = byM[m].slice().sort(function (a, b) { return a.n_in_month - b.n_in_month; });
+      return '<h3>' + esc(ptnMonth(m)) + ': ' + rs.length + (rs.length === 1 ? " אירוע" : " אירועים") + ' · יוצא לתשלום ' + d(rs[0].pay_in_month) + (mIsNow(rs) ? "" : " (צפי)") + '</h3>' +
+        '<table><thead><tr><th>מס׳ בחודש</th><th>שם הלקוח</th><th>תאריך האירוע</th><th>מצב</th><th>סכום</th></tr></thead><tbody>' +
+        rs.map(function (r) { return '<tr><td>' + r.n_in_month + '</td><td>' + esc(r.client_name) + '</td><td>' + d(r.event_date) + '</td><td>' + stTxt(r) + '</td><td class="amt">' + ils(r.amount) + '</td></tr>'; }).join("") +
+        '</tbody></table><p class="calc">החישוב: ' + calc(rs) + '</p>';
+    }).join("");
     var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דוח שיתוף פעולה · ' + esc(p.name) + '</title><style>' +
       '@page{size:A4;margin:12mm 15mm}body{margin:0;font-family:"Segoe UI",Arial,sans-serif;color:#1a1a1a;background:#fff}' +
       '.bsd{font-size:9.5pt}.hd{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:2px solid #e6dcc6;padding-bottom:12px;margin:4px 0 16px}' +
@@ -2747,15 +2769,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       '.tot span{display:block;color:#4d4d4d;font-size:10.5pt}.tot b{font-size:20pt;color:#8a6a22}h2{margin:16px 0 6px;font-size:13.5pt;color:#8a6a22}' +
       'table{width:100%;border-collapse:collapse;font-size:11pt}th,td{padding:7px 9px;text-align:right;border-bottom:1px solid #e6dcc6}th{color:#4d4d4d;font-weight:600;font-size:10pt}' +
       'td.amt{font-weight:800}tfoot td{font-weight:800;border-bottom:0}.note{color:#4d4d4d;font-size:9.5pt;line-height:1.55}' +
+      'h3{margin:14px 0 4px;font-size:12pt}.calc{margin:4px 0 0;font-weight:700;font-size:10.5pt;background:#faf7f0;border:1px solid #e6dcc6;border-radius:6px;padding:6px 10px}tr,h3{break-inside:avoid}' +
       '.ft{margin-top:26px;border-top:2px solid #e6dcc6;padding-top:10px;font-weight:700;font-size:12pt}.ft small{display:block;color:#4d4d4d;font-weight:400;font-size:10pt}' +
       '.pr{position:fixed;bottom:14px;left:14px;font:inherit;padding:8px 16px;border-radius:8px;border:1px solid #a8812f;background:#a8812f;color:#fff;cursor:pointer}@media print{.pr{display:none}}' +
       '</style></head><body><button class="pr" onclick="window.print()">הדפסה / שמירה כ-PDF</button>' +
       '<div class="bsd">בס"ד</div><div class="hd"><div><h1>דוח שיתוף פעולה: ' + esc(p.name) + '</h1><div class="meta">נכון ל-' + d(todayStr()) + '</div></div><div class="lg"><img src="' + PTN_LOGO + '" alt="ש.מ.ש משקאות"></div></div>' +
-      '<div class="tots"><div class="tot"><span>מגיע לך כעת</span><b>' + ils(ptnSum(now)) + '</b></div><div class="tot"><span>כסף עתידי (צפי)</span><b>' + ils(ptnSum(fut)) + '</b></div></div>' +
-      '<h2>מגיע לך כעת</h2>' + tbl(now, "סכום", 'סה"כ' + (payWhen ? ", משולם ב" + esc(payWhen) : "")) +
-      '<p class="note">אירועים שהתקיימו ושולמו במלואם. התשלום יוצא בחודש שאחרי האירוע.</p>' +
-      '<h2>כסף עתידי</h2>' + tbl(fut, "סכום צפוי", 'סה"כ צפוי') +
-      '<p class="note">עסקאות שנסגרו דרכך והאירוע עוד לא התקיים או שהתשלום עליו עוד לא נסגר. זה צפי: התשלום יוצא בחודש שאחרי האירוע, אחרי שהאירוע שולם במלואו והתקיים. הסכום לפי מספר האירועים שלך באותו חודש: הראשון עד השלישי 300 ₪, הרביעי עד השישי 400 ₪, מהשביעי 500 ₪.</p>' +
+      '<div class="tots"><div class="tot"><span>לתשלום ב-' + d(ptnNext()) + '</span><b>' + ils(ptnSum(now)) + '</b></div><div class="tot"><span>כסף עתידי (צפי)</span><b>' + ils(ptnSum(fut)) + '</b></div></div>' +
+      '<h2>סיכום לפי חודשים</h2>' + overview +
+      '<p class="note">איך מחושב: בכל חודש סופרים את האירועים שנסגרו דרכך לפי תאריך האירוע, והספירה מתחילה מחדש בכל חודש. האירוע הראשון עד השלישי בחודש: 300 ₪ כל אחד. הרביעי עד השישי: 400 ₪ כל אחד. מהשביעי: 500 ₪ כל אחד. התשלום יוצא ב-1 לחודש שאחרי, על אירועים שהתקיימו ושולמו במלואם. "צפי" הוא סכום משוער על אירועים שעוד לא התקיימו.</p>' +
+      (months.length ? '<h2>הפירוט</h2>' + details : "") +
+      '<h2>הלידים שהפנית אלינו</h2>' + leadsTbl +
       '<div class="ft">שי-לי · 054-5435939<small>ש.מ.ש משקאות</small></div></body></html>';
     var w = window.open("", "_blank");
     if (!w) { toast("הדפדפן חסם חלון חדש. אפשרו חלונות קופצים ל-CRM ונסו שוב"); return; }
