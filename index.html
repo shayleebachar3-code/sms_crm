@@ -401,6 +401,7 @@ td .btn{margin-inline-end:4px}
     <button class="tab" role="tab" data-view="clients" aria-selected="false">לקוחות</button>
     <button class="tab" role="tab" data-view="payments" aria-selected="false">תשלומים<span class="badge" id="pay-badge" hidden>0</span></button>
     <button class="tab" role="tab" data-view="events" aria-selected="false">יומן אירועים</button>
+    <button class="tab" role="tab" data-view="recruit" aria-selected="false">גיוס מפיקים</button>
     <button class="tab more-btn" type="button" id="more-btn" aria-expanded="false">עוד ▾</button>
   </nav>
   <nav class="tabs tabs2" id="more-tabs" aria-label="עוד" hidden>
@@ -451,6 +452,19 @@ td .btn{margin-inline-end:4px}
     <div class="row-head" style="margin-top:28px"><h2>תשלומים לספקים (שיתופי פעולה)</h2><button class="btn sm" data-ptn-act="new">+ ספק חדש</button></div>
     <p class="muted" style="margin:-6px 0 14px;font-size:14px">על כל אירוע שספק הפנה, שהתקיים ושולם במלואו, מגיע לספק תשלום בחודש שאחרי האירוע. בכל חודש סופרים מחדש: האירוע הראשון עד השלישי בחודש 300 ₪ כל אחד, הרביעי עד השישי 400 ₪, מהשביעי 500 ₪. ליד משויך לספק מתוך כרטיס הלקוח, כשמקור ההגעה הוא "שיתופי פעולה".</p>
     <div id="ptn-box"></div>
+  </section>
+
+  <!-- RECRUIT: wedding producers to contact for the referral program -->
+  <section class="view" id="view-recruit" hidden>
+    <div class="row-head"><h2>גיוס מפיקים לשיתופי פעולה</h2></div>
+    <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל מפיקי החתונות שנמצאו במחקר, עם טלפון. כפתור "פנייה בווטסאפ" פותח את ההודעה שלך מוכנה לשליחה, והסטטוס מתעדכן ל"נשלחה הודעה". כשמפיק מצטרף, בוחרים "הצטרף" והוא נכנס לרשימת הספקים. <b>מומלץ לשלוח עד 20–25 הודעות ביום</b>, כל אחת בנפרד.</p>
+    <div class="kpis" id="rc-kpis"></div>
+    <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px">
+      <div class="field"><label for="rc-q">חיפוש</label><input id="rc-q" placeholder="שם, עיר או טלפון"></div>
+      <div class="field"><label for="rc-region">אזור</label><select id="rc-region"></select></div>
+      <div class="field"><label for="rc-status">סטטוס</label><select id="rc-status"></select></div>
+    </div>
+    <div id="rc-list"></div>
   </section>
 
   <!-- SOURCES -->
@@ -2699,6 +2713,97 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }).join("");
     box.innerHTML = html;
   }
+  /* ---- גיוס מפיקים: רשימת המפיקים מהמחקר, סטטוס, הערות והודעות ווטסאפ מוכנות ---- */
+  var RC_ST = ["לא פנינו", "נשלחה הודעה", "נשלחה תזכורת", "ענה", "מעוניין", "הצטרף", "לא רלוונטי"];
+  var RC_CLS = { "לא פנינו": "", "נשלחה הודעה": "warn", "נשלחה תזכורת": "warn", "ענה": "good", "מעוניין": "good", "הצטרף": "good", "לא רלוונטי": "bad" };
+  var RC_MSG = {
+    first: "מה קורה {שם}? אני שי-לי מש.מ.ש משקאות.\n\nאנחנו מספקים חבילות אלכוהול לחתונות, במחיר נוח יותר מהאולם ובלי התעסקות: שיחה אחת עם הזוג, ומשם הכול עלינו, עד שהחבילה נמסרת באולם.\n\nלמה אני פונה אליכם? כי זוג שמגיע לחתונה רגוע ממליץ על מי שהפיק לו אותה. הזוגות שלכם מקבלים שירות פצצה וראש שקט, ואתם מקבלים תשלום על כל אירוע שהגיע דרככם.\n\nיש לי שאלה, כי אולי זה יכול לעבוד בינינו: הזוגות שלכם סוגרים את האלכוהול לבד?",
+    details: "בשמחה. בקצרה:\nאתם מפנים זוג עם הקישור האישי או קוד ה-QR שלכם, והליד נרשם על שמכם. אפשר גם פשוט לתת לזוג את המספר שלי ולכתוב לי את השם שלו.\nמכאן אנחנו עושים הכול: שיחת אפיון עם הזוג, חישוב, הצעה, התאמה לאישורי ההגעה ואספקה עד האולם.\nעל כל אירוע שהפניתם, שהתקיים ושולם במלואו, אתם מקבלים תשלום. בכל חודש סופרים מחדש:\n- שלושת האירועים הראשונים בחודש: 300 ₪ כל אחד.\n- האירוע הרביעי, החמישי והשישי: 400 ₪ כל אחד.\n- מהאירוע השביעי והלאה: 500 ₪ כל אחד.\nלדוגמה, 5 אירועים בחודש הם 3 ב-300 ₪ ועוד 2 ב-400 ₪, כלומר 1,700 ₪.\nגמר החשבון ב-1 לכל חודש, עם דוח מסודר: מה מגיע לכם עכשיו, מה עתידי, ושמות הלקוחות.\nשלושה כללים פשוטים: אומרים לזוג בגלוי שאנחנו עובדים יחד. זוג נספר לכם כשהוא נרשם על שמכם לפני שנשלחה לו הצעת מחיר. ושיתוף הפעולה מיועד למפיקים שלא מוכרים אלכוהול ולא עובדים עם ספק אלכוהול אחר.\nלפתוח לכם קישור אישי?\nשי-לי, ש.מ.ש משקאות",
+    remind: "היי {שם}, רק להקפיץ את ההודעה הקודמת. אם זה לא הזמן, הכול טוב. ואם זוג ישאל אתכם פעם על אלכוהול לחתונה, שמרו את המספר שלי: 054-5435939.\nשי-לי, ש.מ.ש משקאות"
+  };
+  state.prospects = []; var rcReady = false, rcOpen = {};
+  async function loadProspects() {
+    if (!sb) return;
+    try { var r = await sb.from("partner_prospects").select("*").order("region_order").order("name"); if (r.error) { rcReady = false; } else { state.prospects = r.data || []; rcReady = true; } } catch (e) { rcReady = false; }
+    renderRecruit();
+  }
+  function rcShort(n) { var s = String(n || "").split(/\s[-–|·]\s|,|:|\(/)[0].trim(); return s.length > 2 ? s : String(n || ""); }
+  function rcWa(p, kind) { var w = waNum(p.phone); return w ? "https://wa.me/" + w + "?text=" + encodeURIComponent(RC_MSG[kind].replace("{שם}", rcShort(p.name))) : ""; }
+  function renderRecruit() {
+    var list = $("rc-list"); if (!list) return;
+    if (!rcReady) { list.innerHTML = '<div class="empty">רשימת המפיקים לא זמינה כרגע. לחצו רענון.</div>'; return; }
+    var all = state.prospects, rs = $("rc-region"), ss = $("rc-status");
+    if (rs && !rs.options.length) {
+      var regs = []; all.forEach(function (p) { if (regs.indexOf(p.region) < 0) regs.push(p.region); });
+      rs.innerHTML = '<option value="">כל האזורים</option>' + regs.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join("");
+      ss.innerHTML = '<option value="">כל הסטטוסים</option>' + RC_ST.map(function (s) { return '<option>' + s + '</option>'; }).join("");
+    }
+    var cnt = {}; RC_ST.forEach(function (s) { cnt[s] = 0; }); all.forEach(function (p) { cnt[p.status] = (cnt[p.status] || 0) + 1; });
+    var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
+    $("rc-kpis").innerHTML = tile("מפיקים ברשימה", all.length, cnt["לא פנינו"] + " עוד לא פנינו אליהם", false) +
+      tile("נשלחה הודעה", cnt["נשלחה הודעה"] + cnt["נשלחה תזכורת"], "מחכים לתשובה", false) +
+      tile("ענו או מעוניינים", cnt["ענה"] + cnt["מעוניין"], "לשלוח פרטים ולסגור", cnt["ענה"] + cnt["מעוניין"] > 0) +
+      tile("הצטרפו", cnt["הצטרף"], "נכנסו לרשימת הספקים", false);
+    var q = ($("rc-q").value || "").trim().toLowerCase(), fr = rs.value, fs = ss.value;
+    var shown = all.filter(function (p) {
+      if (fr && p.region !== fr) return false; if (fs && p.status !== fs) return false;
+      if (q && (p.name + " " + (p.city || "") + " " + (p.phone || "") + " " + (p.phone2 || "")).toLowerCase().indexOf(q) < 0 && String(p.phone || "").replace(/\D/g, "").indexOf(q.replace(/\D/g, "") || "~") < 0) return false;
+      return true;
+    });
+    if (!shown.length) { list.innerHTML = '<div class="empty">אין מפיקים שמתאימים לסינון.</div>'; return; }
+    var by = {}, order = []; shown.forEach(function (p) { if (!by[p.region]) { by[p.region] = []; order.push(p.region); } by[p.region].push(p); });
+    var filtered = !!(q || fr || fs);
+    list.innerHTML = order.map(function (r) {
+      var rows = by[r].slice().sort(function (a, b) { return (b.starred - a.starred) || String(a.city || "").localeCompare(String(b.city || ""), "he"); });
+      var open = filtered || rcOpen[r];
+      return '<details class="form rc-reg" data-reg="' + esc(r) + '" style="padding:10px 14px;margin-bottom:10px"' + (open ? " open" : "") + '><summary style="cursor:pointer;font-weight:800;font-size:16px">' + esc(r) + ' <span class="muted" style="font-weight:400;font-size:14px">' + rows.length + ' מפיקים · ' + rows.filter(function (p) { return p.status === "לא פנינו"; }).length + ' עוד לא פנינו</span></summary>' +
+        '<div class="tablebox" style="margin-top:8px"><table><thead><tr><th>שם העסק</th><th>עיר</th><th>טלפון</th><th>סטטוס</th><th>הערות ומעקב</th><th>ווטסאפ</th></tr></thead><tbody>' +
+        rows.map(function (p) {
+          var st = RC_ST.map(function (s) { return '<option' + (p.status === s ? " selected" : "") + '>' + s + '</option>'; }).join("");
+          var ig = p.instagram ? ' <a class="muted" style="font-size:12px" href="https://instagram.com/' + encodeURIComponent(p.instagram) + '" target="_blank" rel="noopener">אינסטגרם</a>' : "";
+          var last = p.last_contact_at ? '<div class="muted" style="font-size:12px">פנייה אחרונה: ' + fmtDate(String(p.last_contact_at).slice(0, 10)) + '</div>' : "";
+          var w1 = rcWa(p, "first"), w2 = rcWa(p, "details"), w3 = rcWa(p, "remind");
+          return '<tr data-rc="' + esc(p.id) + '"' + (p.starred ? ' style="background:#fff8e6"' : "") + '><td><b>' + (p.starred ? "⭐ " : "") + esc(p.name) + '</b>' + ig + '<div class="muted" style="font-size:12px">' + esc(p.source || "") + '</div></td>' +
+            '<td>' + esc(p.city || "") + '</td><td class="num"><a href="tel:' + esc(p.phone || "") + '" dir="ltr">' + esc(p.phone || "") + '</a>' + (p.phone2 ? '<br><a href="tel:' + esc(p.phone2) + '" dir="ltr">' + esc(p.phone2) + '</a>' : "") + '</td>' +
+            '<td><select data-rc-f="status" aria-label="סטטוס"' + dis() + '>' + st + '</select> <span class="chip ' + (RC_CLS[p.status] || "") + '" hidden></span>' + last + '</td>' +
+            '<td><textarea data-rc-f="notes" rows="2" style="width:100%;min-width:170px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px" placeholder="מה סוכם, מתי לחזור…"' + dis() + '>' + esc(p.notes || "") + '</textarea></td>' +
+            '<td style="white-space:nowrap">' + (w1 ? '<a class="btn sm" data-rc-wa="first" href="' + w1 + '" target="_blank" rel="noopener">פנייה בווטסאפ</a><br>' +
+              '<a class="btn ghost sm" data-rc-wa="details" href="' + w2 + '" target="_blank" rel="noopener" style="margin-top:4px">פרטים</a> <a class="btn ghost sm" data-rc-wa="remind" href="' + w3 + '" target="_blank" rel="noopener" style="margin-top:4px">תזכורת</a>' : '<span class="muted">אין טלפון</span>') + '</td></tr>';
+        }).join("") + '</tbody></table></div></details>';
+    }).join("");
+  }
+  async function rcPatch(id, d) {
+    chk(await sb.from("partner_prospects").update(Object.assign({ updated_at: new Date().toISOString() }, d)).eq("id", id));
+    var p = state.prospects.find(function (x) { return x.id === id; }); if (p) Object.assign(p, d);
+  }
+  ["rc-q", "rc-region", "rc-status"].forEach(function (id) { var el = $(id); if (el) el.addEventListener(id === "rc-q" ? "input" : "change", function () { renderRecruit(); }); });
+  document.addEventListener("toggle", function (e) { var d = e.target; if (d && d.classList && d.classList.contains("rc-reg")) rcOpen[d.dataset.reg] = d.open; }, true);
+  document.addEventListener("change", function (e) {
+    var t = e.target, f = t.dataset && t.dataset.rcF; if (!f || !canWrite) return;
+    var row = t.closest("[data-rc]"); if (!row) return; var id = row.dataset.rc, v = t.value;
+    guard(async function () {
+      var d = {}; d[f] = v; if (f === "status" && v !== "לא פנינו" && v !== "לא רלוונטי") d.last_contact_at = new Date().toISOString();
+      await rcPatch(id, d);
+      if (f === "status" && v === "הצטרף") {
+        var p = state.prospects.find(function (x) { return x.id === id; });
+        if (p && !p.partner_id && confirm("להוסיף את " + p.name + " לרשימת הספקים בשיתופי פעולה?")) {
+          var np = chk(await sb.from("partners").insert({ name: rcShort(p.name), phone: p.phone || null, slug: "p-" + Math.random().toString(36).slice(2, 8), notes: "גויס מרשימת המפיקים" }).select().single());
+          await rcPatch(id, { partner_id: np.id }); await loadPartners(); toast("נוסף לרשימת הספקים");
+        }
+      } else toast(f === "notes" ? "ההערה נשמרה" : "הסטטוס עודכן");
+      if (f === "status") renderRecruit();
+    });
+  });
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("[data-rc-wa]"); if (!a || !canWrite) return;
+    var row = a.closest("[data-rc]"); if (!row) return; var id = row.dataset.rc, kind = a.dataset.rcWa;
+    var p = state.prospects.find(function (x) { return x.id === id; }); if (!p) return;
+    var d = { last_contact_at: new Date().toISOString() };
+    if (kind === "first" && p.status === "לא פנינו") d.status = "נשלחה הודעה";
+    if (kind === "remind" && (p.status === "לא פנינו" || p.status === "נשלחה הודעה")) d.status = "נשלחה תזכורת";
+    guard(async function () { await rcPatch(id, d); renderRecruit(); });
+  });
+
   /* סיכום ספקים במסך הראשי: לכל ספק - לידים החודש, נסגרו, ותשלומים לפי חודש האירוע עם שמות הלקוחות */
   function renderPtnSummary() {
     var box = $("ptn-sum"); if (!box) return;
@@ -2817,7 +2922,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function renderAll() { renderFormSources(); renderToday(); renderKpis(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderPartners();renderPayAlert(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
 
   /* ---- tabs ---- */
-  var VIEWS = ["today", "clients", "payments", "events", "sources", "messages", "activity"], MORE_VIEWS = ["sources", "messages", "activity"];
+  var VIEWS = ["today", "clients", "payments", "events", "recruit", "sources", "messages", "activity"], MORE_VIEWS = ["sources", "messages", "activity"];
   function showView(v) {
     if (v === "availability") v = "events"; /* old links: availability now lives inside the events calendar */
     if (VIEWS.indexOf(v) < 0) v = "today";
@@ -3195,7 +3300,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         state.logs = chk(rs[6]) || []; state.reminders = chk(rs[7]) || []; state.stages = chk(rs[8]) || []; state.agreements = chk(rs[9]) || []; try { agrAutoSave(); } catch (e) {}
         /* the forms table is optional: if it is missing the rest of the CRM keeps working */
         state.rsvp = rs[10] && !rs[10].error ? rs[10].data || [] : []; rsvpReady = !!(rs[10] && !rs[10].error); try { rsvpAutoSave(); } catch (e) {}
-        loadPartners();
+        loadPartners(); loadProspects();
         ["clients", "events", "campaigns", "settings"].forEach(function (k) { loaded[k] = true; fresh[k] = true; });
         syncOk = true; setStatus(true, "מחובר, הכל נשמר אוטומטית");
         renderAll();
