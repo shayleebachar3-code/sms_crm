@@ -2768,7 +2768,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             '<td><select data-rc-f="status" aria-label="סטטוס"' + dis() + '>' + st + '</select> <span class="chip ' + (RC_CLS[p.status] || "") + '" hidden></span>' + last + '</td>' +
             '<td><textarea data-rc-f="notes" rows="2" style="width:100%;min-width:170px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px" placeholder="מה סוכם, מתי לחזור…"' + dis() + '>' + esc(p.notes || "") + '</textarea></td>' +
             '<td style="white-space:nowrap">' + (w1 ? '<a class="btn sm" data-rc-wa="first" href="' + w1 + '" target="_blank" rel="noopener">פנייה בווטסאפ</a><br>' +
-              '<a class="btn ghost sm" data-rc-wa="details" href="' + w2 + '" target="_blank" rel="noopener" style="margin-top:4px">פרטים</a> <a class="btn ghost sm" data-rc-wa="remind" href="' + w3 + '" target="_blank" rel="noopener" style="margin-top:4px">תזכורת</a>' : '<span class="muted">אין טלפון</span>') + '</td></tr>';
+              '<a class="btn ghost sm" data-rc-wa="details" href="' + w2 + '" target="_blank" rel="noopener" style="margin-top:4px">פרטים</a> <a class="btn ghost sm" data-rc-wa="remind" href="' + w3 + '" target="_blank" rel="noopener" style="margin-top:4px">תזכורת</a>' : '<span class="muted">אין טלפון</span>') + '<br><button class="linkbtn" data-rc-del style="margin-top:6px;color:var(--bad,#b3261e);font-size:13px"' + dis() + '>הסרה מהרשימה</button></td></tr>';
         }).join("") + '</tbody></table></div></details>';
     }).join("");
   }
@@ -2793,6 +2793,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       } else toast(f === "notes" ? "ההערה נשמרה" : "הסטטוס עודכן");
       if (f === "status") renderRecruit();
     });
+  });
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-rc-del]"); if (!b || !canWrite) return;
+    var row = b.closest("[data-rc]"); if (!row) return; var id = row.dataset.rc, p = state.prospects.find(function (x) { return x.id === id; }); if (!p) return;
+    if (!confirm("להסיר את " + p.name + " מרשימת המפיקים? אי אפשר לבטל את זה.")) return;
+    guard(async function () { chk(await sb.from("partner_prospects").delete().eq("id", id)); state.prospects = state.prospects.filter(function (x) { return x.id !== id; }); renderRecruit(); toast("הוסר מהרשימה"); });
   });
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest("[data-rc-wa]"); if (!a || !canWrite) return;
