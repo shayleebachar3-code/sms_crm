@@ -2684,7 +2684,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       tile("כסף עתידי לספקים", shekel(sFut), "אירועים בחודשים הבאים", false) +
       tile("ממתין לתשלום מלא מהזוג", shekel(tot("held_unpaid")), "אירוע שהתקיים והזוג עוד לא שילם הכול", false) +
       tile("ספקים פעילים", state.partners.filter(function (p) { return p.active !== false; }).length, "", false) + '</div>';
-    html += state.partners.map(function (p) {
+    /* פעילים למעלה; ספקים שסומנו "לא פעיל" עוברים לקבוצה נפרדת בתחתית */
+    var ptnCard = function (p) {
       var mine = all.filter(function (r) { return r.partner_id === p.id; }), leads = state.prefs.filter(function (x) { return x.partner_id === p.id; }).length;
       var due = mine.filter(ptnIsNext), fut = mine.filter(function (r) { return r.state !== "paid" && !ptnIsNext(r); });
       var row = function (r) {
@@ -2719,7 +2720,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         '<h4 style="margin:14px 0 6px">עסקאות שנסגרו ותשלומים</h4>' +
         (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מס׳ האירוע של הספק באותו חודש</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
           : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</details>';
-    }).join("");
+    };
+    var actP = state.partners.filter(function (p) { return p.active !== false; }), offP = state.partners.filter(function (p) { return p.active === false; });
+    html += actP.length ? actP.map(ptnCard).join("") : '<div class="empty">אין כרגע ספקים פעילים.</div>';
+    if (offP.length) html += '<details class="form" style="padding:10px 14px;margin-top:14px;background:transparent"><summary style="cursor:pointer;font-weight:700;color:var(--ink-2)">ספקים לא פעילים (' + offP.length + ') ▾</summary><div style="margin-top:8px">' + offP.map(ptnCard).join("") + '</div></details>';
     box.innerHTML = html;
   }
   var ptnOpen = {};
