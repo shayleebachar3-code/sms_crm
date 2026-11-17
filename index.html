@@ -2699,20 +2699,31 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         return "";
       }).join(" ");
       var list = mine.slice().sort(function (a, b) { return String(b.event_date).localeCompare(String(a.event_date)); });
-      return '<details class="form" style="padding:12px 16px;margin-bottom:10px"' + (due.length ? " open" : "") + '><summary style="cursor:pointer;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline">' +
+      var paidSum = ptnSum(mine.filter(function (r) { return r.state === "paid"; }));
+      /* כל הלידים שהספק הביא, גם כאלה שעוד לא נסגרו */
+      var refs = state.prefs.filter(function (x) { return x.partner_id === p.id; }).map(function (x) { return { x: x, c: byId(state.clients, x.client_id) }; }).filter(function (o) { return o.c; })
+        .sort(function (a, b) { return String(b.x.registered_at).localeCompare(String(a.x.registered_at)); });
+      var refsHtml = refs.length ? '<h4 style="margin:12px 0 6px">כל הלידים שהביא (' + refs.length + ')</h4><div class="tablebox"><table><thead><tr><th>לקוח</th><th>נרשם על שמו</th><th>תאריך אירוע</th><th>מצב</th><th></th></tr></thead><tbody>' +
+        refs.map(function (o) { var won = isWon(o.c); return '<tr><td><b>' + esc(o.c.name) + '</b></td><td class="num">' + fmtDate(String(o.x.registered_at || "").slice(0, 10)) + '</td><td class="num">' + (o.c.eventDate ? fmtDate(o.c.eventDate) : "–") + '</td><td><span class="chip ' + (won ? "good" : "") + '">' + esc(won ? "נסגר" : (o.c.status || "בתהליך")) + '</span></td><td><button class="btn ghost sm" data-ptn-act="open" data-id="' + esc(o.c.id) + '">כרטיס</button></td></tr>'; }).join("") +
+        '</tbody></table></div>' : '<div class="muted" style="font-size:14px;margin-top:8px">עוד לא שויכו לידים לספק הזה.</div>';
+      return '<details class="form ptn-card" data-pid="' + esc(p.id) + '" style="padding:12px 16px;margin-bottom:10px"' + (due.length || ptnOpen[p.id] ? " open" : "") + '><summary style="cursor:pointer;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline">' +
         '<b style="font-size:16px">' + esc(p.name) + '</b>' + (p.active === false ? '<span class="chip">לא פעיל</span>' : "") +
-        '<span class="muted">' + leads + ' לידים · ' + mine.length + ' עסקאות סגורות</span>' +
-        '<span>לתשלום ב-' + ptnD(ptnNext()) + ': <b class="num">' + shekel(ptnSum(due)) + '</b></span><span>עתידי: <b class="num">' + shekel(ptnSum(fut)) + '</b></span></summary>' +
+        '<span class="muted">' + leads + ' לידים · ' + mine.length + ' עסקאות סגורות · שולם עד היום ' + shekel(paidSum) + '</span>' +
+        '<span>לתשלום ב-' + ptnD(ptnNext()) + ': <b class="num">' + shekel(ptnSum(due)) + '</b></span><span>עתידי: <b class="num">' + shekel(ptnSum(fut)) + '</b></span><span class="muted" style="font-size:13px">לחצו לפרטים ▾</span></summary>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">' +
           '<button class="btn sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button>' +
           (p.slug ? '<button class="btn ghost sm" data-ptn-act="link" data-pid="' + esc(p.id) + '">העתקת הקישור האישי</button>' : "") +
           (p.phone ? '<span class="muted ltr num" style="align-self:center">' + esc(p.phone) + '</span>' : "") +
-          '<button class="btn ghost sm" data-ptn-act="toggle" data-pid="' + esc(p.id) + '"' + dis() + '>' + (p.active === false ? "החזרה לפעיל" : "סימון כלא פעיל") + '</button> ' + payBtns + '</div>' +
+          '<button class="btn ghost sm" data-ptn-act="toggle" data-pid="' + esc(p.id) + '"' + dis() + '>' + (p.active === false ? "החזרה לפעיל" : "סימון כלא פעיל") + '</button> <button class="btn ghost sm" data-ptn-act="remove" data-pid="' + esc(p.id) + '" style="color:#b3261e"' + dis() + '>הסרת ספק</button> ' + payBtns + '</div>' +
+        refsHtml +
+        '<h4 style="margin:14px 0 6px">עסקאות שנסגרו ותשלומים</h4>' +
         (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מס׳ האירוע של הספק באותו חודש</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
           : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</details>';
     }).join("");
     box.innerHTML = html;
   }
+  var ptnOpen = {};
+  document.addEventListener("toggle", function (e) { var d = e.target; if (d && d.classList && d.classList.contains("ptn-card")) ptnOpen[d.dataset.pid] = d.open; }, true);
   /* ---- גיוס מפיקים: רשימת המפיקים מהמחקר, סטטוס, הערות והודעות ווטסאפ מוכנות ---- */
   var RC_ST = ["לא פנינו", "נשלחה הודעה", "נשלחה תזכורת", "ענה", "מעוניין", "הצטרף", "לא רלוונטי"];
   var RC_CLS = { "לא פנינו": "", "נשלחה הודעה": "warn", "נשלחה תזכורת": "warn", "ענה": "good", "מעוניין": "good", "הצטרף": "good", "לא רלוונטי": "bad" };
@@ -2916,6 +2927,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (!canWrite) return;
     if (act === "new") { guard(async function () { var np = await ptnCreate(); if (np) { await loadPartners(); toast("הספק נוסף"); } }); return; }
     if (act === "toggle" && p) { guard(async function () { chk(await sb.from("partners").update({ active: p.active === false }).eq("id", p.id)); await loadPartners(); }); return; }
+    if (act === "remove" && p) {
+      var nLeads = state.prefs.filter(function (x) { return x.partner_id === p.id; }).length, nDeals = state.pstmt.filter(function (r) { return r.partner_id === p.id; }).length;
+      var msg = "להסיר את " + p.name + " מהספקים?" + (nLeads ? "\n\nשימו לב: שויכו אליו " + nLeads + " לידים" + (nDeals ? " ו-" + nDeals + " עסקאות סגורות" : "") + ". השיוך שלהם לספק והתיעוד של התשלומים אליו יימחקו. הלקוחות עצמם לא נמחקים." : "") + "\n\nאי אפשר לבטל את זה. אם רק הפסקתם לעבוד איתו, עדיף \"סימון כלא פעיל\".";
+      if (!confirm(msg)) return;
+      guard(async function () {
+        chk(await sb.from("partner_referrals").delete().eq("partner_id", p.id));
+        chk(await sb.from("partner_payouts").delete().eq("partner_id", p.id));
+        chk(await sb.from("partner_prospects").update({ partner_id: null, status: "לא רלוונטי" }).eq("partner_id", p.id));
+        chk(await sb.from("partners").delete().eq("id", p.id));
+        await loadPartners(); try { await loadProspects(); } catch (e) {} toast("הספק הוסר");
+      });
+      return;
+    }
     if ((act === "paid" || act === "topup") && p) {
       var amt = Number(b.dataset.amt) || 0, m = b.dataset.m;
       if (!confirm("לסמן ששולמו ל" + p.name + " " + shekel(amt) + " על " + ptnMonth(m) + "?")) return;
