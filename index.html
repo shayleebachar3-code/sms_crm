@@ -457,7 +457,7 @@ td .btn{margin-inline-end:4px}
   <!-- RECRUIT: wedding producers to contact for the referral program -->
   <section class="view" id="view-recruit" hidden>
     <div class="row-head"><h2>גיוס מפיקים לשיתופי פעולה</h2></div>
-    <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל מפיקי החתונות שנמצאו במחקר, עם טלפון. כפתור "פנייה בווטסאפ" פותח את ההודעה שלך מוכנה לשליחה, והסטטוס מתעדכן ל"נשלחה הודעה". כשמפיק מצטרף, בוחרים "הצטרף" והוא נכנס לרשימת הספקים. <b>מומלץ לשלוח עד 20–25 הודעות ביום</b>, כל אחת בנפרד.</p>
+    <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל מפיקי החתונות שנמצאו במחקר, עם טלפון. כפתור "פנייה בווטסאפ" פותח את ההודעה שלך מוכנה לשליחה, והסטטוס מתעדכן ל"נשלחה הודעה". כשמסמנים מפיק "מעוניין" או "הצטרף", הוא עובר לבד לספקים שעובדים איתך: אפשר לשייך אליו לידים בכרטיס הלקוח, והוא מופיע בתשלומים לספקים. <b>מומלץ לשלוח עד 20–25 הודעות ביום</b>, כל אחת בנפרד.</p>
     <div class="kpis" id="rc-kpis"></div>
     <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px">
       <div class="field"><label for="rc-q">חיפוש</label><input id="rc-q" placeholder="שם, עיר או טלפון"></div>
@@ -2732,7 +2732,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function renderRecruit() {
     var list = $("rc-list"); if (!list) return;
     if (!rcReady) { list.innerHTML = '<div class="empty">רשימת המפיקים לא זמינה כרגע. לחצו רענון.</div>'; return; }
-    var all = state.prospects, rs = $("rc-region"), ss = $("rc-status");
+    /* מי שסומן מעוניין או הצטרף עובר לספקים שעובדים איתנו, ויוצא מרשימת הגיוס */
+    var joined = state.prospects.filter(function (p) { return p.partner_id; }).length;
+    var all = state.prospects.filter(function (p) { return !p.partner_id; }), rs = $("rc-region"), ss = $("rc-status");
     if (rs && !rs.options.length) {
       var regs = []; all.forEach(function (p) { if (regs.indexOf(p.region) < 0) regs.push(p.region); });
       rs.innerHTML = '<option value="">כל האזורים</option>' + regs.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join("");
@@ -2742,8 +2744,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
     $("rc-kpis").innerHTML = tile("מפיקים ברשימה", all.length, cnt["לא פנינו"] + " עוד לא פנינו אליהם", false) +
       tile("נשלחה הודעה", cnt["נשלחה הודעה"] + cnt["נשלחה תזכורת"], "מחכים לתשובה", false) +
-      tile("ענו או מעוניינים", cnt["ענה"] + cnt["מעוניין"], "לשלוח פרטים ולסגור", cnt["ענה"] + cnt["מעוניין"] > 0) +
-      tile("הצטרפו", cnt["הצטרף"], "נכנסו לרשימת הספקים", false);
+      tile("ענו", cnt["ענה"], "לשלוח פרטים ולסגור", cnt["ענה"] > 0) +
+      tile("עברו לספקים שעובדים איתך", joined, "בלשונית תשלומים > תשלומים לספקים", false);
     var q = ($("rc-q").value || "").trim().toLowerCase(), fr = rs.value, fs = ss.value;
     var shown = all.filter(function (p) {
       if (fr && p.region !== fr) return false; if (fs && p.status !== fs) return false;
@@ -2784,11 +2786,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     guard(async function () {
       var d = {}; d[f] = v; if (f === "status" && v !== "לא פנינו" && v !== "לא רלוונטי") d.last_contact_at = new Date().toISOString();
       await rcPatch(id, d);
-      if (f === "status" && v === "הצטרף") {
+      if (f === "status" && (v === "מעוניין" || v === "הצטרף")) {
         var p = state.prospects.find(function (x) { return x.id === id; });
-        if (p && !p.partner_id && confirm("להוסיף את " + p.name + " לרשימת הספקים בשיתופי פעולה?")) {
-          var np = chk(await sb.from("partners").insert({ name: rcShort(p.name), phone: p.phone || null, slug: "p-" + Math.random().toString(36).slice(2, 8), notes: "גויס מרשימת המפיקים" }).select().single());
-          await rcPatch(id, { partner_id: np.id }); await loadPartners(); toast("נוסף לרשימת הספקים");
+        if (p && !p.partner_id) {
+          var np = chk(await sb.from("partners").insert({ name: rcShort(p.name), phone: p.phone || null, slug: "p-" + Math.random().toString(36).slice(2, 8), notes: ("גויס מרשימת המפיקים" + (p.notes ? ". " + p.notes : "")).slice(0, 500) }).select().single());
+          await rcPatch(id, { partner_id: np.id }); await loadPartners(); toast(rcShort(p.name) + " עבר לספקים שעובדים איתך, ואפשר לשייך אליו לידים");
         }
       } else toast(f === "notes" ? "ההערה נשמרה" : "הסטטוס עודכן");
       if (f === "status") renderRecruit();
