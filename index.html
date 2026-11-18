@@ -513,7 +513,7 @@ td .btn{margin-inline-end:4px}
       <th>מקור</th><th>ערוץ</th><th>הוצאה</th><th>לקוחות</th><th>סגרו</th><th>אחוז המרה</th><th>הכנסה</th><th>עלות ללקוח שסגר</th><th>החזר על ההוצאה</th><th></th>
     </tr></thead><tbody id="src-body"></tbody></table></div>
     <section class="sec" id="web-panel" style="margin:18px 0">
-      <div class="row-head"><h3>התנהגות באתר</h3><div class="field" style="min-width:160px"><label for="web-days">תקופה</label><select id="web-days"><option value="7">7 ימים אחרונים</option><option value="30" selected>30 ימים אחרונים</option><option value="90">90 ימים אחרונים</option></select></div></div>
+      <div class="row-head"><h3>התנהגות באתר</h3><div class="field" style="min-width:160px"><label for="web-days">תקופה</label><select id="web-days"><option value="today">היום</option><option value="since" selected>מהיום ואילך (מאז האיפוס ב-18.11)</option><option value="7">7 ימים אחרונים</option><option value="30">30 ימים אחרונים</option><option value="90">90 ימים אחרונים</option><option value="custom">מתאריך שאבחר…</option></select></div><div class="field" id="web-from-box" style="min-width:150px" hidden><label for="web-from">מתאריך</label><input id="web-from" type="date"></div></div>
       <div class="insight" id="web-note">נטען…</div>
       <div class="charts" id="web-tiles"></div>
       <h3 style="margin:14px 0 8px">המסלול: כמה מבקרים הגיעו לכל שלב</h3><div id="web-funnel"></div>
@@ -2517,7 +2517,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   document.addEventListener("click", function (e) { var r = e.target.closest && e.target.closest("[data-sumid]"); if (r) openSheet(r.dataset.sumid); });
 
   /* ---- website behaviour (first-party events from the public site) ---- */
-  var webData = null, webLoading = false, webDays = 30;
+  var webData = null, webLoading = false, webSel = "since", WEB_RESET = "2026-11-18";
   var SEC_L = { hero: "פתיח (ראש העמוד)", value: "מה מקבלים", process: "התהליך", delivery: "אספקה ואיסוף", budgetPanel: "המחשבון", build: "המחשבון", faq: "שאלות נפוצות", contact: "טופס יצירת קשר", final: "סוף העמוד" };
   var FLD_L = { name: "שם", phone: "טלפון", email: "אימייל", notes: "הערות", consent: "אישור תנאים", sendBtn: "כפתור שליחה" };
   function webBar(label, n, total, cls) {
@@ -2526,7 +2526,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function loadWeb() {
     if (!sb || webLoading) return; webLoading = true;
-    var to = todayStr(), from = shift(to, -(webDays - 1));
+    var to = todayStr(), from = webSel === "today" ? to : webSel === "since" ? WEB_RESET : webSel === "custom" ? ($("web-from") && $("web-from").value || WEB_RESET) : shift(to, -((Number(webSel) || 30) - 1)); if (from > to) from = to;
     sb.rpc("site_stats", { p_from: from, p_to: to }).then(function (r) { webData = r && !r.error ? r.data : (webData || null); webLoading = false; webAt = r && !r.error ? Date.now() : 0; renderWeb(r && r.error ? r.error.message : ""); }, function () { webLoading = false; webAt = 0; renderWeb("שגיאה"); });
   }
   function renderWeb(err) {
@@ -2548,7 +2548,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var sr = d.sources || {}, srk = Object.keys(sr).filter(function (k) { return !/localhost/.test(k); }).sort(function (a, b) { return sr[b] - sr[a]; });
     $("web-src").innerHTML = srk.map(function (k) { return webBar(k, sr[k], S); }).join("");
   }
-  document.addEventListener("change", function (e) { if (e.target && e.target.id === "web-days") { webDays = Number(e.target.value) || 30; webData = null; webAt = 0; renderWeb(); loadWeb(); } });
+  document.addEventListener("change", function (e) {
+    var t = e.target; if (!t || (t.id !== "web-days" && t.id !== "web-from")) return;
+    if (t.id === "web-days") { webSel = t.value; $("web-from-box").hidden = webSel !== "custom"; }
+    if (webSel === "custom" && !$("web-from").value) return;
+    webData = null; webAt = 0; renderWeb(); loadWeb();
+  });
 
   /* ---- sources & charts ---- */
   function sourceStats() {
