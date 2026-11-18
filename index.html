@@ -399,7 +399,8 @@ td .btn{margin-inline-end:4px}
   <nav class="tabs" role="tablist" aria-label="תצוגות">
     <button class="tab" role="tab" data-view="today" aria-selected="true">היום<span class="badge" id="today-badge" hidden>0</span></button>
     <button class="tab" role="tab" data-view="clients" aria-selected="false">לקוחות</button>
-    <button class="tab" role="tab" data-view="payments" aria-selected="false">תשלומים<span class="badge" id="pay-badge" hidden>0</span></button>
+    <button class="tab" role="tab" data-view="payments" aria-selected="false">גבייה מלקוחות<span class="badge" id="pay-badge" hidden>0</span></button>
+    <button class="tab" role="tab" data-view="ptnpay" aria-selected="false">תשלומים לספקים</button>
     <button class="tab" role="tab" data-view="events" aria-selected="false">יומן אירועים</button>
     <button class="tab" role="tab" data-view="recruit" aria-selected="false">גיוס מפיקים</button>
     <button class="tab more-btn" type="button" id="more-btn" aria-expanded="false">עוד ▾</button>
@@ -442,21 +443,36 @@ td .btn{margin-inline-end:4px}
 
   <!-- PAYMENTS -->
   <section class="view" id="view-payments" hidden>
-    <div class="row-head"><h2>תשלומים וגבייה</h2></div>
+    <div class="row-head"><h2>גבייה מלקוחות: כסף שמגיע לך</h2></div>
     <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל עסקה סגורה מופיעה כאן עד שהיא משולמת במלואה. היתרה מחושבת מההצעה האחרונה שנשלחה פחות מה ששולם בפועל. <b>אין שירות בלי תשלום:</b> התשלום חייב להיות סגור עד יומיים לפני האירוע. החל מ-5 ימים לפני, הלקוח מקבל ממך תזכורת כל יום, ויום לפני האירוע עם יתרה פתוחה מסומן "חוסם אספקה".</p>
     <div class="kpis" id="pay-kpis"></div>
     <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px">
       <div class="field"><label for="pay-filter">להציג</label><select id="pay-filter"><option value="open">פתוחים בלבד</option><option value="all">כל העסקאות הסגורות</option><option value="paid">שולמו במלואם</option></select></div>
     </div>
     <div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>לשלם עד</th><th>שווי עסקה</th><th>שולם</th><th>יתרה</th><th>מצב</th><th></th></tr></thead><tbody id="pay-rows"></tbody></table></div>
-    <div class="row-head" style="margin-top:28px"><h2>תשלומים לספקים (שיתופי פעולה)</h2><button class="btn sm" data-ptn-act="new">+ ספק חדש</button></div>
-    <p class="muted" style="margin:-6px 0 14px;font-size:14px">על כל אירוע שספק הפנה, שהתקיים ושולם במלואו, מגיע לספק תשלום בחודש שאחרי האירוע. בכל חודש סופרים מחדש: האירוע הראשון עד השלישי בחודש 300 ₪ כל אחד, הרביעי עד השישי 400 ₪, מהשביעי 500 ₪. ליד משויך לספק מתוך כרטיס הלקוח, כשמקור ההגעה הוא "שיתופי פעולה".</p>
+  </section>
+
+  <!-- PARTNER PAYOUTS: money you pay to suppliers who referred couples -->
+  <section class="view" id="view-ptnpay" hidden>
+    <div class="row-head"><h2>תשלומים לספקים: כסף שאתה משלם</h2></div>
+    <p class="muted" style="margin:-6px 0 14px;font-size:14px">ספק חדש מוסיפים בלשונית "גיוס מפיקים", ומסמנים אותו "מעוניין". על כל אירוע שספק הפנה, שהתקיים ושולם במלואו, מגיע לספק תשלום בחודש שאחרי האירוע. בכל חודש סופרים מחדש: האירוע הראשון עד השלישי בחודש 300 ₪ כל אחד, הרביעי עד השישי 400 ₪, מהשביעי 500 ₪. ליד משויך לספק מתוך כרטיס הלקוח, כשמקור ההגעה הוא "שיתופי פעולה".</p>
     <div id="ptn-box"></div>
   </section>
 
   <!-- RECRUIT: wedding producers to contact for the referral program -->
   <section class="view" id="view-recruit" hidden>
-    <div class="row-head"><h2>גיוס מפיקים לשיתופי פעולה</h2></div>
+    <div class="row-head"><h2>גיוס מפיקים לשיתופי פעולה</h2><button class="btn sm" data-rc-new="open">+ מפיק חדש</button></div>
+    <div class="form" id="rc-new" hidden style="padding:12px 16px">
+      <div class="fields">
+        <div class="field"><label for="rc-n-name">שם העסק</label><input id="rc-n-name" placeholder="למשל: טלי שחר הפקות"></div>
+        <div class="field"><label for="rc-n-phone">טלפון</label><input id="rc-n-phone" dir="ltr" inputmode="tel" placeholder="050-0000000"></div>
+        <div class="field"><label for="rc-n-city">עיר</label><input id="rc-n-city" placeholder="אם לא ידוע, להשאיר ריק"></div>
+        <div class="field"><label for="rc-n-region">אזור</label><select id="rc-n-region"></select></div>
+        <div class="field"><label for="rc-n-ig">אינסטגרם</label><input id="rc-n-ig" dir="ltr" placeholder="שם המשתמש, בלי @"></div>
+        <div class="field"><label for="rc-n-notes">הערות</label><input id="rc-n-notes" placeholder="למשל: עבדנו יחד באולם X"></div>
+      </div>
+      <div class="form-actions"><button class="btn" type="button" data-rc-new="save">הוספה לרשימה</button><button class="btn ghost" type="button" data-rc-new="open">ביטול</button></div>
+    </div>
     <p class="muted" style="margin:-6px 0 14px;font-size:14px">כל מפיקי החתונות שנמצאו במחקר, עם טלפון. כפתור "פנייה בווטסאפ" פותח את ההודעה שלך מוכנה לשליחה, והסטטוס מתעדכן ל"נשלחה הודעה". כשמסמנים מפיק "מעוניין" או "הצטרף", הוא עובר לבד לספקים שעובדים איתך: אפשר לשייך אליו לידים בכרטיס הלקוח, והוא מופיע בתשלומים לספקים. <b>מומלץ לשלוח עד 20–25 הודעות ביום</b>, כל אחת בנפרד.</p>
     <div class="kpis" id="rc-kpis"></div>
     <div class="form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;padding:12px 16px">
@@ -1461,11 +1477,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var sum = open.reduce(function (t, c) { return t + payOf(c).bal; }, 0), urg = open.filter(payUrgent), late = open.filter(function (c) { var k = payState(c).k; return k === "late" || k === "due"; });
     var nov = open.filter(function (c) { return payState(c).k === "novalue"; });
     var b = $("pay-badge"); if (b) { b.textContent = urg.length; b.hidden = !urg.length; }
-    var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
-    $("pay-kpis").innerHTML = tile("יתרה פתוחה לגבייה", shekel(sum), open.length + " עסקאות פתוחות", sum > 0) +
-      tile("באיחור", late.length, late.length ? shekel(late.reduce(function (t, c) { return t + payOf(c).bal; }, 0)) : "אין איחורים", late.length > 0) +
-      tile("דחופים (פחות משבוע)", urg.length - late.length - nov.length, "לגבות עכשיו", false) +
-      tile("חסר שווי עסקה", nov.length, nov.length ? "בלי סכום אין מעקב חוב" : "הכל מוזן", nov.length > 0);
+    $("pay-kpis").innerHTML = kpiTile("יתרה פתוחה לגבייה", shekel(sum), open.length + " עסקאות פתוחות", sum > 0, "pay:open") +
+      kpiTile("באיחור", late.length, late.length ? shekel(late.reduce(function (t, c) { return t + payOf(c).bal; }, 0)) : "אין איחורים", late.length > 0, "pay:open") +
+      kpiTile("דחופים (פחות משבוע)", urg.length - late.length - nov.length, "לגבות עכשיו", false, "pay:open") +
+      kpiTile("חסר שווי עסקה", nov.length, nov.length ? "בלי סכום אין מעקב חוב" : "הכל מוזן", nov.length > 0, "pay:open");
     var rows = f === "all" ? won : f === "paid" ? won.filter(function (c) { return !payOpen(c); }) : open;
     rows = rows.slice().sort(function (a, b) { var x = payState(a).rank - payState(b).rank; return x || (a.eventDate || "9").localeCompare(b.eventDate || "9"); });
     if (!rows.length) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ink-2);white-space:normal">' + (loaded.clients ? (f === "open" ? "אין תשלומים פתוחים. כל העסקאות הסגורות שולמו במלואן ✓" : "אין עסקאות להצגה") : "טוען…") + '</td></tr>'; return; }
@@ -2676,14 +2691,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     try { renderPtnSummary(); } catch (e) {}
     var box = $("ptn-box"); if (!box) return;
     if (!ptnReady) { box.innerHTML = '<div class="empty">הנתונים של הספקים לא זמינים כרגע. לחצו רענון.</div>'; return; }
-    if (!state.partners.length) { box.innerHTML = '<div class="empty">עוד אין ספקים. הוסיפו ספק בכפתור "+ ספק חדש", או מתוך כרטיס לקוח שמקור ההגעה שלו "שיתופי פעולה".</div>'; return; }
+    if (!state.partners.length) { box.innerHTML = '<div class="empty">עוד אין ספקים. מוסיפים מפיק בלשונית "גיוס מפיקים" ומסמנים אותו "מעוניין", או מתוך כרטיס לקוח שמקור ההגעה שלו "שיתופי פעולה".</div>'; return; }
     var all = state.pstmt, tot = function (s) { return ptnSum(all.filter(function (r) { return r.state === s; })); };
-    var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
+    var tile = function (l, v, s, alert) { return kpiTile(l, v, s, alert, "ptn:ptn-list"); };
     var nx = ptnD(ptnNext()), sNext = ptnSum(all.filter(ptnIsNext)), sFut = ptnSum(all.filter(function (r) { return r.state !== "paid" && !ptnIsNext(r); }));
     var html = '<div class="kpis">' + tile("לתשלום לספקים ב-" + nx, shekel(sNext), "אירועי החודש ומה שנשאר מקודם", sNext > 0) +
       tile("כסף עתידי לספקים", shekel(sFut), "אירועים בחודשים הבאים", false) +
       tile("ממתין לתשלום מלא מהזוג", shekel(tot("held_unpaid")), "אירוע שהתקיים והזוג עוד לא שילם הכול", false) +
-      tile("ספקים פעילים", state.partners.filter(function (p) { return p.active !== false; }).length, "", false) + '</div>';
+      tile("ספקים פעילים", state.partners.filter(function (p) { return p.active !== false; }).length, "לחצו לרשימה", false) + '</div><div id="ptn-list"></div>';
     /* פעילים למעלה; ספקים שסומנו "לא פעיל" עוברים לקבוצה נפרדת בתחתית */
     var ptnCard = function (p) {
       var mine = all.filter(function (r) { return r.partner_id === p.id; }), leads = state.prefs.filter(function (x) { return x.partner_id === p.id; }).length;
@@ -2715,7 +2730,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           '<button class="btn sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button>' +
           (p.slug ? '<button class="btn ghost sm" data-ptn-act="link" data-pid="' + esc(p.id) + '">העתקת הקישור האישי</button>' : "") +
           (p.phone ? '<span class="muted ltr num" style="align-self:center">' + esc(p.phone) + '</span>' : "") +
+          '<button class="btn ghost sm" data-ptn-act="edit" data-pid="' + esc(p.id) + '"' + dis() + '>עריכת פרטים</button> ' +
           '<button class="btn ghost sm" data-ptn-act="toggle" data-pid="' + esc(p.id) + '"' + dis() + '>' + (p.active === false ? "החזרה לפעיל" : "סימון כלא פעיל") + '</button> <button class="btn ghost sm" data-ptn-act="remove" data-pid="' + esc(p.id) + '" style="color:#b3261e"' + dis() + '>הסרת ספק</button> ' + payBtns + '</div>' +
+        (ptnEdit === p.id ? '<div class="form" data-ptn-form="' + esc(p.id) + '" style="padding:10px 12px;margin:6px 0 10px;background:#faf7f0"><div class="fields">' +
+          '<div class="field"><label>שם הספק</label><input data-pe="name" value="' + esc(p.name || "") + '"></div>' +
+          '<div class="field"><label>טלפון</label><input data-pe="phone" dir="ltr" value="' + esc(p.phone || "") + '"></div>' +
+          '<div class="field"><label>סוג</label><input data-pe="kind" value="' + esc(p.kind || "מפיק אירועים") + '"></div>' +
+          '<div class="field" style="grid-column:1/-1"><label>הערות</label><input data-pe="notes" value="' + esc(p.notes || "") + '"></div></div>' +
+          '<div class="form-actions"><button class="btn sm" data-ptn-act="save" data-pid="' + esc(p.id) + '">שמירה</button><button class="btn ghost sm" data-ptn-act="edit" data-pid="' + esc(p.id) + '">ביטול</button></div></div>' : "") +
         refsHtml +
         '<h4 style="margin:14px 0 6px">עסקאות שנסגרו ותשלומים</h4>' +
         (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מס׳ האירוע של הספק באותו חודש</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
@@ -2726,17 +2748,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (offP.length) html += '<details class="form" style="padding:10px 14px;margin-top:14px;background:transparent"><summary style="cursor:pointer;font-weight:700;color:var(--ink-2)">ספקים לא פעילים (' + offP.length + ') ▾</summary><div style="margin-top:8px">' + offP.map(ptnCard).join("") + '</div></details>';
     box.innerHTML = html;
   }
-  var ptnOpen = {};
+  var ptnOpen = {}, ptnEdit = null;
   document.addEventListener("toggle", function (e) { var d = e.target; if (d && d.classList && d.classList.contains("ptn-card")) ptnOpen[d.dataset.pid] = d.open; }, true);
   /* ---- גיוס מפיקים: רשימת המפיקים מהמחקר, סטטוס, הערות והודעות ווטסאפ מוכנות ---- */
   var RC_ST = ["לא פנינו", "נשלחה הודעה", "נשלחה תזכורת", "ענה", "מעוניין", "הצטרף", "לא רלוונטי"];
   var RC_CLS = { "לא פנינו": "", "נשלחה הודעה": "warn", "נשלחה תזכורת": "warn", "ענה": "good", "מעוניין": "good", "הצטרף": "good", "לא רלוונטי": "bad" };
   var RC_MSG = {
     first: "מה קורה {שם}? אני שי-לי מש.מ.ש משקאות.\n\nאנחנו מספקים חבילות אלכוהול לחתונות, במחיר נוח יותר מהאולם ובלי התעסקות: שיחה אחת עם הזוג, ומשם הכול עלינו, עד שהחבילה נמסרת באולם.\n\nלמה אני פונה אליכם? כי זוג שמגיע לחתונה רגוע ממליץ על מי שהפיק לו אותה. הזוגות שלכם מקבלים שירות פצצה וראש שקט, ואתם מקבלים תשלום על כל אירוע שהגיע דרככם.\n\nיש לי שאלה, כי אולי זה יכול לעבוד בינינו: הזוגות שלכם סוגרים את האלכוהול לבד?",
-    details: "בשמחה. בקצרה:\nאתם מפנים זוג עם הקישור האישי או קוד ה-QR שלכם, והליד נרשם על שמכם. אפשר גם פשוט לתת לזוג את המספר שלי ולכתוב לי את השם שלו.\nמכאן אנחנו עושים הכול: שיחת אפיון עם הזוג, חישוב, הצעה, התאמה לאישורי ההגעה ואספקה עד האולם.\nעל כל אירוע שהפניתם, שהתקיים ושולם במלואו, אתם מקבלים תשלום. בכל חודש סופרים מחדש:\n- שלושת האירועים הראשונים בחודש: 300 ₪ כל אחד.\n- האירוע הרביעי, החמישי והשישי: 400 ₪ כל אחד.\n- מהאירוע השביעי והלאה: 500 ₪ כל אחד.\nלדוגמה, 5 אירועים בחודש הם 3 ב-300 ₪ ועוד 2 ב-400 ₪, כלומר 1,700 ₪.\nגמר החשבון ב-1 לכל חודש, עם דוח מסודר: מה מגיע לכם עכשיו, מה עתידי, ושמות הלקוחות.\nשלושה כללים פשוטים: אומרים לזוג בגלוי שאנחנו עובדים יחד. זוג נספר לכם כשהוא נרשם על שמכם לפני שנשלחה לו הצעת מחיר. ושיתוף הפעולה מיועד למפיקים שלא מוכרים אלכוהול ולא עובדים עם ספק אלכוהול אחר.\nלפתוח לכם קישור אישי?\nשי-לי, ש.מ.ש משקאות",
+    details: "איזה כיף לשמוע ממכם 🙂\nמצורף כאן המחירון לספקים, דף אחד עם כל מה שצריך לדעת: איך זה עובד וכמה אתם מקבלים על כל אירוע.\nבקצרה: אתם רק ממליצים לזוג, ואנחנו לוקחים משם את הכול, משיחת האפיון ועד שהחבילה נמסרת באולם. ב-1 לכל חודש מקבלים דוח מסודר ותשלום.\nתעיפו מבט ותגידו לי מה אתם חושבים. ויש לכם אולי כבר זוג שעוד לא סגר אלכוהול? אפשר להתחיל ממנו.\nשי-לי, ש.מ.ש משקאות",
     remind: "היי {שם}, רק להקפיץ את ההודעה הקודמת. אם זה לא הזמן, הכול טוב. ואם זוג ישאל אתכם פעם על אלכוהול לחתונה, שמרו את המספר שלי: 054-5435939.\nשי-לי, ש.מ.ש משקאות"
   };
-  state.prospects = []; var rcReady = false, rcOpen = {};
+  var RC_REGIONS = [["צפון", 1], ["חיפה והקריות", 2], ["השרון", 3], ["תל אביב וגוש דן", 4], ["המרכז", 5], ["ירושלים", 6], ["השפלה", 7], ["הדרום", 8], ["אילת", 9], ["כללי (עד שיתברר)", 10]];
+  var RC_SHEET = "/partner-sheet.pdf";
+  state.prospects = []; var rcReady = false, rcOpen = {}, rcEdit = null;
+  function rcRegOpts(sel) { return RC_REGIONS.map(function (r) { return '<option' + (r[0] === sel ? " selected" : "") + '>' + r[0] + '</option>'; }).join(""); }
+  function rcRegOrder(r) { var x = RC_REGIONS.find(function (y) { return y[0] === r; }); return x ? x[1] : 10; }
+  /* קוביות לחיצות: כל קובייה מובילה למקום שהיא סופרת */
+  function kpiTile(l, v, s, alert, go) { return '<div class="kpi' + (alert ? " alert" : "") + '"' + (go ? ' data-tgo="' + go + '" role="button" tabindex="0" style="cursor:pointer"' : "") + '><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; }
+  function tileGo(go) {
+    var p = go.split(":"), k = p[0], v = p.slice(1).join(":");
+    var scroll = function (id) { setTimeout(function () { var el = $(id); if (el && el.scrollIntoView) { el.scrollIntoView({ behavior: "smooth", block: "start" }); el.classList.add("flash-go"); setTimeout(function () { el.classList.remove("flash-go"); }, 1700); } }, 80); };
+    if (k === "rc") { location.hash = "recruit"; showView("recruit"); $("rc-status").value = v === "*" ? "" : v; $("rc-q").value = ""; renderRecruit(); document.querySelectorAll("details.rc-reg").forEach(function (d) { d.open = true; }); scroll("rc-list"); }
+    else if (k === "pay") { location.hash = "payments"; showView("payments"); var pf = $("pay-filter"); if (pf && v) pf.value = v; renderPayments(); scroll("pay-rows"); }
+    else if (k === "ptn") { location.hash = "ptnpay"; showView("ptnpay"); scroll(v || "ptn-box"); }
+  }
+  document.addEventListener("click", function (e) { var t = e.target.closest && e.target.closest("[data-tgo]"); if (t) tileGo(t.dataset.tgo); });
+  document.addEventListener("keydown", function (e) { var t = e.target.closest && e.target.closest("[data-tgo]"); if (t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); tileGo(t.dataset.tgo); } });
   async function loadProspects() {
     if (!sb) return;
     try { var r = await sb.from("partner_prospects").select("*").order("region_order").order("name"); if (r.error) { rcReady = false; } else { state.prospects = r.data || []; rcReady = true; } } catch (e) { rcReady = false; }
@@ -2751,19 +2788,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var joined = state.prospects.filter(function (p) { return p.partner_id; }).length;
     var all = state.prospects.filter(function (p) { return !p.partner_id; }), rs = $("rc-region"), ss = $("rc-status");
     if (rs && !rs.options.length) {
-      var regs = []; all.forEach(function (p) { if (regs.indexOf(p.region) < 0) regs.push(p.region); });
-      rs.innerHTML = '<option value="">כל האזורים</option>' + regs.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join("");
-      ss.innerHTML = '<option value="">כל הסטטוסים</option>' + RC_ST.map(function (s) { return '<option>' + s + '</option>'; }).join("");
+      rs.innerHTML = '<option value="">כל האזורים</option>' + RC_REGIONS.map(function (r) { return '<option>' + r[0] + '</option>'; }).join("");
+      ss.innerHTML = '<option value="">כל הסטטוסים</option><option value="__sent">נשלחה הודעה או תזכורת</option>' + RC_ST.map(function (s) { return '<option>' + s + '</option>'; }).join("");
+      var nr = $("rc-n-region"); if (nr) nr.innerHTML = rcRegOpts("כללי (עד שיתברר)");
     }
     var cnt = {}; RC_ST.forEach(function (s) { cnt[s] = 0; }); all.forEach(function (p) { cnt[p.status] = (cnt[p.status] || 0) + 1; });
-    var tile = function (l, v, s, alert) { return '<div class="kpi' + (alert ? " alert" : "") + '"><div class="lbl">' + l + '</div><div class="val num">' + v + '</div><div class="sub">' + s + '</div></div>'; };
-    $("rc-kpis").innerHTML = tile("מפיקים ברשימה", all.length, cnt["לא פנינו"] + " עוד לא פנינו אליהם", false) +
-      tile("נשלחה הודעה", cnt["נשלחה הודעה"] + cnt["נשלחה תזכורת"], "מחכים לתשובה", false) +
-      tile("ענו", cnt["ענה"], "לשלוח פרטים ולסגור", cnt["ענה"] > 0) +
-      tile("עברו לספקים שעובדים איתך", joined, "בלשונית תשלומים > תשלומים לספקים", false);
+    $("rc-kpis").innerHTML = kpiTile("מפיקים ברשימה", all.length, cnt["לא פנינו"] + " עוד לא פנינו אליהם · לחצו להצגה", false, "rc:לא פנינו") +
+      kpiTile("נשלחה הודעה", cnt["נשלחה הודעה"] + cnt["נשלחה תזכורת"], "מחכים לתשובה", false, "rc:__sent") +
+      kpiTile("ענו", cnt["ענה"], "לשלוח פרטים ולסגור", cnt["ענה"] > 0, "rc:ענה") +
+      kpiTile("עברו לספקים שעובדים איתך", joined, "בלשונית תשלומים לספקים", false, "ptn:");
     var q = ($("rc-q").value || "").trim().toLowerCase(), fr = rs.value, fs = ss.value;
     var shown = all.filter(function (p) {
-      if (fr && p.region !== fr) return false; if (fs && p.status !== fs) return false;
+      if (fr && p.region !== fr) return false;
+      if (fs === "__sent") { if (p.status !== "נשלחה הודעה" && p.status !== "נשלחה תזכורת") return false; } else if (fs && p.status !== fs) return false;
       if (q && (p.name + " " + (p.city || "") + " " + (p.phone || "") + " " + (p.phone2 || "")).toLowerCase().indexOf(q) < 0 && String(p.phone || "").replace(/\D/g, "").indexOf(q.replace(/\D/g, "") || "~") < 0) return false;
       return true;
     });
@@ -2780,12 +2817,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           var ig = p.instagram ? ' <a class="muted" style="font-size:12px" href="https://instagram.com/' + encodeURIComponent(p.instagram) + '" target="_blank" rel="noopener">אינסטגרם</a>' : "";
           var last = p.last_contact_at ? '<div class="muted" style="font-size:12px">פנייה אחרונה: ' + fmtDate(String(p.last_contact_at).slice(0, 10)) + '</div>' : "";
           var w1 = rcWa(p, "first"), w2 = rcWa(p, "details"), w3 = rcWa(p, "remind");
+          if (rcEdit === p.id) {
+            var inp = function (f, v, ph, ltr) { return '<input data-rce="' + f + '" value="' + esc(v || "") + '" placeholder="' + ph + '"' + (ltr ? ' dir="ltr"' : "") + ' style="width:100%;margin-bottom:4px">'; };
+            return '<tr data-rc="' + esc(p.id) + '" style="background:#faf7f0"><td>' + inp("name", p.name, "שם העסק") + inp("instagram", p.instagram, "אינסטגרם (בלי @)", true) + '</td>' +
+              '<td>' + inp("city", p.city, "עיר") + '<select data-rce="region" style="width:100%">' + rcRegOpts(p.region) + '</select></td>' +
+              '<td>' + inp("phone", p.phone, "טלפון", true) + inp("phone2", p.phone2, "טלפון נוסף", true) + '</td>' +
+              '<td colspan="2">' + inp("source", p.source, "מקור") + '</td>' +
+              '<td><button class="btn sm" data-rc-save>שמירה</button> <button class="btn ghost sm" data-rc-edit>ביטול</button></td></tr>';
+          }
           return '<tr data-rc="' + esc(p.id) + '"' + (p.starred ? ' style="background:#fff8e6"' : "") + '><td><b>' + (p.starred ? "⭐ " : "") + esc(p.name) + '</b>' + ig + '<div class="muted" style="font-size:12px">' + esc(p.source || "") + '</div></td>' +
             '<td>' + esc(p.city || "") + '</td><td class="num"><a href="tel:' + esc(p.phone || "") + '" dir="ltr">' + esc(p.phone || "") + '</a>' + (p.phone2 ? '<br><a href="tel:' + esc(p.phone2) + '" dir="ltr">' + esc(p.phone2) + '</a>' : "") + '</td>' +
             '<td><select data-rc-f="status" aria-label="סטטוס"' + dis() + '>' + st + '</select> <span class="chip ' + (RC_CLS[p.status] || "") + '" hidden></span>' + last + '</td>' +
             '<td><textarea data-rc-f="notes" rows="2" style="width:100%;min-width:170px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px" placeholder="מה סוכם, מתי לחזור…"' + dis() + '>' + esc(p.notes || "") + '</textarea></td>' +
             '<td style="white-space:nowrap">' + (w1 ? '<a class="btn sm" data-rc-wa="first" href="' + w1 + '" target="_blank" rel="noopener">פנייה בווטסאפ</a><br>' +
-              '<a class="btn ghost sm" data-rc-wa="details" href="' + w2 + '" target="_blank" rel="noopener" style="margin-top:4px">פרטים</a> <a class="btn ghost sm" data-rc-wa="remind" href="' + w3 + '" target="_blank" rel="noopener" style="margin-top:4px">תזכורת</a>' : '<span class="muted">אין טלפון</span>') + '<br><button class="linkbtn" data-rc-del style="margin-top:6px;color:var(--bad,#b3261e);font-size:13px"' + dis() + '>הסרה מהרשימה</button></td></tr>';
+              '<a class="btn ghost sm" data-rc-wa="details" href="' + w2 + '" target="_blank" rel="noopener" style="margin-top:4px">פרטים</a> <a class="btn ghost sm" data-rc-wa="remind" href="' + w3 + '" target="_blank" rel="noopener" style="margin-top:4px">תזכורת</a>' : '<span class="muted">אין טלפון</span>') + '<br><a class="btn ghost sm" href="' + RC_SHEET + '" download="מחירון לספקים - ש.מ.ש משקאות.pdf" style="margin-top:4px">מחירון לספקים</a>' +
+              '<br><button class="linkbtn" data-rc-edit style="margin-top:6px;font-size:13px"' + dis() + '>עריכת פרטים</button> · <button class="linkbtn" data-rc-del style="margin-top:6px;color:var(--bad,#b3261e);font-size:13px"' + dis() + '>הסרה</button></td></tr>';
         }).join("") + '</tbody></table></div></details>';
     }).join("");
   }
@@ -2809,6 +2855,35 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         }
       } else toast(f === "notes" ? "ההערה נשמרה" : "הסטטוס עודכן");
       if (f === "status") renderRecruit();
+    });
+  });
+  /* עריכת פרטי מפיק בשורה */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-rc-edit],[data-rc-save]"); if (!b || !canWrite) return;
+    var row = b.closest("[data-rc]"); if (!row) return; var id = row.dataset.rc;
+    if (b.hasAttribute("data-rc-edit")) { rcEdit = rcEdit === id ? null : id; renderRecruit(); return; }
+    var d = {}; row.querySelectorAll("[data-rce]").forEach(function (el) { d[el.dataset.rce] = el.value.trim() || null; });
+    if (!d.name) { toast("חסר שם עסק"); return; } d.region_order = rcRegOrder(d.region);
+    guard(async function () { await rcPatch(id, d); rcEdit = null; renderRecruit(); toast("הפרטים נשמרו"); });
+  });
+  /* מפיק חדש: נכנס לרשימת הגיוס, עם אזור כללי אם עוד לא ידוע */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-rc-new]"); if (!b) return;
+    if (b.dataset.rcNew === "open") { var f = $("rc-new"); f.hidden = !f.hidden; if (!f.hidden) $("rc-n-name").focus(); return; }
+    if (!canWrite) return;
+    var v = function (id) { return ($(id).value || "").trim(); };
+    var row = { name: v("rc-n-name"), phone: v("rc-n-phone") || null, phone2: null, city: v("rc-n-city") || null, region: $("rc-n-region").value || "כללי (עד שיתברר)", instagram: v("rc-n-ig").replace(/^@/, "") || null, notes: v("rc-n-notes") || null, source: "נוסף ידנית", status: "לא פנינו" };
+    if (!row.name) { toast("חסר שם עסק"); return; }
+    row.region_order = rcRegOrder(row.region);
+    var dig = String(row.phone || "").replace(/\D/g, "").slice(-9);
+    if (dig.length >= 8) {
+      var dupe = state.prospects.find(function (p) { return [p.phone, p.phone2].some(function (x) { return String(x || "").replace(/\D/g, "").slice(-9) === dig; }); });
+      if (dupe && !confirm("המספר הזה כבר קיים אצל " + dupe.name + ". להוסיף בכל זאת?")) return;
+    }
+    guard(async function () {
+      chk(await sb.from("partner_prospects").insert(row));
+      ["rc-n-name", "rc-n-phone", "rc-n-city", "rc-n-ig", "rc-n-notes"].forEach(function (id) { $(id).value = ""; });
+      $("rc-new").hidden = true; rcOpen[row.region] = true; await loadProspects(); toast("המפיק נוסף לרשימה");
     });
   });
   document.addEventListener("click", function (e) {
@@ -2930,6 +3005,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (act === "link" && p) { var L = ptnLink(p); (navigator.clipboard ? navigator.clipboard.writeText(L) : Promise.reject()).then(function () { toast("הקישור הועתק"); }, function () { prompt("העתיקו את הקישור:", L); }); return; }
     if (!canWrite) return;
     if (act === "new") { guard(async function () { var np = await ptnCreate(); if (np) { await loadPartners(); toast("הספק נוסף"); } }); return; }
+    if (act === "edit" && p) { ptnEdit = ptnEdit === p.id ? null : p.id; ptnOpen[p.id] = true; renderPartners(); return; }
+    if (act === "save" && p) { var fm = document.querySelector('[data-ptn-form="' + p.id + '"]'); var d = {}; fm.querySelectorAll("[data-pe]").forEach(function (el) { d[el.dataset.pe] = el.value.trim() || null; }); if (!d.name) { toast("חסר שם ספק"); return; } guard(async function () { chk(await sb.from("partners").update(d).eq("id", p.id)); ptnEdit = null; await loadPartners(); toast("פרטי הספק נשמרו"); }); return; }
     if (act === "toggle" && p) { guard(async function () { chk(await sb.from("partners").update({ active: p.active === false }).eq("id", p.id)); await loadPartners(); }); return; }
     if (act === "remove" && p) {
       var nLeads = state.prefs.filter(function (x) { return x.partner_id === p.id; }).length, nDeals = state.pstmt.filter(function (r) { return r.partner_id === p.id; }).length;
@@ -2958,7 +3035,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function renderAll() { renderFormSources(); renderToday(); renderKpis(); renderDigest(); renderAvail(); renderBoard(); renderPayments(); renderPartners();renderPayAlert(); renderSources(); renderEvents(); renderMessages(); renderSheet(false); renderCal(); renderActivity(); renderCharges(); renderNudges(); renderLock(); renderFormCal(); maybeAutoSync(); }
 
   /* ---- tabs ---- */
-  var VIEWS = ["today", "clients", "payments", "events", "recruit", "sources", "messages", "activity"], MORE_VIEWS = ["sources", "messages", "activity"];
+  var VIEWS = ["today", "clients", "payments", "ptnpay", "events", "recruit", "sources", "messages", "activity"], MORE_VIEWS = ["sources", "messages", "activity"];
   function showView(v) {
     if (v === "availability") v = "events"; /* old links: availability now lives inside the events calendar */
     if (VIEWS.indexOf(v) < 0) v = "today";
