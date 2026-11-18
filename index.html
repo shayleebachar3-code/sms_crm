@@ -2523,7 +2523,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function loadWeb() {
     if (!sb || webLoading) return; webLoading = true;
     var to = todayStr(), from = shift(to, -(webDays - 1));
-    sb.rpc("site_stats", { p_from: from, p_to: to }).then(function (r) { webData = r && !r.error ? r.data : null; webLoading = false; renderWeb(r && r.error ? r.error.message : ""); }, function () { webLoading = false; renderWeb("שגיאה"); });
+    sb.rpc("site_stats", { p_from: from, p_to: to }).then(function (r) { webData = r && !r.error ? r.data : (webData || null); webLoading = false; webAt = r && !r.error ? Date.now() : 0; renderWeb(r && r.error ? r.error.message : ""); }, function () { webLoading = false; webAt = 0; renderWeb("שגיאה"); });
   }
   function renderWeb(err) {
     var d = webData; if (!$("web-note")) return;
@@ -2544,7 +2544,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var sr = d.sources || {}, srk = Object.keys(sr).filter(function (k) { return !/localhost/.test(k); }).sort(function (a, b) { return sr[b] - sr[a]; });
     $("web-src").innerHTML = srk.map(function (k) { return webBar(k, sr[k], S); }).join("");
   }
-  document.addEventListener("change", function (e) { if (e.target && e.target.id === "web-days") { webDays = Number(e.target.value) || 30; webData = null; renderWeb(); loadWeb(); } });
+  document.addEventListener("change", function (e) { if (e.target && e.target.id === "web-days") { webDays = Number(e.target.value) || 30; webData = null; webAt = 0; renderWeb(); loadWeb(); } });
 
   /* ---- sources & charts ---- */
   function sourceStats() {
@@ -2566,7 +2566,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var webAt = 0;
   function renderSources() {
-    if (Date.now() - webAt > 60000) { webAt = Date.now(); loadWeb(); }
+    if (unlocked && !webLoading && Date.now() - webAt > 60000) loadWeb();
     if ($("src-period")) $("src-period").innerHTML = periodOptions(srcPeriod);
     renderSummary();
     var st = sourceStats(), withData = st.filter(function (s) { return s.total > 0; });
