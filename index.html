@@ -1068,6 +1068,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var toast = function (t) { var el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 2600); };
   var stageOf = function (c) { if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
   var waNum = function (p) { var d = String(p || "").replace(/\D/g, ""); if (!d) return ""; return d.charAt(0) === "0" ? "972" + d.slice(1) : d; };
+  function fmtDT(iso, withYear) {
+    if (!iso) return "";
+    try { var d = new Date(iso); var o = { timeZone: "Asia/Jerusalem", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }; if (withYear) o.year = "numeric"; return d.toLocaleString("he-IL", o).replace(",", ""); } catch (e) { return String(iso).slice(0, 16).replace("T", " "); }
+  }
   var byId = function (arr, id) { return arr.find(function (x) { return x.id === id; }); };
   var dis = function () { return canWrite ? "" : " disabled"; };
   var newId = function () { return crypto.randomUUID(); };
@@ -2100,7 +2104,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var rN = newL.map(function (c) {
       var age = c.createdAt ? daysAgo(c.createdAt) : 0;
       return arow({ cid: c.id, title: c.name, sub: esc((c.eventType || "") + (c.eventDate ? " · " + fmtDate(c.eventDate) : "") + (c.guests ? " · " + c.guests + " מוזמנים" : "")) + (c.notes ? '<br>' + esc(c.notes) : ""),
-        chips: [[c.createdAt ? "הגיע " + ago(c.createdAt) : "חדש", age >= 1 ? "bad" : "warn"], [c.source || DIRECT, "acc"]].concat(dayPair(c.eventDate, c.id, false)),
+        chips: [[c.createdAt ? "הגיע " + ago(c.createdAt) + " · " + fmtDT(c.createdAt) : "חדש", age >= 1 ? "bad" : "warn"], [c.source || DIRECT, "acc"]].concat(dayPair(c.eventDate, c.id, false)),
         acts: '<button class="btn sm" data-act="start">התחלת טיפול</button>' + waBtn(c) + '<button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
     var hes = state.clients.filter(function (c) { return stageOf(c) === "מתלבטים" && (!c.followUp || c.followUp <= today); }).sort(function (a, b) { return (a.followUp || "0").localeCompare(b.followUp || "0"); });
@@ -2215,7 +2219,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       '<div class="name"><button data-act="open">' + esc(c.name) + '</button>' + (c.example ? '<span class="chip ex">דוגמה</span>' : "") + '</div>' +
       '<div class="meta"><span>' + esc(c.eventType || "") + '</span><span class="num">' + fmtDate(c.eventDate) + '</span>' + (c.guests ? '<span class="num">' + nf.format(c.guests) + ' מוזמנים</span>' : "") + '</div>' +
       (st === "ליד חדש" ? (c.notes ? '<div class="meta">' + esc(c.notes) + '</div>' : "") : '<div class="line"><b>הצעה</b><span>' + offerLine + '</span><b>קשר אחרון</b><span>' + logLine + '</span>' + (v && isWonSt(st) ? '<b>סגר ב</b><span class="num"><b style="color:var(--good)">' + shekel(v) + '</b></span>' : "") + '</div>') +
-      '<div class="meta"><span class="chip acc">' + esc(c.source || DIRECT) + '</span>' + (c.createdAt && st === "ליד חדש" ? '<span class="chip warn">הגיע ' + ago(c.createdAt) + '</span>' : "") + fuChip + calChip + stChips(c) + '</div>' +
+      '<div class="meta"><span class="chip acc">' + esc(c.source || DIRECT) + '</span>' + (c.createdAt ? '<span class="chip' + (st === "ליד חדש" ? " warn" : "") + '">' + (st === "ליד חדש" ? "הגיע " + ago(c.createdAt) + " · " : "נכנס ") + esc(fmtDT(c.createdAt)) + '</span>' : "") + fuChip + calChip + stChips(c) + '</div>' +
       (c.phone || c.email ? '<div class="meta">' + (c.phone ? '<span class="ltr num">' + esc(c.phone) + '</span>' : "") + (c.email ? '<span class="ltr">' + esc(c.email) + '</span>' : "") + '</div>' : '<div class="meta"><span class="chip bad">אין פרטי קשר</span></div>') +
       '<div class="actions">' +
         (st === "ליד חדש" ? '<button class="btn sm" data-act="start"' + dis() + '>התחלת טיפול</button>' : "") +
@@ -2311,7 +2315,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     sheet.innerHTML =
       '<div class="sheet-head"><div><h2 id="p-title">' + esc(c.name) + '</h2><div class="contact">' +
         (c.phone ? '<span class="ltr num">' + esc(c.phone) + '</span>' : "") + (c.email ? '<span class="ltr">' + esc(c.email) + '</span>' : "") +
-        (c.createdAt ? '<span>נפתח ' + fmtDate(c.createdAt.slice(0, 10)) + '</span>' : "") + (c.example ? '<span class="chip ex">דוגמה</span>' : "") + '</div></div>' +
+        (c.createdAt ? '<span>נכנס ' + esc(fmtDT(c.createdAt, true)) + '</span>' : "") + (c.example ? '<span class="chip ex">דוגמה</span>' : "") + '</div></div>' +
       '<div class="tools"><select data-act="sheet-stage" aria-label="סטטוס"' + dis() + '>' + stOpts + '</select>' +
       (wa ? '<a class="btn ghost sm" href="https://wa.me/' + wa + '" target="_blank" rel="noopener">ווטסאפ</a>' : "") +
       '<button class="btn sm" id="close-sheet" data-act="close">סגירה</button></div></div>' +
