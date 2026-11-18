@@ -512,6 +512,16 @@ td .btn{margin-inline-end:4px}
     <div class="tablebox"><table><thead><tr>
       <th>מקור</th><th>ערוץ</th><th>הוצאה</th><th>לקוחות</th><th>סגרו</th><th>אחוז המרה</th><th>הכנסה</th><th>עלות ללקוח שסגר</th><th>החזר על ההוצאה</th><th></th>
     </tr></thead><tbody id="src-body"></tbody></table></div>
+    <section class="sec" id="web-panel" style="margin:18px 0">
+      <div class="row-head"><h3>התנהגות באתר</h3><div class="field" style="min-width:160px"><label for="web-days">תקופה</label><select id="web-days"><option value="7">7 ימים אחרונים</option><option value="30" selected>30 ימים אחרונים</option><option value="90">90 ימים אחרונים</option></select></div></div>
+      <div class="insight" id="web-note">נטען…</div>
+      <div class="charts" id="web-tiles"></div>
+      <h3 style="margin:14px 0 8px">המסלול: כמה מבקרים הגיעו לכל שלב</h3><div id="web-funnel"></div>
+      <h3 style="margin:14px 0 8px">איפה עזבו את האתר</h3><div class="sub" style="margin-bottom:6px">הנקודה האחרונה שהמבקר ראה לפני שיצא. עצירה גדולה במקום אחד מראה איפה האתר מאבד אנשים.</div><div id="web-exit"></div>
+      <h3 style="margin:14px 0 8px">עומק גלילה</h3><div id="web-scroll"></div>
+      <h3 style="margin:14px 0 8px">טופס: באיזה שדה נעצרים</h3><div id="web-fields"></div>
+      <h3 style="margin:14px 0 8px">מאיפה מגיעים</h3><div id="web-src"></div>
+    </section>
   </section>
 
   <!-- EVENTS -->
@@ -2502,6 +2512,40 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   document.addEventListener("change", function (e) { var t = e.target; if (t && t.dataset && t.dataset.clEdit && canWrite) setClosedDate(t.dataset.clEdit, t.value); });
   document.addEventListener("click", function (e) { var r = e.target.closest && e.target.closest("[data-sumid]"); if (r) openSheet(r.dataset.sumid); });
 
+  /* ---- website behaviour (first-party events from the public site) ---- */
+  var webData = null, webLoading = false, webDays = 30;
+  var SEC_L = { hero: "פתיח (ראש העמוד)", value: "מה מקבלים", process: "התהליך", delivery: "אספקה ואיסוף", budgetPanel: "המחשבון", build: "המחשבון", faq: "שאלות נפוצות", contact: "טופס יצירת קשר", final: "סוף העמוד" };
+  var FLD_L = { name: "שם", phone: "טלפון", email: "אימייל", notes: "הערות", consent: "אישור תנאים", sendBtn: "כפתור שליחה" };
+  function webBar(label, n, total, cls) {
+    var pct = total > 0 ? Math.round(n / total * 100) : 0;
+    return '<div class="crow"><div class="ct"><span><b>' + esc(label) + '</b></span><span class="num"><b>' + n + '</b> (' + pct + '%)</span></div><div class="track" role="img" aria-label="' + esc(label) + ' ' + pct + ' אחוז"><i style="width:' + Math.min(100, pct) + '%' + (cls ? ";background:" + cls : "") + '"></i></div></div>';
+  }
+  function loadWeb() {
+    if (!sb || webLoading) return; webLoading = true;
+    var to = todayStr(), from = shift(to, -(webDays - 1));
+    sb.rpc("site_stats", { p_from: from, p_to: to }).then(function (r) { webData = r && !r.error ? r.data : null; webLoading = false; renderWeb(r && r.error ? r.error.message : ""); }, function () { webLoading = false; renderWeb("שגיאה"); });
+  }
+  function renderWeb(err) {
+    var d = webData; if (!$("web-note")) return;
+    if (!d) { $("web-note").textContent = err ? "לא הצלחתי לטעון נתוני אתר" : "טוען…"; return; }
+    var S = d.sessions || 0, sec = d.sections || {}, sc = d.scroll || {}, act = d.actions || {};
+    $("web-note").innerHTML = S ? "הנתונים אנונימיים ונאספים מהאתר עצמו, בלי שירות חיצוני. ביקור = כניסה אחת לאתר. נחשבת עצירה מיידית כשהמבקר יצא בלי לגלול ובלי ללחוץ על כלום." : "עדיין אין נתונים בתקופה הזו.";
+    var rate = function (n, t) { return t ? Math.round(n / t * 100) + "%" : "–"; };
+    var tile = function (l, v, sub) { return '<div class="chart"><h3>' + l + '</h3><div style="font-size:28px;font-weight:700" class="num">' + v + '</div>' + (sub ? '<div class="cap">' + sub + '</div>' : "") + '</div>'; };
+    $("web-tiles").innerHTML = tile("ביקורים", S, d.pageviews + " צפיות בדפים") + tile("מבקרים ייחודיים", d.visitors || 0, "") + tile("זמן ממוצע באתר", (d.avg_seconds || 0) + " שנ׳", "") + tile("עצירה מיידית", rate(d.bounce || 0, S), (d.bounce || 0) + " ביקורים בלי שום פעולה") + tile("מובייל", rate(d.mobile || 0, S), "מכלל הביקורים") + tile("השאירו פרטים", (act.lead || 0), rate(act.lead || 0, S) + " מהביקורים");
+    var calcSeen = Math.max(sec.budgetPanel || 0, sec.build || 0);
+    var steps = [["ביקורים באתר", S], ["גללו לפחות 50%", sc["50"] || 0], ["ראו את המחשבון", calcSeen], ["התחילו להשתמש במחשבון", act.calc_start || 0], ["הגיעו לאזור הטופס", sec.contact || 0], ["התחילו למלא את הטופס", act.form_start || 0], ["השאירו פרטים", act.lead || 0]];
+    $("web-funnel").innerHTML = steps.map(function (x) { return webBar(x[0], x[1], S); }).join("") + '<div class="sub">לחצו על ווטסאפ: ' + (act.wa || 0) + ' · עברו מהמחשבון לטופס: ' + (act.calc_lead || 0) + '</div>';
+    var ex = d.exit || {}, exk = Object.keys(ex).sort(function (a, b) { return ex[b] - ex[a]; }), exT = exk.reduce(function (t, k) { return t + ex[k]; }, 0);
+    $("web-exit").innerHTML = exk.length ? exk.map(function (k) { return webBar(SEC_L[k] || k, ex[k], exT, k === exk[0] ? "var(--bad)" : ""); }).join("") : '<div class="sub">אין נתונים</div>';
+    $("web-scroll").innerHTML = ["25", "50", "75", "100"].map(function (m) { return webBar("גללו עד " + m + "% מהעמוד", sc[m] || 0, S); }).join("");
+    var fl = d.fields || {}, fk = ["name", "phone", "email", "notes", "consent", "sendBtn"].filter(function (k) { return fl[k] != null; });
+    $("web-fields").innerHTML = fk.length ? fk.map(function (k) { return webBar(FLD_L[k] || k, fl[k], fl[fk[0]] || 1); }).join("") + '<div class="sub">מי שנעצר בשדה מסוים ולא המשיך לשדה הבא, שם הטופס מאבד אותו.</div>' : '<div class="sub">אין עדיין מי שהתחיל למלא</div>';
+    var sr = d.sources || {}, srk = Object.keys(sr).filter(function (k) { return !/localhost/.test(k); }).sort(function (a, b) { return sr[b] - sr[a]; });
+    $("web-src").innerHTML = srk.map(function (k) { return webBar(k, sr[k], S); }).join("");
+  }
+  document.addEventListener("change", function (e) { if (e.target && e.target.id === "web-days") { webDays = Number(e.target.value) || 30; webData = null; renderWeb(); loadWeb(); } });
+
   /* ---- sources & charts ---- */
   function sourceStats() {
     var map = {};
@@ -2520,7 +2564,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       m.cpw = m.spend && m.won ? m.spend / m.won : null; m.roi = m.spend ? m.rev / m.spend : null; return m;
     });
   }
+  var webAt = 0;
   function renderSources() {
+    if (Date.now() - webAt > 60000) { webAt = Date.now(); loadWeb(); }
     if ($("src-period")) $("src-period").innerHTML = periodOptions(srcPeriod);
     renderSummary();
     var st = sourceStats(), withData = st.filter(function (s) { return s.total > 0; });
