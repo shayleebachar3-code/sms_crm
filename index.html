@@ -2800,7 +2800,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     };
     var actP = state.partners.filter(function (p) { return p.active !== false; }), offP = state.partners.filter(function (p) { return p.active === false; });
     html += actP.length ? actP.map(ptnCard).join("") : '<div class="empty">אין כרגע ספקים פעילים.</div>';
-    if (offP.length) html += '<details class="form" style="padding:10px 14px;margin-top:14px;background:transparent"><summary style="cursor:pointer;font-weight:700;color:var(--ink-2)">ספקים לא פעילים (' + offP.length + ') ▾</summary><div style="margin-top:8px">' + offP.map(ptnCard).join("") + '</div></details>';
+    /* ספקים לא פעילים מוצגים ישירות (לא בתוך קבוצה סגורה), וכל כרטיס נפתח בלחיצה כמו ספק פעיל */
+    if (offP.length) html += '<h4 style="margin:18px 0 8px;color:var(--ink-2)">ספקים לא פעילים (' + offP.length + ')</h4>' + offP.map(ptnCard).join("");
     box.innerHTML = html;
   }
   var ptnOpen = {}, ptnEdit = null;
