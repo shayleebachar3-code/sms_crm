@@ -2904,7 +2904,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var d = {}; d[f] = v; if (f === "status" && v !== "לא פנינו" && v !== "לא רלוונטי") d.last_contact_at = new Date().toISOString();
       await rcPatch(id, d);
       if (f === "status") await rcLog(id, "סטטוס", "הסטטוס שונה ל: " + v);
-      if (f === "notes") await rcLog(id, "הערה", v ? "ההערות עודכנו: " + v : "ההערות נמחקו");
+      if (f === "notes" && v.trim()) await rcLog(id, "הערה", "ההערות עודכנו: " + v.trim());
       if (f === "status" && (v === "מעוניין" || v === "הצטרף")) {
         var p = state.prospects.find(function (x) { return x.id === id; });
         if (p && !p.partner_id) {
