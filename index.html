@@ -2779,10 +2779,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         '</tbody></table></div>' : '<div class="muted" style="font-size:14px;margin-top:8px">עוד לא שויכו לידים לספק הזה.</div>';
       return '<details class="form ptn-card" data-pid="' + esc(p.id) + '" style="padding:12px 16px;margin-bottom:10px"' + (due.length || ptnOpen[p.id] ? " open" : "") + '><summary style="cursor:pointer;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline">' +
         '<b style="font-size:16px">' + esc(p.name) + '</b>' + (p.active === false ? '<span class="chip">לא פעיל</span>' : "") +
-        '<span class="muted">' + leads + ' לידים · ' + mine.length + ' עסקאות סגורות · שולם עד היום ' + shekel(paidSum) + '</span>' +
+        '<span class="muted">' + leads + ' לידים · ' + mine.length + ' עסקאות סגורות · שולם עד היום ' + shekel(paidSum) + '</span>' + ptnTalkChip(p) +
         '<span>לתשלום ב-' + ptnD(ptnNext()) + ': <b class="num">' + shekel(ptnSum(due)) + '</b></span><span>עתידי: <b class="num">' + shekel(ptnSum(fut)) + '</b></span><span class="muted" style="font-size:13px">לחצו לפרטים ▾</span></summary>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">' +
-          '<button class="btn sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button>' +
+          '<button class="btn sm" data-ptn-act="full" data-pid="' + esc(p.id) + '">כרטיס ספק מלא</button>' +
+          '<button class="btn ghost sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button>' +
           (p.slug ? '<button class="btn ghost sm" data-ptn-act="link" data-pid="' + esc(p.id) + '">העתקת הקישור האישי</button>' : "") +
           (p.phone ? '<span class="muted ltr num" style="align-self:center">' + esc(p.phone) + '</span>' : "") +
           '<button class="btn ghost sm" data-ptn-act="edit" data-pid="' + esc(p.id) + '"' + dis() + '>עריכת פרטים</button> ' +
@@ -2806,6 +2807,105 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var ptnOpen = {}, ptnEdit = null;
   document.addEventListener("toggle", function (e) { var d = e.target; if (d && d.classList && d.classList.contains("ptn-card")) ptnOpen[d.dataset.pid] = d.open; }, true);
+  /* ---- כרטיס ספק מלא (שי-לי, 23.11.2026): פרטים, מספרים, מעקב דוחות חודשיים ויומן שיחות עם תאריך ושעה ---- */
+  var PT_REPORT = "דוח חודשי נשלח", PT_TALK = "שיחה על דוח חודשי", PT_TYPES = ["שיחה בטלפון", PT_TALK, "הודעה בווטסאפ", "פגישה", "הערה"], ptnFullId = null;
+  function ptnLogOf(p) { return Array.isArray(p && p.log) ? p.log : []; }
+  function ptnHasLog() { return state.partners.length > 0 && state.partners.some(function (p) { return Object.prototype.hasOwnProperty.call(p, "log"); }); }
+  /* שיחה אחרונה = כל רישום חוץ מהערה ומסימון "דוח נשלח" */
+  function ptnLastTalk(p) { var t = ptnLogOf(p).filter(function (h) { return h.type !== PT_REPORT && h.type !== "הערה"; }).map(function (h) { return h.at; }).sort(); return t.length ? t[t.length - 1] : ""; }
+  function ptnTalkChip(p) {
+    var t = ptnLastTalk(p); if (!t) return '<span class="chip warn">אין תיעוד שיחה</span>';
+    var d = daysAgo(t); return '<span class="chip ' + (d >= 45 ? "warn" : "good") + '">שיחה אחרונה: ' + (d <= 0 ? "היום" : d === 1 ? "אתמול" : "לפני " + d + " ימים") + '</span>';
+  }
+  /* החודשים לדוח: עד 6 חודשים אחורה, ולא לפני החודש שבו הספק הצטרף. הדוח על חודש X יוצא ב-1 לחודש שאחריו */
+  function ptnMonthsFor(p) {
+    var cur = curYm(), first = String(p.joined_on || p.created_at || "").slice(0, 7) || cur, out = [];
+    for (var i = 0; i < 6; i++) { var m = addMonths(cur, -i); if (m < first) break; out.push(m); }
+    return out.length ? out : [cur];
+  }
+  async function ptnLog(pid, type, text, month) {
+    var p = ptnById(pid); if (!p) return;
+    var entry = { at: new Date().toISOString(), type: type, text: String(text || "").slice(0, 1000) }; if (month) entry.month = month;
+    chk(await sb.from("partners").update({ log: ptnLogOf(p).concat([entry]) }).eq("id", pid));
+    await loadPartners(); if (ptnFullId === pid) ptnFull();
+  }
+  function ptnFull() {
+    var box = $("ptn-full");
+    if (!box) { box = document.createElement("div"); box.id = "ptn-full"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px"; document.body.appendChild(box); }
+    var p = ptnById(ptnFullId); if (!p) { box.remove(); ptnFullId = null; return; }
+    var mine = state.pstmt.filter(function (r) { return r.partner_id === p.id; }), leads = state.prefs.filter(function (x) { return x.partner_id === p.id; }).length;
+    var due = mine.filter(ptnIsNext), fut = mine.filter(function (r) { return r.state !== "paid" && !ptnIsNext(r); }), paidSum = ptnSum(mine.filter(function (r) { return r.state === "paid"; }));
+    var pr = state.prospects.find(function (x) { return x.partner_id === p.id; }), logs = ptnLogOf(p), cm = curYm(), w = waNum(p.phone), canLog = ptnHasLog();
+    var row = function (l, v) { return v ? '<div><span class="muted">' + l + ':</span> ' + v + '</div>' : ""; };
+    var tile = function (l, v) { return '<div style="flex:1 1 120px;background:var(--surface-2,#f4f4f4);border-radius:8px;padding:8px 10px"><div class="muted" style="font-size:12px">' + l + '</div><div class="num" style="font-weight:800;font-size:17px">' + v + '</div></div>'; };
+    var dsh = function (iso) { return esc(rcWhen(iso).split(" · ")[0]); };
+    /* מעקב דוחות חודשיים */
+    var rep = ptnMonthsFor(p).map(function (m) {
+      var sent = logs.filter(function (h) { return h.type === PT_REPORT && h.month === m; }).pop(), talk = logs.filter(function (h) { return h.type === PT_TALK && h.month === m; }).pop(), past = m < cm;
+      return '<tr><td><b>' + esc(ymLabel(m)) + '</b></td>' +
+        '<td>' + (sent ? '<span class="chip good">נשלח ' + dsh(sent.at) + '</span>' : (past ? '<span class="chip warn">לא נשלח</span> ' : '<span class="muted" style="font-size:12px">יישלח ב-1 לחודש הבא</span> ') + '<button type="button" class="btn ghost sm" data-ptf="sent" data-m="' + m + '"' + dis() + '>סימנתי שנשלח</button>') + '</td>' +
+        '<td>' + (talk ? '<span class="chip good">שיחה ' + dsh(talk.at) + '</span>' + (talk.text ? '<div class="muted" style="font-size:12px;max-width:260px">' + esc(talk.text.length > 70 ? talk.text.slice(0, 70) + "…" : talk.text) + '</div>' : "") : '<button type="button" class="btn ghost sm" data-ptf="talk" data-m="' + m + '"' + dis() + '>תיעוד שיחה</button>') + '</td></tr>';
+    }).join("");
+    var tl = logs.slice().reverse().map(function (h) {
+      return '<li style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="muted" style="font-size:12px">' + esc(rcWhen(h.at)) + ' · <b>' + esc(h.type || "") + '</b>' + (h.month ? ' · על ' + esc(ymLabel(h.month)) : "") + ' <button type="button" class="linkbtn" data-ptf="del" data-at="' + esc(h.at) + '"' + dis() + '>מחיקה</button></div>' + (h.text ? '<div style="white-space:pre-wrap">' + esc(h.text) + '</div>' : "") + '</li>';
+    });
+    if (p.joined_on) tl.push('<li style="padding:8px 0"><div class="muted" style="font-size:12px">' + esc(fmtDate(String(p.joined_on).slice(0, 10))) + ' · הצטרף</div><div>הפך לספק שעובדים איתו' + (pr ? " (גויס מרשימת המפיקים)" : "") + '</div></li>');
+    var pl = rcLogOf(pr || {}), pTl = pl.length ? '<h4 style="margin:16px 0 4px">מה היה בגיוס</h4><ul style="list-style:none;padding:0;margin:0">' + pl.slice().reverse().map(function (h) { return '<li style="padding:6px 0;border-bottom:1px solid var(--line)"><div class="muted" style="font-size:12px">' + esc(rcWhen(h.at)) + ' · ' + esc(h.type || "") + '</div><div style="white-space:pre-wrap">' + esc(h.text || "") + '</div></li>'; }).join("") + '</ul>' : "";
+    var deals = mine.slice().sort(function (a, b) { return String(b.event_date).localeCompare(String(a.event_date)); }).map(function (r) {
+      var st = r.state === "due" ? "לתשלום" : r.state === "paid" ? "שולם " + fmtDate(String(r.paid_on).slice(0, 10)) : r.state === "held_unpaid" ? "ממתין לתשלום מלא מהזוג" : "עתידי";
+      return '<tr><td><b>' + esc(r.client_name) + '</b></td><td class="num">' + fmtDate(String(r.event_date).slice(0, 10)) + '</td><td class="num"><b>' + shekel(r.amount) + '</b></td><td>' + esc(st) + '</td></tr>';
+    }).join("");
+    var inp = function (f, v, l, ltr) { return '<div class="field"><label>' + l + '</label><input data-pfe="' + f + '" value="' + esc(v || "") + '"' + (ltr ? ' dir="ltr"' : "") + dis() + '></div>'; };
+    var months = ptnMonthsFor(p);
+    box.innerHTML = '<div style="background:var(--bg,#fff);color:inherit;border-radius:14px;max-width:760px;width:100%;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0;font-size:21px">' + esc(p.name) + (p.active === false ? ' <span class="chip">לא פעיל</span>' : "") + '</h3><button type="button" class="btn ghost sm" data-ptf-close aria-label="סגירה">סגירה ✕</button></div>' +
+      '<div style="display:grid;gap:4px;margin:10px 0;font-size:14px">' +
+        row("טלפון", p.phone ? '<a href="tel:' + esc(p.phone) + '" dir="ltr">' + esc(p.phone) + '</a>' : "") + row("טלפון נוסף", pr && pr.phone2 ? '<a href="tel:' + esc(pr.phone2) + '" dir="ltr">' + esc(pr.phone2) + '</a>' : "") +
+        row("סוג", esc(p.kind || "")) + row("עיר ואזור", esc([pr && pr.city, pr && pr.region].filter(Boolean).join(" · "))) +
+        row("אינסטגרם", pr && pr.instagram ? '<a href="https://instagram.com/' + encodeURIComponent(pr.instagram) + '" target="_blank" rel="noopener">' + esc(pr.instagram) + '</a>' : "") +
+        row("הצטרף", p.joined_on ? esc(fmtDate(String(p.joined_on).slice(0, 10))) : "") + row("שיחה אחרונה", ptnLastTalk(p) ? esc(rcWhen(ptnLastTalk(p))) : '<span class="chip warn">אין תיעוד שיחה</span>') +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' + (w ? '<a class="btn sm" href="https://wa.me/' + w + '" target="_blank" rel="noopener">ווטסאפ</a>' : "") +
+        '<button type="button" class="btn ghost sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק (להדפסה או שמירה)</button>' + (p.slug ? '<button type="button" class="btn ghost sm" data-ptn-act="link" data-pid="' + esc(p.id) + '">העתקת הקישור האישי</button>' : "") + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">' + tile("לידים", leads) + tile("עסקאות סגורות", mine.length) + tile("שולם עד היום", shekel(paidSum)) + tile("לתשלום ב-" + ptnD(ptnNext()), shekel(ptnSum(due))) + tile("עתידי", shekel(ptnSum(fut))) + '</div>' +
+      '<h4 style="margin:16px 0 4px">דוחות חודשיים ושיחות</h4><div class="muted" style="font-size:13px;margin-bottom:6px">הדוח על חודש יוצא ב-1 לחודש שאחריו. מסמנים כשנשלח, ומתעדים את השיחה על הדוח.</div>' +
+      '<div class="tablebox"><table><thead><tr><th>חודש האירועים</th><th>דוח</th><th>שיחה על הדוח</th></tr></thead><tbody>' + rep + '</tbody></table></div>' +
+      '<h4 style="margin:16px 0 4px">תיעוד שיחה חדשה</h4>' +
+      (canLog ? '<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"><div class="field"><label for="ptf-type">סוג</label><select id="ptf-type"' + dis() + '>' + PT_TYPES.map(function (t) { return '<option>' + t + '</option>'; }).join("") + '</select></div>' +
+          '<div class="field"><label for="ptf-month">על דוח של חודש (לא חובה)</label><select id="ptf-month"' + dis() + '><option value="">—</option>' + months.map(function (m) { return '<option value="' + m + '">' + esc(ymLabel(m)) + '</option>'; }).join("") + '</select></div></div>' +
+          '<textarea id="ptf-text" rows="3" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px" placeholder="מה סוכם, מה הוא אמר, מתי לחזור אליו"' + dis() + '></textarea>' +
+          '<button type="button" class="btn sm" data-ptf="add" style="margin-top:6px"' + dis() + '>הוספה ליומן (נשמר עם תאריך ושעה)</button>'
+        : '<div class="muted">יומן השיחות עוד לא הופעל במסד הנתונים.</div>') +
+      '<h4 style="margin:16px 0 4px">יומן שיחות</h4><ul style="list-style:none;padding:0;margin:0">' + (tl.join("") || '<li class="muted">עוד אין רישומים.</li>') + '</ul>' + pTl +
+      '<h4 style="margin:16px 0 4px">עסקאות שנסגרו דרכו</h4>' + (deals ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>סכום</th><th>מצב</th></tr></thead><tbody>' + deals + '</tbody></table></div>' : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרכו.</div>') +
+      '<h4 style="margin:16px 0 4px">עריכת פרטים</h4><div class="fields">' + inp("name", p.name, "שם הספק") + inp("phone", p.phone, "טלפון", true) + inp("kind", p.kind || "מפיק אירועים", "סוג") + '</div>' +
+      '<div class="field" style="margin-top:8px"><label>הערות קבועות</label><textarea data-pfe="notes" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px"' + dis() + '>' + esc(p.notes || "") + '</textarea></div>' +
+      '<button type="button" class="btn sm" data-ptf="save" style="margin-top:6px"' + dis() + '>שמירת פרטים</button></div>';
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target, box = $("ptn-full");
+    if (box && ((t.closest && t.closest("[data-ptf-close]")) || t === box)) { box.remove(); ptnFullId = null; return; }
+    var b = t.closest && t.closest("[data-ptf]"); if (!b || !ptnFullId || !canWrite) return;
+    var p = ptnById(ptnFullId); if (!p) return; var act = b.dataset.ptf;
+    if (act === "sent") { var m0 = b.dataset.m; guard(async function () { await ptnLog(p.id, PT_REPORT, "", m0); toast("נרשם: הדוח של " + ymLabel(m0) + " נשלח"); }); }
+    else if (act === "talk") { $("ptf-type").value = PT_TALK; $("ptf-month").value = b.dataset.m; var ta = $("ptf-text"); ta.focus(); ta.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    else if (act === "add") {
+      var ty = $("ptf-type").value, mo = $("ptf-month").value, tx = ($("ptf-text").value || "").trim();
+      if (ty === PT_TALK && !mo) { toast("בחרו על דוח של איזה חודש הייתה השיחה"); return; }
+      if (!tx) { toast("כתבו מה היה בשיחה"); return; }
+      guard(async function () { await ptnLog(p.id, ty, tx, mo); toast("נשמר ביומן"); });
+    }
+    else if (act === "del") {
+      if (!confirm("למחוק את הרישום הזה מהיומן?")) return; var at = b.dataset.at;
+      guard(async function () { chk(await sb.from("partners").update({ log: ptnLogOf(p).filter(function (h) { return h.at !== at; }) }).eq("id", p.id)); await loadPartners(); ptnFull(); toast("הרישום נמחק"); });
+    }
+    else if (act === "save") {
+      var d = {}; box.querySelectorAll("[data-pfe]").forEach(function (el) { d[el.dataset.pfe] = el.value.trim() || null; });
+      if (!d.name) { toast("חסר שם ספק"); return; }
+      guard(async function () { chk(await sb.from("partners").update(d).eq("id", p.id)); await loadPartners(); ptnFull(); toast("הפרטים נשמרו"); });
+    }
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && ptnFullId) { var b = $("ptn-full"); if (b) b.remove(); ptnFullId = null; } });
   /* ---- גיוס מפיקים: רשימת המפיקים מהמחקר, סטטוס, הערות והודעות ווטסאפ מוכנות ---- */
   var RC_ST = ["לא פנינו", "נשלחה הודעה", "נשלחה תזכורת", "ענה", "מעוניין", "הצטרף", "לא רלוונטי"];
   var RC_CLS = { "לא פנינו": "", "נשלחה הודעה": "warn", "נשלחה תזכורת": "warn", "ענה": "good", "מעוניין": "good", "הצטרף": "good", "לא רלוונטי": "bad" };
@@ -3115,6 +3215,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var act = b.dataset.ptnAct, p = ptnById(b.dataset.pid);
     if (act === "open") { openSheet(b.dataset.id); return; }
     if (act === "report") { ptnReport(b.dataset.pid); return; }
+    if (act === "full") { ptnFullId = b.dataset.pid; ptnFull(); return; }
     if (act === "link" && p) { var L = ptnLink(p); (navigator.clipboard ? navigator.clipboard.writeText(L) : Promise.reject()).then(function () { toast("הקישור הועתק"); }, function () { prompt("העתיקו את הקישור:", L); }); return; }
     if (!canWrite) return;
     if (act === "new") { guard(async function () { var np = await ptnCreate(); if (np) { await loadPartners(); toast("הספק נוסף"); } }); return; }
