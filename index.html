@@ -2837,6 +2837,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   function rcShort(n) { var s = String(n || "").split(/\s[-–|·]\s|,|:|\(/)[0].trim(); return s.length > 2 ? s : String(n || ""); }
   function rcWa(p, kind) { var w = waNum(p.phone); return w ? "https://wa.me/" + w + "?text=" + encodeURIComponent(RC_MSG[kind].replace("{שם}", rcShort(p.name))) : ""; }
+  /* שי-לי (23.11.2026): ברירת המחדל בגיוס מפיקים היא כל האזורים סגורים. בכל כניסה ללשונית מנקים מה שנפתח וסינון שנשאר מהפעם הקודמת, והיא פותחת רק את האזור שהיא רוצה. */
+  function rcFreshOpen() {
+    rcOpen = {};
+    ["rc-q", "rc-region", "rc-status"].forEach(function (id) { var el = $(id); if (el) el.value = ""; });
+    renderRecruit();
+  }
   function renderRecruit() {
     var list = $("rc-list"); if (!list) return;
     if (!rcReady) { list.innerHTML = '<div class="empty">רשימת המפיקים לא זמינה כרגע. לחצו רענון.</div>'; return; }
@@ -3148,7 +3154,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (VIEWS.indexOf(v) < 0) v = "today";
     var mt = $("more-tabs"); if (mt && MORE_VIEWS.indexOf(v) >= 0) { mt.hidden = false; $("more-btn").setAttribute("aria-expanded", "true"); }
     var mb = $("more-btn"); if (mb) mb.classList.toggle("on", MORE_VIEWS.indexOf(v) >= 0);
+    var prevView = (document.querySelector(".view:not([hidden])") || {}).id;
     document.querySelectorAll(".view").forEach(function (el) { el.hidden = el.id !== "view-" + v; });
+    if (v === "recruit" && prevView !== "view-recruit") rcFreshOpen(); /* כל כניסה ללשונית הגיוס מתחילה עם כל האזורים סגורים */
     document.querySelectorAll(".tab").forEach(function (t) { t.setAttribute("aria-selected", t.dataset.view === v ? "true" : "false"); });
   }
   document.querySelectorAll(".tab[data-view]").forEach(function (t) { t.addEventListener("click", function () { location.hash = t.dataset.view; showView(t.dataset.view); }); });
