@@ -1013,7 +1013,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 (function () {
   var GROUPS = [
     { k: "ליד חדש", label: "ליד חדש", sub: "הגיעו ועוד לא טופלו", color: "var(--seg-new)" },
-    { k: "מתלבטים", label: "פולואפ", sub: "מתלבטים ומי שלא ענה בטלפון", color: "var(--warn)" },
+    { k: "מתלבטים", label: "פולואפ", sub: "מתלבטים, מי שלא ענה בטלפון ומי שעוד לא פנינו אליו", color: "var(--warn)" },
     { k: "סגרו", label: "נסגרה עסקה", sub: "עסקה סגורה", color: "var(--good)" },
     { k: "הושלם", label: "הושלם", sub: "התהליך הסתיים (אירוע עבר וזיכוי הושלם)", color: "var(--accent, #6b7280)" },
     { k: "אבדו", label: "לא מעוניין", sub: "לא התקדמו", color: "var(--bad)" }
@@ -1066,7 +1066,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var daysAgo = function (iso) { var d = new Date(iso); if (isNaN(d)) return 0; return Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000); };
   var inDays = function (n) { return n === 0 ? "היום" : n === 1 ? "מחר" : n > 0 ? "בעוד " + n + " ימים" : "לפני " + (-n) + " ימים"; };
   var toast = function (t) { var el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 2600); };
-  var stageOf = function (c) { if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
+  var stageOf = function (c) { if (c.status === "לא ענה בטלפון" || c.status === "לא פנינו") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
   var waNum = function (p) { var d = String(p || "").replace(/\D/g, ""); if (!d) return ""; return d.charAt(0) === "0" ? "972" + d.slice(1) : d; };
   function fmtDT(iso, withYear) {
     if (!iso) return "";
@@ -2111,7 +2111,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var rH = hes.map(function (c) {
       var d = c.followUp ? daysUntil(c.followUp) : null, o = lastOffer(c);
       return arow({ cid: c.id, title: c.name, sub: esc((c.eventType || "") + (c.eventDate ? " · " + fmtDate(c.eventDate) : "")) + (o ? " · הצעה " + esc(o.pkg || "") + " " + shekel(o.amount) : ""),
-        chips: (c.status === "לא ענה בטלפון" ? [["לא ענה בטלפון", "warn"]] : []).concat([[d == null ? "אין תאריך פולואפ" : d === 0 ? "פולואפ היום" : "באיחור " + (-d) + " ימים", d === 0 ? "warn" : "bad"]]),
+        chips: (c.status === "לא ענה בטלפון" ? [["לא ענה בטלפון", "warn"]] : c.status === "לא פנינו" ? [["לא פנינו אליהם עדיין", "bad"]] : []).concat([[d == null ? "אין תאריך פולואפ" : d === 0 ? "פולואפ היום" : "באיחור " + (-d) + " ימים", d === 0 ? "warn" : "bad"]]),
         acts: waBtn(c) + '<button class="btn ghost sm" data-act="snooze">דחייה ב-3 ימים</button><button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
     var noC = state.clients.filter(function (c) {
@@ -3536,7 +3536,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var sb = null, pollT = null, lastPersist = 0, loadingAll = null;
   var ownerOk = false;
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  var STATUSES = ["נסגרה עסקה", "מתלבט", "לא מעוניין", "לא ענה בטלפון"];
+  var STATUSES = ["נסגרה עסקה", "מתלבט", "לא מעוניין", "לא ענה בטלפון", "לא פנינו"];
   var KIND_L = { status_change: "שינוי סטטוס", stage_change: "מעבר שלב", message_sent: "הודעה נשלחה", pdf_generated: "הופק PDF", payment: "תשלום", agreement_created: "הסכם נוצר", agreement_sent: "הסכם נשלח", agreement_signed: "הסכם נחתם", rsvp_sent: "טופס אישורי הגעה נשלח", rsvp_received: "טופס אישורי הגעה התקבל" };
   var CH_L = { whatsapp_business: "וואטסאפ עסקי", whatsapp: "וואטסאפ", sms: "SMS", email: "אימייל", phone: "טלפון", other: "אחר" };
   var PK_NAMES = Object.keys(PKGS);
@@ -3693,7 +3693,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   stageOf = function (c) {
     if (c.status === "נסגרה עסקה") return isFinished(c) ? "הושלם" : "סגרו";
     if (c.status === "לא מעוניין") return "אבדו";
-    if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer goes straight to follow-up */
+    if (c.status === "לא ענה בטלפון" || c.status === "לא פנינו") return "מתלבטים"; /* no answer / not contacted yet goes straight to follow-up */
     if (!(c.offers || []).length && !(c.log || []).length && !c.quote) return "ליד חדש";
     return "מתלבטים";
   };
@@ -3703,6 +3703,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (value === "נסגרה עסקה") { requestClose(id, {}); return; }
     var d = { status: value };
     if (value === "מתלבט" && !cur.followUp) d.followUp = addDays(3);
+    if (value === "לא פנינו") d.followUp = todayStr(); /* קופץ לעמדת הפולואפ היום */
     guard(function () { return patch("clients", id, d); });
   }
 
