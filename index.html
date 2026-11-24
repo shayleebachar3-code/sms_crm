@@ -2334,7 +2334,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           field("מקור הגעה", "p-source", '<select data-field="source"' + dis() + '>' + srcOpts + '</select>') + partnerField(c) + attrBox(c) +
           field("שווי העסקה (₪)", "p-value", fi("value", "number", c.value, ' min="0" inputmode="numeric"')) +
           field("פולואפ בתאריך", "p-fu", fi("followUp", "date", c.followUp)) +
-          '</div></section>' + sb.hall +
+          '</div></section>' + calSection(c) + sb.hall +
           '<section class="sec"><h3>הערות כלליות</h3><textarea data-field="notes" rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px"' + dis() + '>' + esc(c.notes || "") + '</textarea></section>';
         var offersSec = '<section class="sec"><h3>הצעות שנשלחו <small>' + offers.length + ' הצעות</small></h3>' +
           '<div class="addrow">' +
@@ -2355,7 +2355,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           (won ? grpS("g-pay", "💰 תשלום וזיכוי", debtBanner(c) + sheetExtra(c), true, p.value ? (p.bal ? "יתרה " + shekel(p.bal) : "שולם במלואו ✓") : "חסר שווי עסקה") : "") +
           (sb.docs ? grpS("g-docs", "📄 טופס אישורי הגעה והסכם", sb.docs, won, docsSummary(c)) : "") +
           grpS("g-hist", "🕘 שיחות, הודעות ויומן פעולות", hist, false, (c.log || []).length + " רשומות") +
-          grpS("g-more", "⚙️ עוד פרטים (שלבים, יומן Google, מחיקה)", sb.pipe + sb.journey + calSection(c) + closedEdit(c) + '<section class="sec"><h3>ביומן Google</h3>' + calHtml + '</section>' + '<div><button class="btn danger sm" data-act="del-client"' + dis() + '>מחיקת הלקוח</button></div>', false, won && c.pipelineStage ? "שלב " + c.pipelineStage + " מתוך 11" : "");
+          grpS("g-more", "⚙️ עוד פרטים (שלבים, יומן Google, מחיקה)", sb.pipe + sb.journey + closedEdit(c) + '<section class="sec"><h3>ביומן Google</h3>' + calHtml + '</section>' + '<div><button class="btn danger sm" data-act="del-client"' + dis() + '>מחיקת הלקוח</button></div>', false, won && c.pipelineStage ? "שלב " + c.pipelineStage + " מתוך 11" : "");
       })() +
       '</div>';
     $("overlay").scrollTop = scroll;
@@ -3559,6 +3559,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       maxPkgName: r.max_pkg_name || "", maxPkgAmount: r.max_pkg_amount == null ? "" : Number(r.max_pkg_amount),
       finalPkgName: r.final_pkg_name || "", finalPkgAmount: r.final_pkg_amount == null ? "" : Number(r.final_pkg_amount),
       rsvpConfirmed: r.rsvp_confirmed == null ? "" : r.rsvp_confirmed, rsvpSentAt: r.rsvp_sent_at || "", hallName: r.hall_contact_name || "", hallPhone: r.hall_contact_phone || "",
+      closedAt: r.closed_at || ex.closedAt || undefined,
       payment: r.payment_status ? { status: r.payment_status, amount: r.payment_amount == null ? 0 : Number(r.payment_amount), date: r.payment_date || "", note: r.payment_note || "" } : undefined,
       refund: { status: r.refund_status || "wait", pickupDate: r.pickup_date || "", requestedAt: r.refund_requested_at || "", doneAt: r.refund_done_at || "" },
       offers: (offers || []).map(function (o) { return { id: o.id, pkg: o.pkg || "", amount: o.amount == null ? 0 : Number(o.amount), date: o.sent_on, status: o.status, note: o.note || "" }; }),
@@ -3568,7 +3569,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var FLAT = { name: "name", phone: "phone", email: "email", eventType: "event_type", eventDate: "event_date", guests: "guests", venue: "venue", source: "source", notes: "notes",
     followUp: "follow_up", value: "value", example: "is_example", createdAt: "created_at", quote: "quote", cal: "cal", status: "status", pipelineStage: "pipeline_stage_id",
-    maxPkgName: "max_pkg_name", maxPkgAmount: "max_pkg_amount", finalPkgName: "final_pkg_name", finalPkgAmount: "final_pkg_amount", rsvpConfirmed: "rsvp_confirmed", rsvpSentAt: "rsvp_sent_at", hallName: "hall_contact_name", hallPhone: "hall_contact_phone" };
+    maxPkgName: "max_pkg_name", maxPkgAmount: "max_pkg_amount", finalPkgName: "final_pkg_name", finalPkgAmount: "final_pkg_amount", rsvpConfirmed: "rsvp_confirmed", rsvpSentAt: "rsvp_sent_at", hallName: "hall_contact_name", hallPhone: "hall_contact_phone", closedAt: "closed_at" };
   var DATEF = { event_date: 1, follow_up: 1, rsvp_sent_at: 1 }, NUMF = { guests: 1, value: 1, pipeline_stage_id: 1, max_pkg_amount: 1, final_pkg_amount: 1, rsvp_confirmed: 1 };
   function clientToRow(p, cur) {
     var row = {}, extra = null, prefs = null;
