@@ -1066,7 +1066,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var daysAgo = function (iso) { var d = new Date(iso); if (isNaN(d)) return 0; return Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000); };
   var inDays = function (n) { return n === 0 ? "היום" : n === 1 ? "מחר" : n > 0 ? "בעוד " + n + " ימים" : "לפני " + (-n) + " ימים"; };
   var toast = function (t) { var el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 2600); };
-  var stageOf = function (c) { if (c.status === "לא ענה בטלפון" || c.status === "לא פנינו") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
+  var stageOf = function (c) { if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
   var waNum = function (p) { var d = String(p || "").replace(/\D/g, ""); if (!d) return ""; return d.charAt(0) === "0" ? "972" + d.slice(1) : d; };
   function fmtDT(iso, withYear) {
     if (!iso) return "";
@@ -3693,7 +3693,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   stageOf = function (c) {
     if (c.status === "נסגרה עסקה") return isFinished(c) ? "הושלם" : "סגרו";
     if (c.status === "לא מעוניין") return "אבדו";
-    if (c.status === "לא ענה בטלפון" || c.status === "לא פנינו") return "מתלבטים"; /* no answer / not contacted yet goes straight to follow-up */
+    if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer goes straight to follow-up */
+    /* "לא פנינו" = ברירת המחדל לכל ליד חדש: בלי שום פעולה הוא נשאר "ליד חדש", ברגע שיש הצעה/תיעוד הוא עובר לפולואפ */
     if (!(c.offers || []).length && !(c.log || []).length && !c.quote) return "ליד חדש";
     return "מתלבטים";
   };
