@@ -2796,7 +2796,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           '<div class="form-actions"><button class="btn sm" data-ptn-act="save" data-pid="' + esc(p.id) + '">שמירה</button><button class="btn ghost sm" data-ptn-act="edit" data-pid="' + esc(p.id) + '">ביטול</button></div></div>' : "") +
         refsHtml +
         '<h4 style="margin:14px 0 6px">עסקאות שנסגרו ותשלומים</h4>' +
-        (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מס׳ האירוע של הספק באותו חודש</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
+        (list.length ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>מס׳ בחודש הסגירה (קובע מדרגה)</th><th>סכום</th><th>יוצא לתשלום</th><th>מצב</th><th></th></tr></thead><tbody>' + list.map(row).join("") + '</tbody></table></div>'
           : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</details>';
     };
     var actP = state.partners.filter(function (p) { return p.active !== false; }), offP = state.partners.filter(function (p) { return p.active === false; });
@@ -3171,11 +3171,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       months.map(function (m) { var rs = byM[m]; return '<tr><td>' + esc(ptnMonth(m)) + '</td><td>' + rs.length + '</td><td class="amt">' + ils(ptnSum(rs)) + '</td><td>' + d(rs[0].pay_in_month) + '</td><td>' + (mIsNow(rs) ? "לתשלום ב-" + d(ptnNext()) : "צפי") + '</td></tr>'; }).join("") +
       '</tbody><tfoot><tr><td>סה"כ</td><td>' + open.length + '</td><td>' + ils(ptnSum(open)) + '</td><td colspan="2"></td></tr></tfoot></table>' : '<p class="note">אין כרגע עסקאות פתוחות דרכך.</p>';
     var details = months.map(function (m) {
-      var rs = byM[m].slice().sort(function (a, b) { return a.n_in_month - b.n_in_month; });
+      var rs = byM[m].slice().sort(function (a, b) { return String(a.event_date).localeCompare(String(b.event_date)); });
       return '<h3>' + esc(ptnMonth(m)) + ': ' + rs.length + (rs.length === 1 ? " אירוע" : " אירועים") + ' · יוצא לתשלום ' + d(rs[0].pay_in_month) + (mIsNow(rs) ? "" : " (צפי)") + '</h3>' +
-        '<table><thead><tr><th>מס׳ בחודש</th><th>שם הלקוח</th><th>תאריך האירוע</th><th>מצב</th><th>סכום</th></tr></thead><tbody>' +
-        rs.map(function (r) { return '<tr><td>' + r.n_in_month + '</td><td>' + esc(r.client_name) + '</td><td>' + d(r.event_date) + '</td><td>' + stTxt(r) + '</td><td class="amt">' + ils(r.amount) + '</td></tr>'; }).join("") +
-        '</tbody></table><p class="calc">החישוב: ' + calc(rs) + '</p>';
+        '<table><thead><tr><th>מס׳ בחודש הסגירה</th><th>שם הלקוח</th><th>תאריך האירוע</th><th>מצב</th><th>סכום</th></tr></thead><tbody>' +
+        rs.map(function (r) { return '<tr><td>' + r.n_in_month + ' (נסגר ' + esc(ptnMonth(r.close_month)) + ')</td><td>' + esc(r.client_name) + '</td><td>' + d(r.event_date) + '</td><td>' + stTxt(r) + '</td><td class="amt">' + ils(r.amount) + '</td></tr>'; }).join("") +
+        '</tbody></table><p class="calc">החישוב: ' + calc(rs) + '</p><p class="note">המדרגה נקבעת לפי סדר הסגירה של העסקאות של הספק באותו חודש סגירה. התשלום מועבר ב-1 לחודש שאחרי האירוע.</p>';
     }).join("");
     var html = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דוח שיתוף פעולה · ' + esc(p.name) + '</title><style>' +
       '@page{size:A4;margin:12mm 15mm}body{margin:0;font-family:"Segoe UI",Arial,sans-serif;color:#1a1a1a;background:#fff}' +
