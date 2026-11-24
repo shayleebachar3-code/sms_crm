@@ -2853,7 +2853,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var pl = rcLogOf(pr || {}), pTl = pl.length ? '<h4 style="margin:16px 0 4px">מה היה בגיוס</h4><ul style="list-style:none;padding:0;margin:0">' + pl.slice().reverse().map(function (h) { return '<li style="padding:6px 0;border-bottom:1px solid var(--line)"><div class="muted" style="font-size:12px">' + esc(rcWhen(h.at)) + ' · ' + esc(h.type || "") + '</div><div style="white-space:pre-wrap">' + esc(h.text || "") + '</div></li>'; }).join("") + '</ul>' : "";
     var deals = mine.slice().sort(function (a, b) { return String(b.event_date).localeCompare(String(a.event_date)); }).map(function (r) {
       var st = r.state === "due" ? "לתשלום" : r.state === "paid" ? "שולם " + fmtDate(String(r.paid_on).slice(0, 10)) : r.state === "held_unpaid" ? "ממתין לתשלום מלא מהזוג" : "עתידי";
-      return '<tr><td><b>' + esc(r.client_name) + '</b></td><td class="num">' + fmtDate(String(r.event_date).slice(0, 10)) + '</td><td class="num"><b>' + shekel(r.amount) + '</b></td><td>' + esc(st) + '</td></tr>';
+      var cd = ""; if (r.closed_at) { var cdt = new Date(r.closed_at); if (!isNaN(cdt)) cd = cdt.getFullYear() + "-" + String(cdt.getMonth() + 1).padStart(2, "0") + "-" + String(cdt.getDate()).padStart(2, "0"); }
+      return '<tr><td><b>' + esc(r.client_name) + '</b></td><td class="num">' + fmtDate(String(r.event_date).slice(0, 10)) + '</td>' +
+        '<td style="min-width:200px"><input type="date" data-cd="' + esc(r.client_id) + '" value="' + cd + '" style="max-width:150px"' + dis() + '> <button type="button" class="btn ghost sm" data-ptf="setclose" data-cid="' + esc(r.client_id) + '"' + dis() + '>שמירה</button><div class="muted" style="font-size:12px">מס׳ ' + r.n_in_month + ' ב' + esc(ptnMonth(r.close_month)) + '</div></td>' +
+        '<td class="num"><b>' + shekel(r.amount) + '</b></td><td>' + esc(st) + '</td></tr>';
     }).join("");
     var inp = function (f, v, l, ltr) { return '<div class="field"><label>' + l + '</label><input data-pfe="' + f + '" value="' + esc(v || "") + '"' + (ltr ? ' dir="ltr"' : "") + dis() + '></div>'; };
     var months = ptnMonthsFor(p);
@@ -2877,7 +2880,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           '<button type="button" class="btn sm" data-ptf="add" style="margin-top:6px"' + dis() + '>הוספה ליומן (נשמר עם תאריך ושעה)</button>'
         : '<div class="muted">יומן השיחות עוד לא הופעל במסד הנתונים.</div>') +
       '<h4 style="margin:16px 0 4px">יומן שיחות</h4><ul style="list-style:none;padding:0;margin:0">' + (tl.join("") || '<li class="muted">עוד אין רישומים.</li>') + '</ul>' + pTl +
-      '<h4 style="margin:16px 0 4px">עסקאות שנסגרו דרכו</h4>' + (deals ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>סכום</th><th>מצב</th></tr></thead><tbody>' + deals + '</tbody></table></div>' : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרכו.</div>') +
+      '<h4 style="margin:16px 0 4px">עסקאות שנסגרו דרכו</h4>' + (deals ? '<div class="tablebox"><table><thead><tr><th>לקוח</th><th>תאריך אירוע</th><th>תאריך סגירה (קובע מדרגה)</th><th>סכום</th><th>מצב</th></tr></thead><tbody>' + deals + '</tbody></table></div><div class="muted" style="font-size:12px;margin-top:4px">אפשר לתקן את תאריך הסגירה אם סימנת באיחור. המדרגה של כל העסקאות באותו חודש סגירה מתחשבת מחדש.</div>' : '<div class="muted" style="font-size:14px">עוד אין עסקאות סגורות דרכו.</div>') +
       '<h4 style="margin:16px 0 4px">עריכת פרטים</h4><div class="fields">' + inp("name", p.name, "שם הספק") + inp("phone", p.phone, "טלפון", true) + inp("kind", p.kind || "מפיק אירועים", "סוג") + '</div>' +
       '<div class="field" style="margin-top:8px"><label>הערות קבועות</label><textarea data-pfe="notes" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px"' + dis() + '>' + esc(p.notes || "") + '</textarea></div>' +
       '<button type="button" class="btn sm" data-ptf="save" style="margin-top:6px"' + dis() + '>שמירת פרטים</button></div>';
@@ -2898,6 +2901,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     else if (act === "del") {
       if (!confirm("למחוק את הרישום הזה מהיומן?")) return; var at = b.dataset.at;
       guard(async function () { chk(await sb.from("partners").update({ log: ptnLogOf(p).filter(function (h) { return h.at !== at; }) }).eq("id", p.id)); await loadPartners(); ptnFull(); toast("הרישום נמחק"); });
+    }
+    else if (act === "setclose") {
+      var cid = b.dataset.cid, inpd = box.querySelector('[data-cd="' + cid + '"]'), dv = inpd && inpd.value;
+      if (!dv) { toast("בחרו תאריך סגירה"); return; }
+      var iso = new Date(dv + "T12:00:00").toISOString();
+      guard(async function () { chk(await sb.from("clients").update({ closed_at: iso }).eq("id", cid)); await loadPartners(); ptnFull(); toast("תאריך הסגירה עודכן, המדרגות חושבו מחדש"); });
     }
     else if (act === "save") {
       var d = {}; box.querySelectorAll("[data-pfe]").forEach(function (el) { d[el.dataset.pfe] = el.value.trim() || null; });
@@ -3138,9 +3147,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       }).join("");
       var nowSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) <= m0; })), futSum = ptnSum(rows.filter(function (r) { return String(r.event_month).slice(0, 7) > m0; }));
       return '<div class="form" style="padding:12px 16px;margin-bottom:10px"><div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline">' +
-        '<b style="font-size:16px">' + esc(p.name) + '</b><span class="muted">החודש: ' + newRefs.length + ' לידים, ' + closedNew + ' נסגרו</span>' +
+        '<button type="button" class="linkbtn" data-ptn-act="full" data-pid="' + esc(p.id) + '" style="font-size:16px;font-weight:800">' + esc(p.name) + '</button><span class="muted">החודש: ' + newRefs.length + ' לידים, ' + closedNew + ' נסגרו</span>' +
         '<span>לתשלום ב-' + ptnD(ptnNext()) + ': <b class="num">' + shekel(nowSum) + '</b></span><span>עתידי: <b class="num">' + shekel(futSum) + '</b></span>' +
-        '<button class="btn ghost sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button></div>' +
+        '<button class="btn sm" data-ptn-act="full" data-pid="' + esc(p.id) + '">כרטיס ספק מלא</button> <button class="btn ghost sm" data-ptn-act="report" data-pid="' + esc(p.id) + '">דוח לספק</button></div>' +
         (lines || '<div class="muted" style="font-size:14px;margin-top:6px">עוד אין עסקאות סגורות דרך הספק הזה.</div>') + '</div>';
     }).join("");
     box.innerHTML = cards ? '<details class="pull" data-k="ptnsum" open style="margin:14px 0"><summary><span>ספקים (שיתופי פעולה): מה מגיע החודש ומה עתידי</span></summary>' + cards + '</details>' : "";
