@@ -510,7 +510,7 @@ td .btn{margin-inline-end:4px}
     <div class="insight" id="insight"></div>
     <div class="charts" id="charts"></div>
     <div class="tablebox"><table><thead><tr>
-      <th>מקור</th><th>ערוץ</th><th>הוצאה</th><th>לקוחות</th><th>סגרו</th><th>אחוז המרה</th><th>הכנסה</th><th>עלות ללקוח שסגר</th><th>החזר על ההוצאה</th><th></th>
+      <th>מקור</th><th>ערוץ</th><th>הוצאה</th><th>ביקורים באתר</th><th>לחצו על ווטסאפ</th><th>עלות ללחיצה</th><th>לקוחות</th><th>סגרו</th><th>אחוז המרה</th><th>הכנסה</th><th>עלות ללקוח שסגר</th><th>החזר על ההוצאה</th><th></th>
     </tr></thead><tbody id="src-body"></tbody></table></div>
     <section class="sec" id="web-panel" style="margin:18px 0">
       <div class="row-head"><h3>התנהגות באתר</h3><div class="field" style="min-width:160px"><label for="web-days">תקופה</label><select id="web-days"><option value="today">היום</option><option value="since">מהיום ואילך (מאז האיפוס ב-18.11)</option><option value="7">7 ימים אחרונים</option><option value="30" selected>30 ימים אחרונים</option><option value="90">90 ימים אחרונים</option><option value="custom">מתאריך שאבחר…</option></select></div><div class="field" id="web-from-box" style="min-width:150px" hidden><label for="web-from">מתאריך</label><input id="web-from" type="date"></div></div>
@@ -2495,7 +2495,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (typing) { var gb = $("goal-bars"); if (gb) gb.innerHTML = goalBarsHtml(single, d, n); }
     else $("sum-goals").innerHTML = single ? '<div class="chart" style="margin-bottom:12px"><h3>יעדים ל' + ymLabel(single) + '</h3><div class="fields" style="display:flex;gap:10px;flex-wrap:wrap"><div class="field"><label for="goal-deals">יעד עסקאות</label><input id="goal-deals" type="number" min="0" inputmode="numeric" value="' + (g.deals || "") + '"' + dis() + '></div><div class="field"><label for="goal-rev">יעד הכנסה (₪)</label><input id="goal-rev" type="number" min="0" inputmode="numeric" value="' + (g.revenue || "") + '"' + dis() + '></div><div class="field"><label for="goal-leads">יעד לידים</label><input id="goal-leads" type="number" min="0" inputmode="numeric" value="' + (g.leads || "") + '"' + dis() + '></div></div><div id="goal-bars">' + goalBarsHtml(single, d, n) + "</div></div>" : "";
     function tile(t, v, sub) { return '<div class="chart"><h3>' + t + '</h3><div style="font-size:26px;font-weight:700" class="num">' + v + '</div><div class="cap">' + (sub || "") + "</div></div>"; }
-    $("sum-tiles").innerHTML = tile("לידים", d.leads, "") + tile("עסקאות שנסגרו", n, d.leads ? Math.round(n / d.leads * 100) + "% מהלידים" : "") + tile("שווי עסקאות", shekel(d.value), n ? "ממוצע " + shekel(Math.round(d.value / n)) + " לעסקה" : "") + tile("שולם", shekel(d.paid), "") + tile("חוב פתוח", shekel(d.debt), d.debt ? "יתרה לגבייה" : "אין חוב") + tile("אירועים שהתקיימו", d.held, "") + tile("הוצאות פרסום", shekel(d.spend), d.spend && n ? "עלות לעסקה " + shekel(Math.round(d.spend / n)) : "");
+    $("sum-tiles").innerHTML = tile("לידים", d.leads, "") + tile("עסקאות שנסגרו", n, d.leads ? Math.round(n / d.leads * 100) + "% מהלידים" : "") + tile("שווי עסקאות", shekel(d.value), n ? "ממוצע " + shekel(Math.round(d.value / n)) + " לעסקה" : "") + tile("שולם", shekel(d.paid), "") + tile("חוב פתוח", shekel(d.debt), d.debt ? "יתרה לגבייה" : "אין חוב") + tile("אירועים שהתקיימו", d.held, "") + tile("הוצאות פרסום", shekel(d.spend), d.spend && n ? "עלות לעסקה " + shekel(Math.round(d.spend / n)) : "") + (waData && waKey === waRange().join("|") ? tile("לחצו על וואטסאפ באתר", waData.wa_sessions || 0, "מתוך " + (waData.sessions || 0) + " ביקורים" + (waData.wa_sessions && d.spend ? " · עלות ללחיצה " + shekel(Math.round(d.spend / waData.wa_sessions)) : "")) : "");
     var ms = Object.keys(d.months).filter(Boolean).sort().reverse();
     $("sum-months").innerHTML = ms.length ? ms.map(function (k) { var m = d.months[k]; return "<tr><td><b>" + ymLabel(k) + '</b></td><td class="num">' + m.leads + '</td><td class="num">' + m.n + '</td><td class="num">' + shekel(m.value) + '</td><td class="num">' + shekel(m.paid) + '</td><td class="num">' + shekel(m.debt) + '</td><td class="num">' + shekel(m.spend) + "</td></tr>"; }).join("") : '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--ink-2)">אין נתונים בתקופה הזו</td></tr>';
     var rows = d.won.slice().sort(function (a, b) { return closedYm(b).localeCompare(closedYm(a)) || (b.eventDate || "").localeCompare(a.eventDate || ""); });
@@ -2568,14 +2568,41 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       m.n[st] = (m.n[st] || 0) + 1; m.total++;
       if (isWonSt(st)) m.rev += dealValue(c);
     });
+    if (waData && waKey === waRange().join("|")) Object.keys(waData.by_src || {}).forEach(function (k) {
+      var nm = k === "ישיר" ? DIRECT : k, v = waData.by_src[k];
+      if (!map[nm] && (v.wa_clicks || 0) > 0) map[nm] = { name: nm, channel: "", spend: null, camp: null, n: {}, total: 0, rev: 0 };
+    });
     return Object.keys(map).map(function (k) {
-      var m = map[k]; m.won = (m.n["סגרו"] || 0) + (m.n["הושלם"] || 0); m.conv = m.total ? m.won / m.total : null;
+      var m = map[k], w = waFor(k); m.web = w; m.cpc = w && w.wa && m.spend ? m.spend / w.wa : null; m.won = (m.n["סגרו"] || 0) + (m.n["הושלם"] || 0); m.conv = m.total ? m.won / m.total : null;
       m.cpw = m.spend && m.won ? m.spend / m.won : null; m.roi = m.spend ? m.rev / m.spend : null; return m;
     });
   }
   var webAt = 0;
+  /* website visits and WhatsApp-button clicks per source, for the same period as the sources table (RPC site_wa_by_src) */
+  var waData = null, waKey = "", waAt = 0, waLoading = false;
+  function waRange() {
+    var r = periodRange(srcPeriod);
+    if (!r) return ["2020-01-01", todayStr()];
+    var last = new Date(Number(r[1].slice(0, 4)), Number(r[1].slice(5, 7)), 0).getDate();
+    return [r[0] + "-01", r[1] + "-" + pad2(last)];
+  }
+  function loadWa() {
+    if (!sb || waLoading) return;
+    var rg = waRange(), key = rg.join("|"); waLoading = true;
+    sb.rpc("site_wa_by_src", { p_from: rg[0], p_to: rg[1] }).then(function (r) {
+      waLoading = false;
+      if (r && !r.error) { waData = r.data; waKey = key; waAt = Date.now(); if ($("src-body")) renderSources(); } else waAt = 0;
+    }, function () { waLoading = false; waAt = 0; });
+  }
+  function waFor(name) {
+    var by = waData && waKey === waRange().join("|") ? waData.by_src || {} : null;
+    if (!by) return null;
+    var v = by[name === DIRECT ? "ישיר" : name];
+    return v ? { sessions: v.sessions || 0, wa: v.wa_clicks || 0, waSess: v.wa_sessions || 0 } : { sessions: 0, wa: 0, waSess: 0 };
+  }
   function renderSources() {
     if (unlocked && !webLoading && Date.now() - webAt > 60000) loadWeb();
+    if (unlocked && !waLoading && (waKey !== waRange().join("|") || Date.now() - waAt > 60000)) loadWa();
     if ($("src-period")) $("src-period").innerHTML = periodOptions(srcPeriod);
     renderSummary();
     var st = sourceStats(), withData = st.filter(function (s) { return s.total > 0; });
@@ -2590,7 +2617,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (small) ins += ' <span class="muted">יש רק ' + state.clients.length + ' לקוחות, המדגם קטן ולא כדאי להסיק ממנו מסקנות סופיות.</span>';
     }
     $("insight").innerHTML = ins;
-    if (!withData.length) { $("charts").innerHTML = ""; }
+      var waRows = st.filter(function (s) { return s.web && (s.web.wa || s.web.sessions); }).sort(function (a, b) { return b.web.wa - a.web.wa || b.web.sessions - a.web.sessions; });
+      var maxWa = Math.max.apply(null, [1].concat(waRows.map(function (s) { return s.web.wa; })));
+      var c4 = waRows.length ? waRows.map(function (s) {
+        return '<div class="crow"><div class="ct"><b>' + esc(s.name) + '</b><span class="num"><b>' + s.web.wa + '</b> לחיצות</span></div><div class="track" role="img" aria-label="לחיצות וואטסאפ מ' + esc(s.name) + '"><i style="width:' + (s.web.wa / maxWa * 100) + '%"></i></div>' +
+          '<div class="sub num">' + s.web.waSess + ' מתוך ' + s.web.sessions + ' ביקורים לחצו' + (s.cpc ? " · עלות ללחיצה " + shekel(s.cpc) : "") + '</div></div>';
+      }).join("") : '<div class="sub">אין עדיין לחיצות על וואטסאפ בתקופה הזו</div>';
+    var waChart = '<div class="chart"><h3>לחיצות על וואטסאפ באתר לפי מקור</h3><div class="cap">מי שלחץ על כפתור הוואטסאפ באתר. עדיין לא לקוח עד שנפתח לו כרטיס.</div>' + c4 + '</div>';
+    if (!withData.length) { $("charts").innerHTML = waData ? waChart : ""; }
     else {
       var maxTotal = Math.max.apply(null, withData.map(function (s) { return s.total; }));
       var maxRev = Math.max.apply(null, [1].concat(withData.map(function (s) { return s.rev; })));
@@ -2613,14 +2647,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           '<div class="sub num">' + (s.cpw ? "עלות ללקוח שסגר: " + shekel(s.cpw) : s.spend ? "הוצאה " + shekel(s.spend) + ", עדיין בלי סגירה" : "בלי הוצאה מתועדת") + '</div></div>';
       }).join("");
       $("charts").innerHTML =
+        waChart +
         '<div class="chart"><h3>אחוז המרה לפי מקור</h3><div class="cap">לקוחות שסגרו מתוך כל הלקוחות מהמקור, כולל מי שעדיין בתהליך או מתלבט.</div>' + c1 + '</div>' +
         '<div class="chart"><h3>מה קרה ללקוחות מכל מקור</h3><div class="cap">אורך הפס לפי מספר הלקוחות, והצבעים לפי הסטטוס.</div>' + c2 + '</div>' +
         '<div class="chart"><h3>הכנסה לפי מקור</h3><div class="cap">סכום העסקאות שנסגרו.</div>' + c3 + '</div>';
     }
-    if (!st.length) { $("src-body").innerHTML = '<tr><td colspan="10" style="white-space:normal;text-align:center;color:var(--ink-2);padding:24px">' + (loaded.campaigns ? "אין מקורות עדיין. הוסיפו קמפיין, ובכרטיס הלקוח בחרו אותו כמקור הגעה." : "טוען…") + '</td></tr>'; return; }
+    if (!st.length) { $("src-body").innerHTML = '<tr><td colspan="13" style="white-space:normal;text-align:center;color:var(--ink-2);padding:24px">' + (loaded.campaigns ? "אין מקורות עדיין. הוסיפו קמפיין, ובכרטיס הלקוח בחרו אותו כמקור הגעה." : "טוען…") + '</td></tr>'; return; }
     $("src-body").innerHTML = st.sort(function (a, b) { return (b.conv == null ? -1 : b.conv) - (a.conv == null ? -1 : a.conv); }).map(function (s) {
       return '<tr' + (s.camp ? ' data-id="' + esc(s.camp.id) + '"' : "") + '><td><b>' + esc(s.name) + '</b> ' + (s.camp && s.camp.example ? '<span class="chip ex">דוגמה</span>' : "") + '</td><td>' + esc(s.channel) + '</td>' +
-        '<td class="num">' + (s.spend == null ? "–" : shekel(s.spend)) + '</td><td class="num">' + s.total + '</td><td class="num">' + s.won + '</td>' +
+        '<td class="num">' + (s.spend == null ? "–" : shekel(s.spend)) + '</td><td class="num">' + (s.web ? s.web.sessions : "–") + '</td><td class="num">' + (s.web ? s.web.wa + (s.web.sessions ? ' <span class="muted">(' + Math.round(s.web.waSess / s.web.sessions * 100) + '%)</span>' : "") : "–") + '</td><td class="num">' + (s.cpc == null ? "–" : shekel(s.cpc)) + '</td><td class="num">' + s.total + '</td><td class="num">' + s.won + '</td>' +
         '<td class="num">' + (s.conv == null ? "–" : Math.round(s.conv * 100) + "%") + '</td><td class="num">' + shekel(s.rev) + '</td>' +
         '<td class="num">' + (s.cpw == null ? "–" : shekel(s.cpw)) + '</td>' +
         '<td>' + (s.roi == null ? "–" : '<span class="chip ' + (s.roi >= 1 ? "good" : "bad") + ' num">×' + s.roi.toFixed(1) + '</span>') + '</td>' +
