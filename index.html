@@ -421,7 +421,8 @@ td .btn{margin-inline-end:4px}
 
   <!-- CLIENTS -->
   <section class="view" id="view-clients" hidden>
-    <div class="row-head"><h2>כרטיסי לקוח</h2><div class="cl-tools"><input id="cl-search" type="search" placeholder="חיפוש לפי שם, טלפון, אולם או תאריך" aria-label="חיפוש לקוח" autocomplete="off"><button class="btn" id="toggle-client-form">ליד חדש</button></div></div>
+    <div class="row-head"><h2>כרטיסי לקוח</h2><div class="cl-tools"><button class="btn" id="toggle-client-form">ליד חדש</button></div></div>
+    <div class="cl-searchbar" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:2px solid var(--accent,#8a6a22);border-radius:12px;padding:10px 14px;margin:6px 0 12px"><span aria-hidden="true" style="font-size:20px">🔍</span><input id="cl-search" type="search" placeholder="חיפוש לקוח: הקלידו שם (או טלפון, אולם, תאריך)" aria-label="חיפוש לקוח לפי שם" autocomplete="off" style="flex:1;border:0;outline:0;background:transparent;font-size:17px;color:inherit;min-width:0;max-width:none;padding:4px 0"></div>
     <div class="muted" id="cl-search-info" style="font-size:13px;margin:-6px 0 10px" hidden></div>
     <form class="form" id="client-form" hidden>
       <div class="fields">
