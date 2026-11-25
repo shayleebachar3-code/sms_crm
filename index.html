@@ -1066,7 +1066,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var daysAgo = function (iso) { var d = new Date(iso); if (isNaN(d)) return 0; return Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000); };
   var inDays = function (n) { return n === 0 ? "היום" : n === 1 ? "מחר" : n > 0 ? "בעוד " + n + " ימים" : "לפני " + (-n) + " ימים"; };
   var toast = function (t) { var el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function () { el.hidden = true; }, 2600); };
-  var stageOf = function (c) { if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
+  var stageOf = function (c) { if (c.status === "לא ענה בטלפון" || c.status === "שיחת אפיון בוצעה" || c.status === "הצעה נשלחה") return "מתלבטים"; /* no answer = straight to follow-up */ return c.stage === "בתהליך" ? "מתלבטים" : (c.stage || "ליד חדש"); };
   var waNum = function (p) { var d = String(p || "").replace(/\D/g, ""); if (!d) return ""; return d.charAt(0) === "0" ? "972" + d.slice(1) : d; };
   function fmtDT(iso, withYear) {
     if (!iso) return "";
@@ -1827,7 +1827,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       offers: (c.offers || []).concat([{ id: newId(), pkg: q.pkg, amount: q.est || 0, date: todayStr(), status: "נשלחה", note: "הצעה מסוכן ההצעות" }]),
       log: (c.log || []).concat([{ id: newId(), at: new Date().toISOString(), type: "ווטסאפ", text: "נשלחה הצעת " + q.pkg + (q.est ? " ב-" + shekel(q.est) : "") }]) };
     if (stageOf(c) === "ליד חדש") d.stage = "מתלבטים";
-    guard(async function () { await patch("clients", id, d); renderSheet(true); toast("ההצעה נרשמה בהיסטוריית ההצעות"); });
+    if (c.status !== "נסגרה עסקה" && c.status !== "לא מעוניין") { d.status = "הצעה נשלחה"; d.followUp = addWorkDays(todayStr(), QUOTE_WAIT_DAYS); }
+    guard(async function () { await patch("clients", id, d); renderSheet(true); toast("ההצעה נרשמה. פולואפ בעוד יומיים (בלי שבת)"); });
   }
   function quoteSection(c) {
     var st = stageOf(c); if (isWonSt(st) || st === "אבדו") return "";
@@ -2111,7 +2112,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var rH = hes.map(function (c) {
       var d = c.followUp ? daysUntil(c.followUp) : null, o = lastOffer(c);
       return arow({ cid: c.id, title: c.name, sub: esc((c.eventType || "") + (c.eventDate ? " · " + fmtDate(c.eventDate) : "")) + (o ? " · הצעה " + esc(o.pkg || "") + " " + shekel(o.amount) : ""),
-        chips: (c.status === "לא ענה בטלפון" ? [["לא ענה בטלפון", "warn"]] : c.status === "לא פנינו" ? [["לא פנינו אליהם עדיין", "bad"]] : []).concat([[d == null ? "אין תאריך פולואפ" : d === 0 ? "פולואפ היום" : "באיחור " + (-d) + " ימים", d === 0 ? "warn" : "bad"]]),
+        chips: (c.status === "לא ענה בטלפון" ? [["לא ענה בטלפון", "warn"]] : c.status === "לא פנינו" ? [["לא פנינו אליהם עדיין", "bad"]] : c.status === "שיחת אפיון בוצעה" ? [["אפיון בוצע, להכין הצעה", "warn"]] : c.status === "הצעה נשלחה" ? [["הצעה נשלחה, עברו יומיים", "warn"]] : []).concat([[d == null ? "אין תאריך פולואפ" : d === 0 ? "פולואפ היום" : "באיחור " + (-d) + " ימים", d === 0 ? "warn" : "bad"]]),
         acts: waBtn(c) + '<button class="btn ghost sm" data-act="snooze">דחייה ב-3 ימים</button><button class="btn ghost sm" data-act="open-id">פתיחת כרטיס</button>' });
     });
     var noC = state.clients.filter(function (c) {
@@ -2386,13 +2387,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         (L0.k === "system" && L0.msg && w ? '<a class="btn sm" data-jsend="' + esc(c.id) + '" href="https://wa.me/' + w + '?text=' + encodeURIComponent(L0.msg) + '" target="_blank" rel="noopener">שליחה בווטסאפ</a>' : "") + (L0.k === "owner" ? '<button class="btn sm" data-sb="step-owner"' + dis() + '>סימנתי שביצעתי</button>' : ""));
     }
     if (won && payOpen(c)) { var p2 = payOf(c); return box("", "💰 יתרה פתוחה", (p2.value ? "יתרה " + shekel(p2.bal) + " · לשלם עד " + esc(fmtDate(payDue(c))) : "חסר שווי עסקה") + ". תזכורת יומית ללקוח מתחילה 5 ימים לפני האירוע.", '<button class="btn ghost sm" data-act="pay-add"' + dis() + '>רישום תשלום</button>'); }
-    if (st === "ליד חדש") return box("warn", "👋 הצעד הבא: ליצור קשר ראשון", "לשלוח הודעת פתיחה, ואחרי השיחה לרשום מה סוכם בחלק \"שיחות והודעות\".", w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(journeyMsg(c, 1)) + '" target="_blank" rel="noopener">הודעת פתיחה בווטסאפ</a>' : '<span class="chip bad">אין טלפון בכרטיס</span>');
+    if (st === "ליד חדש") return box("warn", "👋 הצעד הבא: ליצור קשר ראשון", "לשלוח הודעת פתיחה, ואחרי השיחה לרשום מה סוכם בחלק \"שיחות והודעות\".", (w ? '<a class="btn sm" href="https://wa.me/' + w + '?text=' + encodeURIComponent(journeyMsg(c, 1)) + '" target="_blank" rel="noopener">הודעת פתיחה בווטסאפ</a>' : '<span class="chip bad">אין טלפון בכרטיס</span>') + '<button class="btn ghost sm" data-act="quick-status" data-v="שיחת אפיון בוצעה"' + dis() + '>דיברנו: בוצעה שיחת אפיון</button><button class="btn ghost sm" data-act="quick-status" data-v="לא ענה בטלפון"' + dis() + '>לא ענה בטלפון</button>');
     if (st === "מתלבטים") {
       var q = c.quote && c.quote.kind === "custom" ? c.quote : null;
-      if (!q && !(c.offers || []).length) return box("warn", "🥃 הצעד הבא: להכין הצעת מחיר", "ממלאים את אפיון החבילה ומפיקים PDF בחלק \"חבילה והצעת מחיר\".", '<button class="btn sm" data-act="go-grp" data-g="g-pkg">לחבילה והצעה</button>');
+      if (!q && !(c.offers || []).length) return box("warn", "🥃 הצעד הבא: להכין הצעת מחיר", (c.status === "שיחת אפיון בוצעה" ? "האפיון בוצע. " : "") + "ממלאים את אפיון החבילה ומפיקים PDF בחלק \"חבילה והצעת מחיר\". אחרי השליחה מסמנים \"סימנתי כנשלחה\", והסטטוס והפולואפ (יומיים בלי שבת) מתעדכנים לבד.", '<button class="btn sm" data-act="go-grp" data-g="g-pkg">לחבילה והצעה</button>' + (c.status !== "שיחת אפיון בוצעה" ? '<button class="btn ghost sm" data-act="quick-status" data-v="שיחת אפיון בוצעה"' + dis() + '>סימון: בוצעה שיחת אפיון</button>' : ""));
       if (q && !q.sentAt) return box("warn", "🥃 הצעד הבא: לשלוח את ההצעה ללקוח", "ההצעה " + esc(q.en || "") + " · " + shekel(q.total) + " הופקה ועוד לא סומנה כנשלחה.", '<button class="btn sm" data-act="go-grp" data-g="g-pkg">לשליחת ההצעה</button>');
-      var fu = c.followUp;
-      return box(fu && fu <= todayStr() ? "warn" : "", "📞 הצעד הבא: פולואפ" + (fu ? " ב-" + esc(fmtDate(fu)) : ""), "ההצעה נשלחה. אם הלקוח סוגר, משנים סטטוס ל\"נסגרה עסקה\" למעלה.", (w ? waBtn(c) : "") + '<button class="btn ghost sm" data-act="snooze">דחייה ב-3 ימים</button>');
+      var fu = c.followUp, tdy = todayStr(), qs = function (v, l) { return '<button class="btn ghost sm" data-act="quick-status" data-v="' + v + '"' + dis() + '>' + l + '</button>'; };
+      if (c.status !== "הצעה נשלחה" && (c.offers || []).length) return box("warn", "📨 ההצעה נשלחה, לעדכן סטטוס", "הלקוח קיבל הצעה. סימון \"הצעה נשלחה\" פותח חלון של יומיים (בלי שבת) עד הפולואפ.", '<button class="btn sm" data-act="quick-status" data-v="הצעה נשלחה"' + dis() + '>סימון: הצעה נשלחה</button>' + qs("נסגרה עסקה", "נסגרה עסקה") + qs("לא מעוניין", "לא מעוניין"));
+      if (fu && fu > tdy) return box("", "⏳ ההצעה נשלחה, ממתין לתשובה", "הלקוח בחלון של יומיים (בלי שבת). הפולואפ הבא ב-<b>" + esc(fmtDate(fu)) + "</b>. אם הוא חוזר קודם, מעדכנים את הסטטוס.", qs("נסגרה עסקה", "נסגרה עסקה") + qs("מתלבט", "מתלבט") + qs("לא מעוניין", "לא מעוניין"));
+      return box("warn", "📞 הצעד הבא: פולואפ עכשיו", "עברו יומיים (בלי שבת) מאז ההצעה" + (fu ? " (פולואפ ב-" + esc(fmtDate(fu)) + ")" : "") + ". אם הלקוח סוגר, משנים סטטוס ל\"נסגרה עסקה\".", (w ? waBtn(c) : "") + '<button class="btn ghost sm" data-act="snooze">דחייה ב-3 ימים</button>' + qs("נסגרה עסקה", "נסגרה עסקה") + qs("מתלבט", "מתלבט") + qs("לא מעוניין", "לא מעוניין"));
     }
     return box("", "✓ אין פעולה דחופה ללקוח הזה", "", "");
   }
@@ -3428,6 +3431,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     if (act === "open" || act === "open-id") { if (cid) openSheet(cid); }
     else if (act === "start" && cid) openSheet(cid);
     else if (act === "snooze" && (cid || openId)) { var sid = cid || openId; guard(function () { return patch("clients", sid, { followUp: addDays(3) }); }); toast("הפולואפ נדחה ב-3 ימים"); }
+    else if (act === "quick-status" && openId && canWrite) { setStatus2(openId, b.dataset.v); toast("הסטטוס עודכן: " + b.dataset.v); }
     else if (act === "close") closeSheet();
     else if (act === "add-offer" && openId) {
       var c = byId(state.clients, openId); if (!c) return;
@@ -3436,7 +3440,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       var offer = { id: newId(), pkg: pkg, amount: amt, date: $("o-date").value || todayStr(), status: $("o-status").value, note: $("o-note").value.trim() };
       var dd = { offers: (c.offers || []).concat([offer]) };
       if (stageOf(c) === "ליד חדש") dd.stage = "מתלבטים";
-      guard(async function () { await patch("clients", openId, dd); renderSheet(true); toast("ההצעה נוספה"); });
+      if (offer.status === "נשלחה" && c.status !== "נסגרה עסקה" && c.status !== "לא מעוניין") { dd.status = "הצעה נשלחה"; dd.followUp = addWorkDays(offer.date, QUOTE_WAIT_DAYS) < todayStr() ? todayStr() : addWorkDays(offer.date, QUOTE_WAIT_DAYS); }
+      guard(async function () { await patch("clients", openId, dd); renderSheet(true); toast("ההצעה נוספה. פולואפ בעוד יומיים (בלי שבת)"); });
     }
     else if (act === "del-offer" && openId) {
       var oid = b.closest(".offer").dataset.oid, c2 = byId(state.clients, openId);
@@ -3536,7 +3541,19 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var sb = null, pollT = null, lastPersist = 0, loadingAll = null;
   var ownerOk = false;
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  var STATUSES = ["נסגרה עסקה", "מתלבט", "לא מעוניין", "לא ענה בטלפון", "לא פנינו"];
+  var STATUSES = ["לא פנינו", "לא ענה בטלפון", "שיחת אפיון בוצעה", "הצעה נשלחה", "מתלבט", "נסגרה עסקה", "לא מעוניין"];
+  /* מוסיף n ימי עבודה (בלי שבת) לתאריך yyyy-mm-dd */
+  function addWorkDays(ds, n) { var d = new Date(ds + "T12:00:00"), k = 0; while (k < n) { d.setDate(d.getDate() + 1); if (d.getDay() !== 6) k++; } return dstr(d); }
+  var QUOTE_WAIT_DAYS = 2;
+  /* פולואפ אחרי הצעה: יומיים (בלי שבת) מהיום שהיא נשלחה */
+  function quoteFollowUp(c) {
+    var base = todayStr();
+    var o = (c.offers || []).filter(function (x) { return x.date; }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); })[0];
+    if (o && o.date) base = String(o.date).slice(0, 10);
+    if (c.quote && c.quote.sentAt) { var qd = jerDay(c.quote.sentAt); if (qd && qd > base) base = qd; }
+    var fu = addWorkDays(base, QUOTE_WAIT_DAYS); return fu < todayStr() ? todayStr() : fu;
+  }
+  function jerDay(iso) { try { return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }); } catch (e) { return String(iso || "").slice(0, 10); } }
   var KIND_L = { status_change: "שינוי סטטוס", stage_change: "מעבר שלב", message_sent: "הודעה נשלחה", pdf_generated: "הופק PDF", payment: "תשלום", agreement_created: "הסכם נוצר", agreement_sent: "הסכם נשלח", agreement_signed: "הסכם נחתם", rsvp_sent: "טופס אישורי הגעה נשלח", rsvp_received: "טופס אישורי הגעה התקבל" };
   var CH_L = { whatsapp_business: "וואטסאפ עסקי", whatsapp: "וואטסאפ", sms: "SMS", email: "אימייל", phone: "טלפון", other: "אחר" };
   var PK_NAMES = Object.keys(PKGS);
@@ -3694,7 +3711,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   stageOf = function (c) {
     if (c.status === "נסגרה עסקה") return isFinished(c) ? "הושלם" : "סגרו";
     if (c.status === "לא מעוניין") return "אבדו";
-    if (c.status === "לא ענה בטלפון") return "מתלבטים"; /* no answer goes straight to follow-up */
+    if (c.status === "לא ענה בטלפון" || c.status === "שיחת אפיון בוצעה" || c.status === "הצעה נשלחה") return "מתלבטים"; /* no answer / after the interview call / quote sent: in the follow-up flow */
     /* "לא פנינו" = ברירת המחדל לכל ליד חדש: בלי שום פעולה הוא נשאר "ליד חדש", ברגע שיש הצעה/תיעוד הוא עובר לפולואפ */
     if (!(c.offers || []).length && !(c.log || []).length && !c.quote) return "ליד חדש";
     return "מתלבטים";
@@ -3706,6 +3723,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var d = { status: value };
     if (value === "מתלבט" && !cur.followUp) d.followUp = addDays(3);
     if (value === "לא פנינו") d.followUp = todayStr(); /* קופץ לעמדת הפולואפ היום */
+    if (value === "שיחת אפיון בוצעה") d.followUp = todayStr(); /* הצעד הבא: להכין ולשלוח הצעה */
+    if (value === "הצעה נשלחה") d.followUp = quoteFollowUp(cur); /* חלון של יומיים בלי שבת */
     guard(function () { return patch("clients", id, d); });
   }
 
@@ -4371,6 +4390,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var d = { value: Number(q.total) || Number(c.value) || 0, quote: isLatest ? q : c.quote, quotes: hist.filter(function (k) { return k.id !== "legacy"; }).map(function (k) { return ent && k.id === ent.id ? Object.assign({}, k, { sentAt: nowIso }) : k; }),
       offers: (c.offers || []).concat([{ id: newId(), pkg: q.pkg, amount: q.total || q.est || 0, date: todayStr(), status: "נשלחה", note: q.qk === "final" ? "הצעה סופית לפי אישורי הגעה" : q.qk === "rev" ? "הצעה מעודכנת" : "הצעה מותאמת + PDF" }]),
       log: (c.log || []).concat([{ id: newId(), at: new Date().toISOString(), type: "ווטסאפ", text: "נשלחה הצעת " + (q.en || q.pkg) + (q.total ? " ב-" + shekel(q.total) : "") }]) };
+    if (c.status !== "נסגרה עסקה" && c.status !== "לא מעוניין") { d.status = "הצעה נשלחה"; d.followUp = addWorkDays(todayStr(), QUOTE_WAIT_DAYS); }
     guard(async function () {
       await patch("clients", id, d);
       await logAct(id, "message_sent", "whatsapp_business", { note: "נשלחה הצעת מחיר " + (q.en || ""), total: q.total, file: q.file, source: "quote_sent" });
